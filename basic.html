@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GATE Study Materials</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 100%;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            gap: 0;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 320px;
+            min-width: 320px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 0;
+            box-shadow: 2px 0 15px rgba(0, 0, 0, 0.1);
+            border: none;
+            border-right: 1px solid rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar.collapsed {
+            width: 60px;
+            min-width: 60px;
+        }
+
+        .sidebar.collapsed .sidebar-header h1,
+        .sidebar.collapsed .stats,
+        .sidebar.collapsed .breadcrumb,
+        .sidebar.collapsed .search-box,
+        .sidebar.collapsed .back-button span,
+        .sidebar.collapsed .folder-item span,
+        .sidebar.collapsed .file-item span {
+            display: none;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-header h1 {
+            font-weight: 700;
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .stats {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 0.9rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 15px 20px 0 20px;
+            flex-wrap: wrap;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .breadcrumb-item {
+            background: #3498db;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .breadcrumb-item:hover {
+            background: #2980b9;
+            transform: translateY(-1px);
+            box-shadow: 0 3px 8px rgba(52, 152, 219, 0.3);
+        }
+
+        .breadcrumb-separator {
+            color: #7f8c8d;
+            font-size: 0.8rem;
+        }
+
+        .sidebar-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .content-area {
+            flex: 1;
+            background: #ffffff;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            height: 100vh;
+        }
+
+        .pdf-controls {
+            display: none;
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            z-index: 1000;
+            gap: 10px;
+        }
+
+        .pdf-controls.visible {
+            display: flex;
+        }
+
+        .control-btn {
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            border: none;
+            padding: 12px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .control-btn:hover {
+            background: rgba(0, 0, 0, 0.95);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+        }
+
+        .toggle-sidebar-btn {
+            position: absolute;
+            top: 50%;
+            left: -1px;
+            transform: translateY(-50%);
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            width: 30px;
+            height: 70px;
+            border-radius: 0 12px 12px 0;
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .toggle-sidebar-btn:hover {
+            background: linear-gradient(135deg, #2980b9, #1f5f8b);
+            width: 35px;
+            box-shadow: 3px 0 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .fullscreen-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #000;
+            z-index: 9999;
+            display: none;
+        }
+
+        .fullscreen-overlay.active {
+            display: block;
+        }
+
+        .fullscreen-controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 10000;
+            display: flex;
+            gap: 10px;
+        }
+
+        .fullscreen-pdf-viewer {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .folder-item, .file-item {
+            display: flex;
+            align-items: center;
+            padding: 14px 16px;
+            margin: 6px 0;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
+            background: rgba(255, 255, 255, 0.7);
+        }
+
+        .folder-item:hover {
+            background: linear-gradient(45deg, #f39c12, #e67e22);
+            color: white;
+            transform: translateX(8px) translateY(-2px);
+            box-shadow: 0 6px 20px rgba(243, 156, 18, 0.4);
+        }
+
+        .file-item:hover {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            color: white;
+            transform: translateX(8px) translateY(-2px);
+            box-shadow: 0 6px 20px rgba(231, 76, 60, 0.4);
+        }
+
+        .icon {
+            margin-right: 14px;
+            font-size: 1.3rem;
+            width: 24px;
+            text-align: center;
+        }
+
+        .back-button {
+            background: linear-gradient(45deg, #9b59b6, #8e44ad);
+            color: white;
+            border: none;
+            padding: 14px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            margin-bottom: 20px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 12px rgba(155, 89, 182, 0.3);
+        }
+
+        .back-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(155, 89, 182, 0.5);
+        }
+
+        .pdf-viewer {
+            width: 100%;
+            height: 100%;
+            border: none;
+            border-radius: 0;
+        }
+
+        .welcome-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #7f8c8d;
+            text-align: center;
+            padding: 40px;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+        }
+
+        .welcome-screen .icon {
+            font-size: 5rem;
+            margin-bottom: 30px;
+            color: #bdc3c7;
+            text-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .welcome-screen h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 2rem;
+        }
+
+        .welcome-screen p {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            max-width: 500px;
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 14px 18px;
+            border: 2px solid #ecf0f1;
+            border-radius: 25px;
+            margin-bottom: 25px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 4px rgba(52, 152, 219, 0.15);
+            background: white;
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #7f8c8d;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #ecf0f1;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .search-results-header {
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+            color: #7f8c8d;
+            text-align: center;
+            padding: 10px;
+            background: rgba(52, 152, 219, 0.1);
+            border-radius: 8px;
+        }
+
+        .file-item .file-details {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .file-item .file-path {
+            font-size: 0.8rem;
+            color: #7f8c8d;
+            margin-top: 3px;
+        }
+
+        .file-item:hover .file-path {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+                height: 100vh;
+            }
+            
+            .sidebar {
+                width: 100% !important;
+                min-width: 100% !important;
+                max-height: 300px;
+                border-right: none;
+                border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            }
+            
+            .sidebar.collapsed {
+                max-height: 80px;
+            }
+            
+            .sidebar-header {
+                padding: 15px;
+            }
+            
+            .sidebar-header h1 {
+                font-size: 1.4rem;
+            }
+            
+            .sidebar-content {
+                padding: 15px;
+            }
+
+            .toggle-sidebar-btn {
+                position: relative;
+                left: auto;
+                top: auto;
+                transform: none;
+                width: 100%;
+                height: 40px;
+                border-radius: 8px;
+                margin: 10px 0;
+            }
+
+            .breadcrumb {
+                margin: 10px 15px 0 15px;
+            }
+            
+            .content-area {
+                height: calc(100vh - 300px);
+            }
+            
+            .sidebar.collapsed ~ .content-area {
+                height: calc(100vh - 80px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h3>📚 GATE Study Materials</h3>
+                <div class="stats" id="stats">
+                    <strong id="folderCount">0</strong> Folders | 
+                    <strong id="pdfCount">0</strong> PDFs
+                </div>
+            </div>
+            
+            <div class="breadcrumb" id="breadcrumb">
+                <div class="breadcrumb-item" onclick="navigateToPath([])">🏠 Home</div>
+            </div>
+            
+            <div class="sidebar-content">
+                <input type="text" class="search-box" id="searchBox" placeholder="🔍 Search files and folders...">
+                <div id="navigation">
+                    <!-- Navigation will be populated here -->
+                </div>
+            </div>
+        </div>
+
+        <div class="content-area">
+            <button class="toggle-sidebar-btn" id="toggleSidebar" onclick="toggleSidebar()">◀</button>
+            <div class="pdf-controls" id="pdfControls">
+                <button class="control-btn" onclick="toggleFullscreen()" title="Fullscreen">⛶</button>
+                <button class="control-btn" onclick="hideViewer()" title="Close PDF">✕</button>
+            </div>
+            <div class="welcome-screen" id="welcomeScreen">
+                <div class="icon">📄</div>
+                <h2>Welcome to GATE Study Materials</h2>
+                <p>Select a folder from the left to browse your study materials.<br>
+                Click on any PDF to view it directly in this area.</p>
+            </div>
+            <div class="loading" id="loadingScreen" style="display: none;">
+                <div class="spinner"></div>
+                <span>Loading PDF...</span>
+            </div>
+            <iframe class="pdf-viewer" id="pdfViewer" style="display: none;"></iframe>
+        </div>
+
+        <!-- Fullscreen overlay -->
+        <div class="fullscreen-overlay" id="fullscreenOverlay">
+            <div class="fullscreen-controls">
+                <button class="control-btn" onclick="exitFullscreen()" title="Exit Fullscreen">↙</button>
+            </div>
+            <iframe class="fullscreen-pdf-viewer" id="fullscreenPdfViewer"></iframe>
+        </div>
+    </div>
+
+    <script>
+        // File structure data
+        const fileStructure = {
+            "Algorithms": {
+                "Algo Handout.pdf": "pdf",
+                "Algorithms Notes.pdf": "pdf",
+                "Cormen.pdf": "pdf",
+                "Sahani.pdf": "pdf"
+            },
+            "Aptitude": {
+                "GRE Aptitute.pdf": "pdf",
+                "Jagan Sir.pdf": "pdf",
+                "NA Notes 1.pdf": "pdf",
+                "NA V1.pdf": "pdf",
+                "RS Agarwal.pdf": "pdf",
+                "Questions": {
+                    "NA Day 01.pdf": "pdf",
+                    "NA Day 02.pdf": "pdf",
+                    "NA Day 03.pdf": "pdf",
+                    "NA Day 04.pdf": "pdf",
+                    "NA Day 05.pdf": "pdf",
+                    "NA Day 06.pdf": "pdf",
+                    "NA Day 07.pdf": "pdf",
+                    "NA Day 08.pdf": "pdf",
+                    "NA Day 09.pdf": "pdf",
+                    "NA Day 10.pdf": "pdf",
+                    "NA Day 11.pdf": "pdf",
+                    "NA Day 12.pdf": "pdf",
+                    "NA Day 13.pdf": "pdf",
+                    "NA Day 14.pdf": "pdf",
+                    "NA Day 15.pdf": "pdf",
+                    "NA Day 16.pdf": "pdf"
+                }
+            },
+            "CD": {
+                "CD Ace material questions.pdf": "pdf",
+                "CD Notes.pdf": "pdf",
+                "CD Short Notes.pdf": "pdf",
+                "Ullman & Aho CD.pdf": "pdf"
+            },
+            "CNW": {
+                "CN Notes.pdf": "pdf"
+            },
+            "CO": {
+                "Carl Hamacher.pdf": "pdf",
+                "CO Shared Notes.pdf": "pdf",
+                "Hennessy and Patterson.pdf": "pdf",
+                "Morris Mano.pdf": "pdf",
+                "VD Sir Notes.pdf": "pdf"
+            },
+            "DBMS": {
+                "Chapter8_25-08-19.pdf": "pdf",
+                "DBMS Notes.pdf": "pdf",
+                "DBMS_BY_RAGHU_RAMAKRISHNAN.pdf": "pdf",
+                "DBMS-1 Transactions.pdf": "pdf",
+                "Korth.pdf": "pdf",
+                "MSQs.pdf": "pdf",
+                "Navathe.pdf": "pdf"
+            },
+            "DLD": {
+                "DLD Notes.pdf": "pdf",
+                "Morris Mano.pdf": "pdf",
+                "Zvi Kohavi.pdf": "pdf"
+            },
+            "DMS": {
+                "DMS ACE Material Questions.pdf": "pdf",
+                "Grimaldi.pdf": "pdf",
+                "Kenneth Rosen.pdf": "pdf",
+                "Graph Theory": {
+                    "Graph Theory Notes.pdf": "pdf",
+                    "Graph Theory PQ.pdf": "pdf"
+                },
+                "Logic": {},
+                "Set Theory": {}
+            },
+            "DS": {
+                "DS Notes.pdf": "pdf",
+                "DS Shared notes.pdf": "pdf",
+                "Sahani (1).pdf": "pdf",
+                "Sahani.pdf": "pdf"
+            },
+            "Eng. Mathematics": {
+                "Probability": {}
+            },
+            "English": {
+                "Barrons-333-High-Freq-Words-With-Meanings.pdf": "pdf",
+                "English1.pdf": "pdf",
+                "English2.pdf": "pdf",
+                "GATE VERBAL.mhtml": "html",
+                "VerbalAbility_Classnotes.pdf": "pdf"
+            },
+            "Gate Overflow": {
+                "Vol 1.pdf": "pdf",
+                "Vol 2.pdf": "pdf",
+                "Vol 3.pdf": "pdf"
+            },
+            "OS": {
+                "Galvin.pdf": "pdf",
+                "OS Handout.pdf": "pdf",
+                "OS MM Notes.pdf": "pdf",
+                "OS Notes 1.pdf": "pdf",
+                "OS Notes 2.pdf": "pdf",
+                "System Calls.pdf": "pdf",
+                "Tanenbaum.pdf": "pdf"
+            },
+            "PL": {
+                "C Complete Reference.pdf": "pdf",
+                "C Puzzles.pdf": "pdf",
+                "Dennis Ritchie.pdf": "pdf",
+                "PL notes.pdf": "pdf",
+                "PL Short Notes.pdf": "pdf",
+                "PL_Class Notes.pdf": "pdf"
+            },
+            "RBR notes": {
+                "CN.pdf": "pdf",
+                "CO (1).pdf": "pdf",
+                "CO.pdf": "pdf",
+                "Combinatorics.pdf": "pdf",
+                "Compilers.pdf": "pdf",
+                "dbms.pdf": "pdf",
+                "digital.pdf": "pdf",
+                "Graph Theory.pdf": "pdf",
+                "OS.pdf": "pdf",
+                "Set Theory.pdf": "pdf",
+                "TCS-Aptitude-Paid.pdf": "pdf",
+                "tocc.pdf": "pdf"
+            },
+            "Short Notes": {
+                "Algorithms Short Notes.pdf": "pdf",
+                "CN Short Notes.pdf": "pdf",
+                "CO Short Notes.pdf": "pdf",
+                "DBMS Short Notes.pdf": "pdf",
+                "DLD Short Notes.pdf": "pdf",
+                "DS Short Notes.pdf": "pdf",
+                "Eng Maths Short Notes.pdf": "pdf"
+            },
+            "TOC": {
+                "Aho & Ullman.pdf": "pdf",
+                "Countability.pdf": "pdf",
+                "Peter Linz.pdf": "pdf",
+                "TOC Complete Notes.pdf": "pdf",
+                "TOC notes.pdf": "pdf"
+            }
+        };
+
+        let currentPath = [];
+        let allFiles = [];
+        let sidebarCollapsed = false;
+        let currentPdfUrl = '';
+
+        // Initialize the application
+        function init() {
+            updateStats();
+            renderNavigation();
+            setupSearch();
+            buildFileList();
+        }
+
+        // Toggle sidebar visibility
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const toggleBtn = document.getElementById('toggleSidebar');
+            
+            sidebarCollapsed = !sidebarCollapsed;
+            sidebar.classList.toggle('collapsed', sidebarCollapsed);
+            toggleBtn.textContent = sidebarCollapsed ? '▶' : '◀';
+            toggleBtn.title = sidebarCollapsed ? 'Show Sidebar' : 'Hide Sidebar';
+        }
+
+        // Toggle fullscreen mode
+        function toggleFullscreen() {
+            const overlay = document.getElementById('fullscreenOverlay');
+            const fullscreenViewer = document.getElementById('fullscreenPdfViewer');
+            
+            if (currentPdfUrl) {
+                overlay.classList.add('active');
+                fullscreenViewer.src = currentPdfUrl;
+                document.body.style.overflow = 'hidden';
+            }
+        }
+
+        // Exit fullscreen mode
+        function exitFullscreen() {
+            const overlay = document.getElementById('fullscreenOverlay');
+            overlay.classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }
+
+        // Handle escape key for fullscreen
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                exitFullscreen();
+            }
+        });
+
+        // Build a flat list of all files for search
+        function buildFileList() {
+            allFiles = [];
+            
+            function traverse(obj, path = []) {
+                for (const [key, value] of Object.entries(obj)) {
+                    const currentPath = [...path, key];
+                    if (typeof value === 'string') {
+                        allFiles.push({
+                            name: key,
+                            path: currentPath,
+                            type: value,
+                            fullPath: currentPath.join(' > ')
+                        });
+                    } else {
+                        traverse(value, currentPath);
+                    }
+                }
+            }
+            
+            traverse(fileStructure);
+        }
+
+        // Update statistics
+        function updateStats() {
+            let folderCount = 0;
+            let pdfCount = 0;
+
+            function count(obj) {
+                for (const [key, value] of Object.entries(obj)) {
+                    if (typeof value === 'object') {
+                        folderCount++;
+                        count(value);
+                    } else if (value === 'pdf') {
+                        pdfCount++;
+                    }
+                }
+            }
+
+            count(fileStructure);
+            document.getElementById('folderCount').textContent = folderCount;
+            document.getElementById('pdfCount').textContent = pdfCount;
+        }
+
+        // Get current directory data
+        function getCurrentDirectory() {
+            let current = fileStructure;
+            for (const segment of currentPath) {
+                current = current[segment];
+            }
+            return current;
+        }
+
+        // Render navigation
+        function renderNavigation() {
+            const navElement = document.getElementById('navigation');
+            const currentDir = getCurrentDirectory();
+            
+            let html = '';
+            
+            // Back button if not at root
+            if (currentPath.length > 0) {
+                html += '<button class="back-button" onclick="goBack()">← <span>Back</span></button>';
+            }
+
+            // Render items
+            const entries = Object.entries(currentDir).sort(([a, aVal], [b, bVal]) => {
+                // Folders first, then files
+                if (typeof aVal === 'object' && typeof bVal === 'string') return -1;
+                if (typeof aVal === 'string' && typeof bVal === 'object') return 1;
+                return a.localeCompare(b);
+            });
+
+            for (const [name, value] of entries) {
+                if (typeof value === 'object') {
+                    // It's a folder
+                    html += `
+                        <div class="folder-item" onclick="enterFolder('${name}')">
+                            <div class="icon">📁</div>
+                            <span>${name}</span>
+                        </div>
+                    `;
+                } else {
+                    // It's a file
+                    const icon = value === 'pdf' ? '📄' : '🌐';
+                    html += `
+                        <div class="file-item" onclick="openFile('${name}')">
+                            <div class="icon">${icon}</div>
+                            <span>${name}</span>
+                        </div>
+                    `;
+                }
+            }
+
+            navElement.innerHTML = html;
+            updateBreadcrumb();
+        }
+
+        // Update breadcrumb
+        function updateBreadcrumb() {
+            const breadcrumb = document.getElementById('breadcrumb');
+            let html = '<div class="breadcrumb-item" onclick="navigateToPath([])">🏠 Home</div>';
+            
+            for (let i = 0; i < currentPath.length; i++) {
+                html += '<div class="breadcrumb-separator">></div>';
+                const path = currentPath.slice(0, i + 1);
+                html += `<div class="breadcrumb-item" onclick="navigateToPath(['${path.join("','")}'])">${currentPath[i]}</div>`;
+            }
+            
+            breadcrumb.innerHTML = html;
+        }
+
+        // Navigate to specific path
+        function navigateToPath(path) {
+            currentPath = path;
+            renderNavigation();
+            hideViewer();
+        }
+
+        // Go back one level
+        function goBack() {
+            if (currentPath.length > 0) {
+                currentPath.pop();
+                renderNavigation();
+                hideViewer();
+            }
+        }
+
+        // Enter folder
+        function enterFolder(folderName) {
+            currentPath.push(folderName);
+            renderNavigation();
+            hideViewer();
+        }
+
+        // Open file
+        function openFile(fileName) {
+            const filePath = [...currentPath, fileName].join('/');
+            showPDF(filePath);
+        }
+
+        // Show PDF
+        function showPDF(filePath) {
+            const welcomeScreen = document.getElementById('welcomeScreen');
+            const loadingScreen = document.getElementById('loadingScreen');
+            const pdfViewer = document.getElementById('pdfViewer');
+            const pdfControls = document.getElementById('pdfControls');
+
+            welcomeScreen.style.display = 'none';
+            loadingScreen.style.display = 'flex';
+            pdfViewer.style.display = 'none';
+            pdfControls.classList.remove('visible');
+
+            currentPdfUrl = filePath;
+
+            // Simulate loading and then show PDF
+            setTimeout(() => {
+                pdfViewer.src = filePath;
+                loadingScreen.style.display = 'none';
+                pdfViewer.style.display = 'block';
+                pdfControls.classList.add('visible');
+                
+                // Handle load error
+                pdfViewer.onerror = () => {
+                    loadingScreen.style.display = 'none';
+                    pdfControls.classList.remove('visible');
+                    welcomeScreen.innerHTML = `
+                        <div class="icon">❌</div>
+                        <h2>File Not Found</h2>
+                        <p>The file "${filePath}" could not be loaded.<br>
+                        Please make sure the file exists in your repository.</p>
+                    `;
+                    welcomeScreen.style.display = 'flex';
+                    currentPdfUrl = '';
+                };
+            }, 500);
+        }
+
+        // Hide viewer
+        function hideViewer() {
+            const welcomeScreen = document.getElementById('welcomeScreen');
+            const loadingScreen = document.getElementById('loadingScreen');
+            const pdfViewer = document.getElementById('pdfViewer');
+            const pdfControls = document.getElementById('pdfControls');
+
+            loadingScreen.style.display = 'none';
+            pdfViewer.style.display = 'none';
+            pdfControls.classList.remove('visible');
+            currentPdfUrl = '';
+            
+            welcomeScreen.innerHTML = `
+                <div class="icon">📄</div>
+                <h2>Welcome to GATE Study Materials</h2>
+                <p>Select a folder from the left to browse your study materials.<br>
+                Click on any PDF to view it directly in this area.</p>
+            `;
+            welcomeScreen.style.display = 'flex';
+        }
+
+        // Setup search functionality
+        function setupSearch() {
+            const searchBox = document.getElementById('searchBox');
+            searchBox.addEventListener('input', handleSearch);
+        }
+
+        // Handle search
+        function handleSearch(e) {
+            const query = e.target.value.toLowerCase().trim();
+            const navElement = document.getElementById('navigation');
+            
+            if (!query) {
+                renderNavigation();
+                return;
+            }
+
+            const filteredFiles = allFiles.filter(file => 
+                file.name.toLowerCase().includes(query) ||
+                file.fullPath.toLowerCase().includes(query)
+            );
+
+            let html = '';
+            if (filteredFiles.length === 0) {
+                html = '<div style="text-align: center; color: #7f8c8d; padding: 20px; background: rgba(231, 76, 60, 0.1); border-radius: 8px;">No files found matching your search</div>';
+            } else {
+                html += '<div class="search-results-header">Found ' + filteredFiles.length + ' result(s)</div>';
+                
+                for (const file of filteredFiles) {
+                    const icon = file.type === 'pdf' ? '📄' : '🌐';
+                    html += `
+                        <div class="file-item" onclick="openSearchResult('${file.path.join('/')}', ['${file.path.slice(0, -1).join("','")}'])">
+                            <div class="icon">${icon}</div>
+                            <div class="file-details">
+                                <div style="font-weight: 600;">${file.name}</div>
+                                <div class="file-path">${file.fullPath}</div>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+            
+            navElement.innerHTML = html;
+        }
+
+        // Open search result
+        function openSearchResult(filePath, folderPath) {
+            // Navigate to the folder first
+            currentPath = folderPath.filter(p => p !== '');
+            renderNavigation();
+            
+            // Then open the file
+            setTimeout(() => {
+                showPDF(filePath);
+            }, 100);
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

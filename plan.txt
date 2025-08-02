@@ -1,0 +1,13 @@
+📚 Concept Building Order (Recommended)
+Week	Subject	Topics (In order)
+1–2	Discrete Mathematics (DMS)	Set Theory, Propositions, Predicate Logic, Functions, Relations, Pigeonhole, Graph Theory, Combinatorics, Probability
+3–4	Digital Logic Design (DLD)	Number Systems, Boolean Algebra, Logic Gates, K-maps, Flip-Flops, Counters, Combinational & Sequential Circuits
+5–6	Data Structures (DS)	Arrays, Linked Lists, Stacks, Queues, Trees, Graphs, Heaps, Hashing
+7–8	Algorithms	Recursion, Sorting, Searching, Divide & Conquer, Greedy, DP, Graph Algorithms (DFS/BFS/Dijkstra/Kruskal), Complexity Analysis
+9–10	Computer Organization (CO)	Number Systems (Recap), Logic Design Basics, Memory, CPU Architecture, Instruction Set, Pipelining, I/O, Cache
+11–12	Operating Systems (OS)	Processes, Threads, Scheduling, Synchronization (Semaphores), Deadlock, Memory Management, Paging, Virtual Memory, File Systems
+13–14	Database Management Systems (DBMS)	ER Model, Relational Model, SQL, Normalization, Transactions, Indexing, Concurrency
+15	Computer Networks (CNW)	OSI/TCP Layers, IP, UDP, TCP, Routing, DNS, HTTP, Congestion Control, Subnetting
+16	Theory of Computation (TOC)	Regular Languages, Finite Automata, Context-Free Grammars, PDA, Turing Machines, Decidability
+17	Compiler Design (CD)	Phases, Lexical Analysis, Parsing, Syntax Tree, Intermediate Code, Code Optimization
+18+	Aptitude (daily)	Numbers, Percentages, Time-Speed, Averages, Ratio, Probability, DI, Reasoning
