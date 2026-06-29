@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Video Lectures — SOH CSE</title>
+<meta name="description" content="Watch curated GATE CSE video lectures by subject. Take timestamped notes, bookmark videos, and add custom playlists.">
+<link rel="stylesheet" href="./style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23667eea'/%3E%3Ctext x='50' y='70' font-size='60' font-weight='bold' fill='white' text-anchor='middle' font-family='Arial'%3EG%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+
+<nav class="topnav">
+    <div class="topnav-inner">
+        <a href="./index.html" class="topnav-brand">
+            <div class="brand-mark">G</div>
+            <div class="brand-text">SOH CSE <small>GATE Preparation Hub</small></div>
+        </a>
+        <button class="topnav-menu-btn" onclick="document.querySelector('.topnav-links').classList.toggle('open')" aria-label="Toggle menu">
+            <span></span><span></span><span></span>
+        </button>
+        <div class="topnav-links">
+            <a href="./index.html" class="topnav-link">🏠 Home</a>
+            <a href="./materials.html" class="topnav-link">📚 Materials</a>
+            <a href="./pyq.html" class="topnav-link">📝 PYQs</a>
+            <a href="./videos.html" class="topnav-link active">🎥 Videos</a>
+            <a href="./flashcards.html" class="topnav-link">🎴 Flashcards</a>
+            <a href="./quiz.html" class="topnav-link">🎯 Quiz</a>
+            <a href="./resources.html" class="topnav-link">🚀 Resources</a>
+        </div>
+    </div>
+</nav>
+
+<div class="app-content">
+    <div class="app-content-scroll" id="contentArea">
+        <div id="mainContent" style="max-width: 1400px; margin: 0 auto;">
+            <div class="loading-screen"><div class="spinner"></div><p>Loading video catalog…</p></div>
+        </div>
+    </div>
+</div>
+
+<script src="./chatbot.js"></script>
+<script src="./videos_data.js"></script>
+<script>
+const NOTES_KEY = 'sohcse_video_notes';
+const BOOKMARKS_KEY = 'sohcse_video_bookmarks';
+const RECENT_KEY = 'sohcse_video_recent';
+const CUSTOM_KEY = 'sohcse_video_custom';
+
+let state = { view: 'browse', subject: null, currentPlaylist: null, currentSideTab: 'notes' };
+
+function getAllNotes() { try { return JSON.parse(localStorage.getItem(NOTES_KEY) || '{}'); } catch { return {}; } }
+function getNotes(id) { return getAllNotes()[id] || []; }
+function saveNote(id, text, time) { const all = getAllNotes(); if (!all[id]) all[id] = []; all[id].push({ time: time || 0, text, createdAt: Date.now() }); localStorage.setItem(NOTES_KEY, JSON.stringify(all)); }
+function deleteNote(id, createdAt) { const all = getAllNotes(); if (!all[id]) return; all[id] = all[id].filter(n => n.createdAt !== createdAt); localStorage.setItem(NOTES_KEY, JSON.stringify(all)); }
+function getBookmarks() { try { return JSON.parse(localStorage.getItem(BOOKMARKS_KEY) || '[]'); } catch { return []; } }
+function isBookmarked(id) { return getBookmarks().some(b => b.id === id); }
+function toggleBookmark(p) { const bm = getBookmarks(); const idx = bm.findIndex(b => b.id === p.id); if (idx >= 0) { bm.splice(idx, 1); localStorage.setItem(BOOKMARKS_KEY, JSON.stringify(bm)); return false; } bm.push({ id: p.id, title: p.title, channel: p.channel, subject: state.subject, addedAt: Date.now() }); localStorage.setItem(BOOKMARKS_KEY, JSON.stringify(bm)); return true; }
+function getRecent() { try { return JSON.parse(localStorage.getItem(RECENT_KEY) || '[]'); } catch { return []; } }
+function addRecent(p) { let r = getRecent().filter(x => x.id !== p.id); r.unshift({ id: p.id, title: p.title, channel: p.channel, subject: state.subject, playedAt: Date.now() }); r = r.slice(0, 12); localStorage.setItem(RECENT_KEY, JSON.stringify(r)); }
+function getCustomPlaylists() { try { return JSON.parse(localStorage.getItem(CUSTOM_KEY) || '[]'); } catch { return []; } }
+function addCustomPlaylist(url, title) { const parsed = parseYouTubeUrl(url); if (!parsed) return null; const item = { id: parsed.id, type: parsed.type, title: title || 'Custom Playlist', channel: 'Added by you', description: 'Your custom-added playlist.', addedAt: Date.now() }; const all = getCustomPlaylists(); if (!all.find(p => p.id === item.id)) { all.push(item); localStorage.setItem(CUSTOM_KEY, JSON.stringify(all)); } return item; }
+function parseYouTubeUrl(url) { const pl = url.match(/[?&]list=([^&\s]+)/); if (pl) return { type: 'playlist', id: pl[1] }; const sh = url.match(/youtu\.be\/([^?\s]+)/); if (sh) return { type: 'video', id: sh[1] }; const w = url.match(/[?&]v=([^&\s]+)/); if (w) return { type: 'video', id: w[1] }; if (/^[A-Za-z0-9_-]{11}$/.test(url)) return { type: 'video', id: url }; if (/^(PL|UU|FL|RD|OL)[A-Za-z0-9_-]+$/.test(url)) return { type: 'playlist', id: url }; return null; }
+
+function buildEmbedUrl(p) {
+    if (p.type === 'search' && p.searchQuery) return `https://www.youtube.com/embed?listType=search&list=${encodeURIComponent(p.searchQuery)}&autoplay=1`;
+    if (p.type === 'video') return `https://www.youtube.com/embed/${p.id}?autoplay=1&rel=0&modestbranding=1`;
+    return `https://www.youtube.com/embed/videoseries?list=${p.id}&autoplay=1&rel=0&modestbranding=1`;
+}
+function buildYouTubeLink(p) {
+    if (p.type === 'search' && p.searchQuery) return `https://www.youtube.com/results?search_query=${encodeURIComponent(p.searchQuery)}`;
+    if (p.type === 'video') return `https://www.youtube.com/watch?v=${p.id}`;
+    return `https://www.youtube.com/playlist?list=${p.id}`;
+}
+
+function init() {
+    const params = new URLSearchParams(location.search);
+    const subj = params.get('subject');
+    state.subject = (subj && VIDEO_CATALOG[subj]) ? subj : 'algorithms';
+    renderBrowse();
+}
+
+function renderBrowse() {
+    state.view = 'browse';
+    state.currentPlaylist = null;
+    const subjectKeys = Object.keys(VIDEO_CATALOG);
+    if (!state.subject) state.subject = subjectKeys[0];
+    const subj = VIDEO_CATALOG[state.subject];
+    const customPl = getCustomPlaylists();
+    const bookmarks = getBookmarks();
+    const recent = getRecent();
+
+    document.getElementById('mainContent').innerHTML = `
+        <div style="text-align:center;margin-bottom:24px;">
+            <div style="font-size:3rem;margin-bottom:8px;">🎥</div>
+            <h1 style="font-size:1.8rem;font-weight:800;color:var(--text);margin-bottom:4px;">Video Lectures</h1>
+            <p style="color:var(--text-muted);font-size:0.92rem;max-width:680px;margin:0 auto;">Curated YouTube playlists for GATE CSE — take timestamped notes, bookmark videos, and add your own playlists. All videos play directly inside the app.</p>
+        </div>
+        <div class="section-eyebrow">Choose Subject</div>
+        <div class="video-subject-tabs" id="subjectTabs">
+            ${subjectKeys.map(k => `<button class="video-subject-tab ${k === state.subject ? 'active' : ''}" onclick="selectSubject('${k}')">${VIDEO_CATALOG[k].icon} ${VIDEO_CATALOG[k].label}</button>`).join('')}
+            <button class="video-subject-tab ${state.subject === 'bookmarks' ? 'active' : ''}" onclick="selectSubject('bookmarks')">⭐ Bookmarks (${bookmarks.length})</button>
+        </div>
+        ${state.subject === 'bookmarks' ? renderBookmarksView() : `
+            <div class="section-eyebrow">${subj.icon} ${subj.label} — Curated Playlists</div>
+            <div class="playlist-grid">${subj.playlists.map(p => renderPlaylistCard(p)).join('')}</div>
+            ${customPl.length > 0 ? `<div class="section-eyebrow" style="margin-top:30px;">⭐ Your Custom Playlists</div><div class="playlist-grid">${customPl.map(p => renderPlaylistCard(p)).join('')}</div>` : ''}
+            <div class="custom-playlist-section">
+                <h3>➕ Add Custom Playlist</h3>
+                <p>Paste any YouTube playlist or video URL to add it to your collection. Works with playlist URLs, watch URLs, youtu.be short links, or raw IDs.</p>
+                <div class="custom-playlist-form">
+                    <input type="text" id="customUrl" placeholder="https://www.youtube.com/playlist?list=PL..." />
+                    <input type="text" id="customTitle" placeholder="Optional title" style="max-width:200px;" />
+                    <button class="btn btn-ghost btn-sm" onclick="addCustomFromForm()">Add</button>
+                </div>
+            </div>
+            ${recent.length > 0 ? `<div class="section-eyebrow" style="margin-top:30px;">🕘 Recently Watched</div><div class="playlist-grid">${recent.slice(0, 6).map(p => renderPlaylistCard({ id: p.id, title: p.title, channel: p.channel, description: 'Recently watched playlist', type: (p.id.startsWith('PL') || p.id.startsWith('UU') || p.id.startsWith('FL')) ? 'playlist' : 'video' })).join('')}</div>` : ''}
+            <div class="section-eyebrow" style="margin-top:30px;">📺 Recommended ${subj.label} Channels</div>
+            <div class="subjects-grid">${subj.channels.map(c => `<a class="subject-card" href="${c.url}" target="_blank" rel="noopener" style="text-decoration:none;"><div class="card-top"><div class="card-icon">📺</div><div class="count-badge">↗</div></div><div class="card-title">${c.name}</div><div class="card-meta">${c.why}</div></a>`).join('')}</div>
+            <div class="custom-playlist-section" style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));">
+                <h3>💡 How video player works</h3>
+                <p style="margin-bottom: 8px;"><strong>📌 Curated playlists</strong> — Direct embeds of popular GATE playlists from Gate Smashers, Neso Academy, Jenny's, Abdul Bari etc.</p>
+                <p style="margin-bottom: 8px;"><strong>🔍 Search-based players</strong> — Live YouTube search results playing in the app. Always works, shows latest videos.</p>
+                <p><strong>📝 Notes & bookmarks</strong> — All notes and bookmarks are saved on your device. Click the timestamp on any note to jump to that part of the video on YouTube.</p>
+            </div>
+        `}
+    `;
+}
+
+function renderPlaylistCard(p) {
+    const isBm = isBookmarked(p.id);
+    const ytLink = buildYouTubeLink(p);
+    const isSearch = p.type === 'search';
+    const pJson = JSON.stringify(p).replace(/'/g, "&#39;");
+    return `
+        <div class="playlist-card" onclick='playPlaylist(${pJson})'>
+            <div class="playlist-thumb">
+                <div class="thumb-icon">${isSearch ? '🔍' : '▶'}</div>
+                <div class="play-overlay"><div class="play-icon">${isSearch ? '🔍' : '▶'}</div></div>
+            </div>
+            <div class="playlist-info">
+                <div class="playlist-title">${escapeHtml(p.title)}</div>
+                <div class="playlist-channel">${escapeHtml(p.channel)} ${p.videos && p.videos !== '∞' ? `• ${p.videos} videos` : (p.videos === '∞' ? '• all matches' : '')}</div>
+                <div class="playlist-desc">${escapeHtml(p.description || '')}</div>
+                <div class="playlist-actions">
+                    <button class="btn btn-ghost btn-sm" onclick='event.stopPropagation(); playPlaylist(${pJson})'>${isSearch ? '🔍 Search' : '▶ Play'}</button>
+                    <button class="btn btn-ghost btn-sm ${isBm ? 'bookmarked' : ''}" onclick='event.stopPropagation(); toggleBookmarkUI(${pJson})' title="Bookmark">${isBm ? '❤' : '🤍'}</button>
+                    <a href="${ytLink}" target="_blank" rel="noopener" onclick="event.stopPropagation()" class="btn btn-ghost btn-sm" title="Open on YouTube">↗</a>
+                    ${isSearch ? '<span class="playlist-badge" style="background:rgba(102,126,234,0.1);color:var(--primary);">LIVE SEARCH</span>' : ''}
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function renderBookmarksView() {
+    const bm = getBookmarks();
+    if (bm.length === 0) return `<div class="empty-state" style="margin-top:30px;"><div class="empty-icon">⭐</div><h3>No bookmarks yet</h3><p>Click the heart icon on any playlist to bookmark it for quick access.</p></div>`;
+    return `<div class="section-eyebrow">Your Bookmarked Playlists (${bm.length})</div><div class="playlist-grid">${bm.map(p => renderPlaylistCard(p)).join('')}</div>`;
+}
+
+function selectSubject(slug) { state.subject = slug; renderBrowse(); document.getElementById('contentArea').scrollTop = 0; }
+function toggleBookmarkUI(p) { toggleBookmark(p); if (state.view === 'browse') renderBrowse(); else if (state.view === 'player') renderPlayer(); }
+function addCustomFromForm() {
+    const url = document.getElementById('customUrl').value.trim();
+    const title = document.getElementById('customTitle').value.trim();
+    if (!url) { alert('Please paste a YouTube URL'); return; }
+    const added = addCustomPlaylist(url, title);
+    if (!added) { alert('Could not parse the URL. Please paste a valid YouTube playlist or video URL.'); return; }
+    document.getElementById('customUrl').value = '';
+    document.getElementById('customTitle').value = '';
+    renderBrowse();
+}
+
+function playPlaylist(meta) { state.view = 'player'; state.currentPlaylist = meta; addRecent(meta); renderPlayer(); }
+
+function renderPlayer() {
+    const p = state.currentPlaylist;
+    if (!p) return;
+    const isBm = isBookmarked(p.id);
+    const embedUrl = buildEmbedUrl(p);
+    const ytLink = buildYouTubeLink(p);
+    document.getElementById('mainContent').innerHTML = `
+        <button class="btn btn-ghost btn-sm" style="margin-bottom:14px;" onclick="renderBrowse()">← Back to all playlists</button>
+        <div class="player-view">
+            <div class="player-main">
+                <div class="player-frame-wrap" id="playerFrameWrap">
+                    <iframe src="${embedUrl}" title="${escapeHtml(p.title)}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
+                </div>
+                <div class="player-meta">
+                    <h2>${escapeHtml(p.title)}</h2>
+                    <div class="meta-row">
+                        <span>📺 ${escapeHtml(p.channel || 'YouTube')}</span>
+                        <a href="${ytLink}" target="_blank" rel="noopener" style="text-decoration:none;"><button title="Open on YouTube">↗ YouTube</button></a>
+                        <button class="${isBm ? 'bookmarked' : ''}" onclick="toggleBookmarkUIPlayer()" title="Bookmark this playlist">${isBm ? '❤ Bookmarked' : '🤍 Bookmark'}</button>
+                    </div>
+                    <div style="margin-top:10px;font-size:0.82rem;color:var(--text-muted);background:var(--bg-light);padding:10px 12px;border-radius:8px;">💡 <strong>Note:</strong> Notes are saved with timestamps you manually enter. Click any timestamp in your notes to jump back to that point in the video on YouTube.</div>
+                </div>
+            </div>
+            <div class="player-side">
+                <div class="side-card">
+                    <div class="side-tabs">
+                        <button class="side-tab ${state.currentSideTab === 'notes' ? 'active' : ''}" onclick="setSideTab('notes')">📝 Notes</button>
+                        <button class="side-tab ${state.currentSideTab === 'bookmarks' ? 'active' : ''}" onclick="setSideTab('bookmarks')">⭐ Bookmarks</button>
+                        <button class="side-tab ${state.currentSideTab === 'recent' ? 'active' : ''}" onclick="setSideTab('recent')">🕘 Recent</button>
+                    </div>
+                    <div class="side-content" id="sideContent">${renderSideContent()}</div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function renderSideContent() {
+    const p = state.currentPlaylist;
+    if (state.currentSideTab === 'notes') {
+        const notes = getNotes(p.id);
+        return `
+            <div class="note-input-wrap">
+                <input type="text" id="noteTimeInput" placeholder="Timestamp (e.g. 5:30 or 12:45)" style="width:100%;padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:0.85rem;font-family:inherit;margin-bottom:8px;">
+                <textarea id="noteInput" placeholder="Type your note about this video..."></textarea>
+                <div class="note-actions"><button class="btn btn-ghost btn-sm" onclick="saveNoteFromInput()">💾 Save Note</button></div>
+            </div>
+            <div id="notesList">
+                ${notes.length === 0 ? '<div class="empty-side"><div class="empty-icon">📝</div><div>No notes yet.<br>Add your first note above. Enter a timestamp like "5:30" to mark when in the video this note refers to.</div></div>' : notes.slice().reverse().map(n => `
+                    <div class="note-item">
+                        <div class="note-header">
+                            <a class="note-time" href="${buildYouTubeLink(p)}&t=${Math.floor(parseTimeToSeconds(n.time))}s" target="_blank" title="Open video at this time">▶ ${escapeHtml(n.time || '0:00')}</a>
+                            <button class="note-delete" onclick="deleteNoteUI(${n.createdAt})" title="Delete">×</button>
+                        </div>
+                        <div class="note-text">${escapeHtml(n.text)}</div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    } else if (state.currentSideTab === 'bookmarks') {
+        const bm = getBookmarks();
+        if (bm.length === 0) return '<div class="empty-side"><div class="empty-icon">⭐</div><div>No bookmarks yet.<br>Click the heart on any playlist to save it here.</div></div>';
+        return bm.map(b => {
+            const bJson = JSON.stringify({ id: b.id, title: b.title, channel: b.channel, type: (b.id.startsWith('PL') || b.id.startsWith('UU') || b.id.startsWith('FL')) ? 'playlist' : 'video' }).replace(/'/g, "&#39;");
+            return `<div class="note-item" style="cursor:pointer;" onclick='playPlaylist(${bJson})'><div class="note-header"><span style="font-size:0.78rem;font-weight:600;color:var(--text);">${escapeHtml(b.title)}</span><button class="note-delete" onclick="event.stopPropagation(); removeBookmarkUI('${b.id}')" title="Remove bookmark">×</button></div><div style="font-size:0.75rem;color:var(--text-muted);">📺 ${escapeHtml(b.channel || 'YouTube')}</div></div>`;
+        }).join('');
+    } else if (state.currentSideTab === 'recent') {
+        const r = getRecent();
+        if (r.length === 0) return '<div class="empty-side"><div class="empty-icon">🕘</div><div>No recently watched playlists.</div></div>';
+        return r.map(item => {
+            const iJson = JSON.stringify({ id: item.id, title: item.title, channel: item.channel, type: (item.id.startsWith('PL') || item.id.startsWith('UU') || item.id.startsWith('FL')) ? 'playlist' : 'video' }).replace(/'/g, "&#39;");
+            return `<div class="note-item" style="cursor:pointer;" onclick='playPlaylist(${iJson})'><div class="note-header"><span style="font-size:0.78rem;font-weight:600;color:var(--text);">${escapeHtml(item.title)}</span></div><div style="font-size:0.72rem;color:var(--text-muted);">📺 ${escapeHtml(item.channel || 'YouTube')} • ${timeAgo(item.playedAt)}</div></div>`;
+        }).join('');
+    }
+    return '';
+}
+
+function parseTimeToSeconds(t) { if (!t) return 0; const parts = String(t).split(':').map(x => parseInt(x, 10)); if (parts.some(isNaN)) return 0; if (parts.length === 1) return parts[0]; if (parts.length === 2) return parts[0] * 60 + parts[1]; if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2]; return 0; }
+function setSideTab(tab) { state.currentSideTab = tab; const sc = document.getElementById('sideContent'); if (sc) sc.innerHTML = renderSideContent(); }
+function toggleBookmarkUIPlayer() { const p = state.currentPlaylist; if (!p) return; toggleBookmark(p); renderPlayer(); }
+function removeBookmarkUI(id) { const bm = getBookmarks(); const idx = bm.findIndex(b => b.id === id); if (idx >= 0) { bm.splice(idx, 1); localStorage.setItem(BOOKMARKS_KEY, JSON.stringify(bm)); } setSideTab('bookmarks'); }
+function saveNoteFromInput() {
+    const input = document.getElementById('noteInput');
+    const timeInput = document.getElementById('noteTimeInput');
+    if (!input || !input.value.trim()) { alert('Type a note first.'); return; }
+    const p = state.currentPlaylist;
+    const time = timeInput ? timeInput.value.trim() : '';
+    saveNote(p.id, input.value.trim(), time);
+    input.value = ''; if (timeInput) timeInput.value = '';
+    setSideTab('notes');
+}
+function deleteNoteUI(createdAt) { const p = state.currentPlaylist; deleteNote(p.id, createdAt); setSideTab('notes'); }
+function timeAgo(ts) { const diff = Date.now() - ts; const mins = Math.floor(diff / 60000); if (mins < 1) return 'just now'; if (mins < 60) return `${mins}m ago`; const hrs = Math.floor(mins / 60); if (hrs < 24) return `${hrs}h ago`; const days = Math.floor(hrs / 24); if (days < 7) return `${days}d ago`; return new Date(ts).toLocaleDateString(); }
+function escapeHtml(s) { if (!s) return ''; return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+
+init();
+</script>
+</body>
+</html>

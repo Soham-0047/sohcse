@@ -1,4 +1,4 @@
-{
+window.GATE_DATA = {
   "source": "https://questions.examside.com/past-years/gate/gate-cse",
   "scraped_at": "2026-06-28T17:59:36.933Z",
   "total_subjects": 14,
@@ -113946,4 +113946,4 @@
     }
   },
   "processed_at": "2026-06-28T18:00:01.355Z"
-}
+};
