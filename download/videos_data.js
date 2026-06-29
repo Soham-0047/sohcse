@@ -72,10 +72,12 @@ const VIDEO_CATALOG = {
         label: 'Computer Networks', icon: '🌐',
         playlists: [
             { id: 'PLxCzCOWd7aiH8h_IoA7O_JW0urT0cCMqA', type: 'playlist', title: 'Computer Networks Complete', channel: 'Gate Smashers', description: 'Complete CN course — OSI/TCP-IP models, all 5 layers, IP addressing, routing protocols (DV/LS), TCP/UDP, congestion control, and application protocols.', videos: 90 },
+            { id: 'PLOG_8OlGMp73hMyn-WX1M2Q4ON98DmaRq', type: 'playlist', title: 'Computer Networks — Ankit Doyla (Unacademy)', channel: 'Ankit Doyla', description: 'Highly-rated CN playlist by Ankit Doyla Sir (Unacademy). Covers all GATE CN topics with detailed explanations and problem-solving.', videos: 60 },
             { searchQuery: 'GATE CSE computer networks complete course', type: 'search', title: '🔍 All GATE CN Videos', channel: 'YouTube Search', description: 'Live YouTube search results for GATE CSE computer networks videos.', videos: '∞' }
         ],
         channels: [
             { name: 'Gate Smashers', url: 'https://www.youtube.com/@GateSmashers', why: 'Best CN playlist for GATE' },
+            { name: 'Ankit Doyla (Unacademy)', url: 'https://www.youtube.com/@AnkitDoyla', why: 'Excellent CN and TOC lectures' },
             { name: 'Knowledge Gate', url: 'https://www.youtube.com/@KnowGateHindi', why: 'CN in Hindi' },
             { name: 'Neso Academy', url: 'https://www.youtube.com/@nesoacademy', why: 'CN with deep protocol analysis' }
         ]
@@ -84,10 +86,12 @@ const VIDEO_CATALOG = {
         label: 'Theory of Computation', icon: '🔤',
         playlists: [
             { id: 'PLBlnK6fEyqRgp46KUvYZYqN-2_FM3jAQD', type: 'playlist', title: 'Theory of Computation', channel: 'Neso Academy', description: 'Comprehensive TOC course — finite automata (DFA/NFA), regular expressions, CFG, pushdown automata, Turing machines, decidability, and reducibility.', videos: 150 },
+            { id: 'PLOG_8OlGMp72SAVxAk3VwEKQNbLkpN4Vs', type: 'playlist', title: 'TOC — Ankit Doyla (Unacademy)', channel: 'Ankit Doyla', description: 'Highly-rated TOC playlist by Ankit Doyla Sir (Unacademy). Covers automata theory, grammars, Turing machines, and decidability with GATE focus.', videos: 50 },
             { searchQuery: 'GATE CSE theory of computation complete course', type: 'search', title: '🔍 All GATE TOC Videos', channel: 'YouTube Search', description: 'Live YouTube search results for GATE CSE theory of computation videos.', videos: '∞' }
         ],
         channels: [
             { name: 'Neso Academy', url: 'https://www.youtube.com/@nesoacademy', why: 'Best TOC course on YouTube' },
+            { name: 'Ankit Doyla (Unacademy)', url: 'https://www.youtube.com/@AnkitDoyla', why: 'Excellent TOC lectures' },
             { name: 'Gate Smashers', url: 'https://www.youtube.com/@GateSmashers', why: 'GATE-focused TOC' },
             { name: 'Knowledge Gate', url: 'https://www.youtube.com/@KnowGateHindi', why: 'Hindi TOC lectures' }
         ]
