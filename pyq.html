@@ -1,0 +1,1369 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GATE CSE PYQs — Previous Year Questions with Solutions</title>
+
+    <!-- PDF.js (kept for consistency with other pages) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+    <!-- KaTeX for math rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+
+    <!-- DOMPurify for sanitizing question HTML -->
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
+
+    <!-- Pre-loaded PYQ data (2,736 questions) -->
+    <script src="./gate_cse_data.js"></script>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 100%;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            gap: 0;
+            overflow: hidden;
+        }
+
+        /* ============ Sidebar (matches existing site) ============ */
+        .sidebar {
+            width: 320px;
+            min-width: 320px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 2px 0 15px rgba(0, 0, 0, 0.1);
+            border-right: 1px solid rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+        .sidebar.collapsed { width: 60px; min-width: 60px; }
+        .sidebar.collapsed .sidebar-header h1,
+        .sidebar.collapsed .stats,
+        .sidebar.collapsed .breadcrumb,
+        .sidebar.collapsed .search-box,
+        .sidebar.collapsed .back-button span,
+        .sidebar.collapsed .pyq-section-title,
+        .sidebar.collapsed .subject-item > button > span:not(.chevron),
+        .sidebar.collapsed .chapter-list,
+        .sidebar.collapsed .home-link span { display: none; }
+
+        .sidebar-header {
+            padding: 15px;
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .sidebar-header h1 {
+            font-weight: 700;
+            font-size: 1.4rem;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .stats {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 0.85rem;
+            backdrop-filter: blur(10px);
+            margin-top: 8px;
+            line-height: 1.5;
+        }
+
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin: 12px 16px 0 16px;
+            flex-wrap: wrap;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            font-size: 0.85rem;
+        }
+        .breadcrumb-item {
+            cursor: pointer;
+            color: #3498db;
+            font-weight: 600;
+            transition: color 0.2s;
+        }
+        .breadcrumb-item:hover { color: #2980b9; text-decoration: underline; }
+        .breadcrumb-separator { color: #95a5a6; }
+        .breadcrumb-current { color: #2c3e50; font-weight: 600; }
+
+        .sidebar-content {
+            flex: 1;
+            padding: 12px 16px;
+            overflow-y: auto;
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e9ecef;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            margin-bottom: 16px;
+            transition: all 0.3s;
+            background: white;
+        }
+        .search-box:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .home-link {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+            margin-bottom: 12px;
+            background: linear-gradient(45deg, #9b59b6, #8e44ad);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(155, 89, 182, 0.3);
+            width: 100%;
+        }
+        .home-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 18px rgba(155, 89, 182, 0.5);
+        }
+
+        .pyq-section-title {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #7f8c8d;
+            padding: 8px 4px 6px 4px;
+        }
+
+        /* Subject accordion */
+        .subject-item { margin-bottom: 2px; }
+        .subject-item > button {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 14px;
+            background: rgba(255, 255, 255, 0.7);
+            border: 1px solid transparent;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #2c3e50;
+            text-align: left;
+        }
+        .subject-item > button:hover {
+            background: linear-gradient(45deg, #f39c12, #e67e22);
+            color: white;
+            transform: translateX(4px);
+            box-shadow: 0 4px 14px rgba(243, 156, 18, 0.3);
+        }
+        .subject-item.expanded > button {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+        }
+        .subject-item > button .chevron {
+            transition: transform 0.2s;
+            font-size: 0.7rem;
+            width: 12px;
+            flex-shrink: 0;
+        }
+        .subject-item.expanded > button .chevron { transform: rotate(90deg); }
+        .subject-item > button .count-badge {
+            margin-left: auto;
+            background: rgba(255,255,255,0.25);
+            color: inherit;
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-weight: 700;
+        }
+        .subject-item > button:not(:hover) .count-badge:not(:hover) {
+            background: #f1f5f9;
+            color: #64748b;
+        }
+        .subject-item.expanded > button .count-badge {
+            background: rgba(255,255,255,0.25);
+            color: white;
+        }
+
+        .chapter-list {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+            padding-left: 10px;
+        }
+        .subject-item.expanded .chapter-list { max-height: 1500px; }
+
+        .chapter-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+            padding: 8px 12px;
+            margin: 2px 0;
+            background: transparent;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.82rem;
+            color: #2c3e50;
+            text-align: left;
+            transition: all 0.2s;
+        }
+        .chapter-btn:hover {
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+        }
+        .chapter-btn.active {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            box-shadow: 0 3px 10px rgba(102, 126, 234, 0.3);
+        }
+        .chapter-btn .count-badge {
+            margin-left: auto;
+            background: #f1f5f9;
+            color: #64748b;
+            font-size: 0.65rem;
+            padding: 2px 6px;
+            border-radius: 999px;
+            font-weight: 700;
+        }
+        .chapter-btn.active .count-badge {
+            background: rgba(255,255,255,0.25);
+            color: white;
+        }
+
+        /* Toggle sidebar button */
+        .toggle-sidebar-btn {
+            position: absolute;
+            top: 50%;
+            left: -1px;
+            transform: translateY(-50%);
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            width: 30px;
+            height: 70px;
+            border-radius: 0 12px 12px 0;
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
+        }
+
+        /* ============ Content area ============ */
+        .content-area {
+            flex: 1;
+            position: relative;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            overflow-y: auto;
+            padding: 24px 28px;
+        }
+
+        .content-area::-webkit-scrollbar { width: 10px; }
+        .content-area::-webkit-scrollbar-track { background: transparent; }
+        .content-area::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 5px; }
+        .content-area::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.3); }
+
+        /* ============ Loading & Error ============ */
+        .loading-screen, .error-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #7f8c8d;
+            text-align: center;
+            padding: 40px;
+        }
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #e9ecef;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 20px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .error-screen { color: #e74c3c; }
+
+        /* ============ Home (overview) ============ */
+        .overview {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        .overview-hero {
+            text-align: center;
+            margin-bottom: 32px;
+            color: #2c3e50;
+        }
+        .overview-hero .hero-icon { font-size: 3rem; margin-bottom: 12px; }
+        .overview-hero h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .overview-hero p { color: #64748b; font-size: 0.95rem; }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 36px;
+        }
+        .stat-card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            border: 1px solid #e9ecef;
+            transition: all 0.3s;
+        }
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.15);
+        }
+        .stat-card .stat-value {
+            font-size: 2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1.2;
+        }
+        .stat-card .stat-label {
+            font-size: 0.75rem;
+            color: #7f8c8d;
+            margin-top: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            font-weight: 600;
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .subjects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 14px;
+        }
+        .subject-card {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 14px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: left;
+        }
+        .subject-card:hover {
+            border-color: #667eea;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 22px rgba(102, 126, 234, 0.18);
+        }
+        .subject-card .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+        .subject-card .card-title {
+            font-weight: 700;
+            font-size: 0.95rem;
+            color: #2c3e50;
+        }
+        .subject-card .count-badge {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            font-size: 0.7rem;
+            padding: 3px 10px;
+            border-radius: 999px;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+        .subject-card .card-meta {
+            font-size: 0.75rem;
+            color: #7f8c8d;
+        }
+
+        /* ============ Subject view (chapters) ============ */
+        .chapters-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 14px;
+        }
+        .chapter-card {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 14px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .chapter-card:hover {
+            border-color: #e67e22;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 22px rgba(230, 126, 34, 0.18);
+        }
+
+        /* ============ Chapter view (questions) ============ */
+        .chapter-header {
+            background: white;
+            border-radius: 16px;
+            padding: 20px 24px;
+            margin-bottom: 18px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+        }
+        .chapter-header h2 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 4px;
+        }
+        .chapter-header .meta {
+            color: #7f8c8d;
+            font-size: 0.85rem;
+        }
+
+        .filter-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 14px;
+            font-size: 0.8rem;
+        }
+        .filter-row .filter-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-right: 4px;
+        }
+        .filter-chip {
+            padding: 5px 12px;
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 999px;
+            cursor: pointer;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: #2c3e50;
+            transition: all 0.2s;
+        }
+        .filter-chip:hover { border-color: #667eea; color: #667eea; }
+        .filter-chip.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-color: transparent;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        /* ============ Question card ============ */
+        .question-card {
+            background: white;
+            border-radius: 14px;
+            padding: 22px;
+            margin-bottom: 14px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+            border: 1px solid #e9ecef;
+            transition: box-shadow 0.2s;
+        }
+        .question-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+
+        .q-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 14px;
+            font-size: 0.8rem;
+        }
+        .q-number {
+            font-weight: 700;
+            color: #95a5a6;
+            font-size: 0.85rem;
+        }
+        .q-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 6px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+        .badge-mcq { background: #dbeafe; color: #1e40af; }
+        .badge-msq { background: #fce7f3; color: #9d174d; }
+        .badge-nat { background: #fef3c7; color: #92400e; }
+        .badge-true_false { background: #d1fae5; color: #065f46; }
+        .badge-fill_blanks { background: #ede9fe; color: #5b21b6; }
+        .badge-subjective { background: #f1f5f9; color: #475569; }
+        .q-paper {
+            background: #f1f5f9;
+            color: #475569;
+            padding: 3px 10px;
+            border-radius: 6px;
+            font-weight: 600;
+        }
+        .q-marks { color: #7f8c8d; }
+        .q-bonus { background: #fef3c7; color: #92400e; padding: 3px 10px; border-radius: 6px; font-weight: 700; }
+        .q-oos { background: #fee2e2; color: #991b1b; padding: 3px 10px; border-radius: 6px; font-weight: 700; }
+        .q-source {
+            margin-left: auto;
+            color: #95a5a6;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.75rem;
+            transition: color 0.2s;
+        }
+        .q-source:hover { color: #667eea; }
+
+        /* Question content (HTML rendered) */
+        .q-content {
+            line-height: 1.65;
+            font-size: 0.95rem;
+            color: #1f2937;
+        }
+        .q-content p { margin: 0.5rem 0; }
+        .q-content p:first-child { margin-top: 0; }
+        .q-content p:last-child { margin-bottom: 0; }
+        .q-content ul, .q-content ol { margin: 0.5rem 0 0.5rem 1.5rem; }
+        .q-content ul { list-style: disc; }
+        .q-content ol { list-style: decimal; }
+        .q-content li { margin: 0.25rem 0; }
+        .q-content code {
+            background: #f1f5f9;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', 'Fira Code', Menlo, Consolas, monospace;
+            font-size: 0.875em;
+            color: #be185d;
+        }
+        .q-content pre {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 14px 18px;
+            border-radius: 10px;
+            overflow-x: auto;
+            margin: 10px 0;
+            font-size: 0.85rem;
+        }
+        .q-content pre code { background: transparent; color: inherit; padding: 0; }
+        .q-content img { max-width: 100%; height: auto; margin: 8px 0; border-radius: 8px; }
+        .q-content table { border-collapse: collapse; margin: 8px 0; }
+        .q-content th, .q-content td { border: 1px solid #cbd5e1; padding: 6px 12px; }
+        .q-content sup, .q-content sub { font-size: 0.75em; }
+        .q-content b, .q-content strong { font-weight: 600; }
+
+        /* Options */
+        .options-list { display: flex; flex-direction: column; gap: 8px; margin: 14px 0; }
+        .option-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 10px 14px;
+            border: 1.5px solid #e9ecef;
+            border-radius: 10px;
+            background: #fafbfc;
+            transition: all 0.2s;
+        }
+        .option-row.correct {
+            border-color: #10b981;
+            background: #ecfdf5;
+        }
+        .option-identifier {
+            flex-shrink: 0;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #e9ecef;
+            color: #64748b;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+        }
+        .option-row.correct .option-identifier {
+            background: #10b981;
+            color: white;
+        }
+        .option-content { flex: 1; min-width: 0; }
+        .option-check {
+            color: #10b981;
+            flex-shrink: 0;
+            margin-top: 4px;
+        }
+
+        /* NAT answer box */
+        .answer-box {
+            margin-top: 12px;
+            padding: 10px 14px;
+            background: #ecfdf5;
+            border: 1.5px solid #10b981;
+            border-radius: 10px;
+            font-size: 0.9rem;
+        }
+        .answer-box .answer-label {
+            font-weight: 700;
+            color: #047857;
+            text-transform: uppercase;
+            font-size: 0.7rem;
+            letter-spacing: 0.04em;
+            margin-right: 8px;
+        }
+        .answer-box .answer-value { color: #064e3b; font-weight: 600; }
+
+        .no-answer-box {
+            margin-top: 12px;
+            padding: 10px 14px;
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            border-radius: 10px;
+            font-size: 0.82rem;
+            color: #92400e;
+        }
+
+        /* Explanation */
+        .explanation-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 12px;
+            background: none;
+            border: none;
+            color: #667eea;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            padding: 4px 0;
+            transition: color 0.2s;
+        }
+        .explanation-toggle:hover { color: #764ba2; }
+        .explanation-toggle .chevron { transition: transform 0.2s; font-size: 0.7rem; }
+        .explanation-toggle.expanded .chevron { transform: rotate(90deg); }
+
+        .explanation-body {
+            margin-top: 12px;
+            padding: 14px 16px 14px 18px;
+            background: #f8fafc;
+            border-left: 4px solid #667eea;
+            border-radius: 0 10px 10px 0;
+            font-size: 0.9rem;
+            color: #1f2937;
+        }
+        .explanation-body.hidden { display: none; }
+
+        /* Pagination */
+        .pagination {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            margin: 24px 0 8px 0;
+            flex-wrap: wrap;
+        }
+        .page-btn {
+            min-width: 36px;
+            height: 36px;
+            padding: 0 10px;
+            border: 1px solid #e9ecef;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #2c3e50;
+            transition: all 0.2s;
+        }
+        .page-btn:hover:not(:disabled) { border-color: #667eea; color: #667eea; }
+        .page-btn.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-color: transparent;
+        }
+        .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .page-info {
+            text-align: center;
+            font-size: 0.8rem;
+            color: #7f8c8d;
+            margin-bottom: 24px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #7f8c8d;
+        }
+        .empty-state .empty-icon { font-size: 3rem; margin-bottom: 12px; }
+        .empty-state h3 { color: #2c3e50; margin-bottom: 6px; }
+
+        /* ============ Responsive ============ */
+        @media (max-width: 768px) {
+            .container { flex-direction: column; }
+            .sidebar {
+                width: 100%;
+                min-width: 100%;
+                height: auto;
+                max-height: 45vh;
+                position: relative;
+            }
+            .sidebar.collapsed { width: 100%; min-width: 100%; max-height: 60px; }
+            .content-area { padding: 16px; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .overview-hero h2 { font-size: 1.5rem; }
+            .subjects-grid, .chapters-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- ============ Sidebar ============ -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h1>📚 GATE CSE PYQs</h1>
+                <div class="stats" id="stats">Loading…</div>
+            </div>
+
+            <div class="breadcrumb" id="breadcrumb">
+                <div class="breadcrumb-item" onclick="goHome()">🏠 Home</div>
+            </div>
+
+            <div class="sidebar-content">
+                <button class="home-link" onclick="goHome()">
+                    <span>📖 Study Materials</span>
+                </button>
+
+                <input type="text" class="search-box" id="searchBox"
+                       placeholder="🔍 Search questions…" oninput="onSearchInput()">
+
+                <div class="pyq-section-title">Subjects</div>
+                <div id="subjectList"></div>
+            </div>
+        </div>
+
+        <button class="toggle-sidebar-btn" id="toggleSidebar" onclick="toggleSidebar()" title="Toggle sidebar">◀</button>
+
+        <!-- ============ Content Area ============ -->
+        <div class="content-area" id="contentArea">
+            <div id="mainContent">
+                <div class="loading-screen">
+                    <div class="spinner"></div>
+                    <p>Loading 2,736 questions…</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+// =================== State ===================
+let data = null;
+const state = {
+    view: 'home',          // 'home' | 'subject' | 'chapter' | 'search'
+    subject: null,
+    chapter: null,
+    search: '',
+    yearFilter: null,
+    typeFilter: null,
+    page: 1,
+    pageSize: 20,
+    expandedExplanations: new Set(),
+    expandedSubjects: new Set(),
+};
+let sidebarCollapsed = false;
+
+// =================== Init ===================
+async function init() {
+    try {
+        if (typeof window.GATE_DATA !== 'undefined' && window.GATE_DATA) {
+            data = window.GATE_DATA;
+        } else {
+            const res = await fetch('./gate_cse_questions.json');
+            if (!res.ok) throw new Error(`HTTP ${res.status} — ${res.statusText}`);
+            data = await res.json();
+        }
+        renderStats();
+        renderSidebar();
+        renderHome();
+    } catch (e) {
+        document.getElementById('mainContent').innerHTML = `
+            <div class="error-screen">
+                <div style="font-size:3rem;margin-bottom:12px;">⚠️</div>
+                <h3>Failed to load PYQ data</h3>
+                <p style="margin-top:8px;color:#7f8c8d;">${escapeHtml(e.message)}</p>
+                <p style="margin-top:16px;font-size:0.85rem;color:#95a5a6;">
+                    Make sure <code>gate_cse_data.js</code> is in the same directory as this HTML file.
+                </p>
+            </div>
+        `;
+    }
+}
+
+function renderStats() {
+    const s = data.stats;
+    document.getElementById('stats').innerHTML = `
+        <strong>${s.total_questions.toLocaleString()}</strong> Questions<br>
+        <strong>${data.total_subjects}</strong> Subjects • <strong>${data.total_chapters}</strong> Chapters<br>
+        <strong>${s.year_range.min}–${s.year_range.max}</strong> • ${s.answer_coverage_pct}% with answers
+    `;
+}
+
+// =================== Sidebar ===================
+function renderSidebar() {
+    const list = document.getElementById('subjectList');
+    list.innerHTML = data.subjects.map(s => `
+        <div class="subject-item ${state.expandedSubjects.has(s.subject) ? 'expanded' : ''}" data-subject="${s.subject}">
+            <button onclick="toggleSubject('${s.subject}')">
+                <span class="chevron">▶</span>
+                <span>${s.subject_label}</span>
+                <span class="count-badge">${s.total_questions}</span>
+            </button>
+            <div class="chapter-list">
+                <button class="chapter-btn" onclick="selectSubject('${s.subject}')">
+                    <span>📋 Overview</span>
+                    <span class="count-badge">${s.total_questions}</span>
+                </button>
+                ${s.chapters.map(c => `
+                    <button class="chapter-btn ${state.subject === s.subject && state.chapter === c.chapter ? 'active' : ''}"
+                            onclick="selectChapter('${s.subject}', '${c.chapter}')">
+                        <span>${c.chapter_label}</span>
+                        <span class="count-badge">${c.question_count}</span>
+                    </button>
+                `).join('')}
+            </div>
+        </div>
+    `).join('');
+}
+
+function toggleSubject(slug) {
+    if (state.expandedSubjects.has(slug)) state.expandedSubjects.delete(slug);
+    else state.expandedSubjects.add(slug);
+    const item = document.querySelector(`.subject-item[data-subject="${slug}"]`);
+    if (item) item.classList.toggle('expanded');
+}
+
+function toggleSidebar() {
+    sidebarCollapsed = !sidebarCollapsed;
+    const sb = document.getElementById('sidebar');
+    sb.classList.toggle('collapsed', sidebarCollapsed);
+    document.getElementById('toggleSidebar').textContent = sidebarCollapsed ? '▶' : '◀';
+}
+
+// =================== Navigation ===================
+function goHome() {
+    state.view = 'home';
+    state.subject = null;
+    state.chapter = null;
+    state.search = '';
+    state.yearFilter = null;
+    state.typeFilter = null;
+    state.page = 1;
+    state.expandedExplanations.clear();
+    document.getElementById('searchBox').value = '';
+    updateBreadcrumb();
+    renderHome();
+    updateActiveChapter();
+}
+
+function selectSubject(slug) {
+    state.view = 'subject';
+    state.subject = slug;
+    state.chapter = null;
+    state.page = 1;
+    state.expandedExplanations.clear();
+    state.expandedSubjects.add(slug);
+    state.yearFilter = null;
+    state.typeFilter = null;
+    renderSidebar();
+    updateBreadcrumb();
+    renderSubjectView();
+    updateActiveChapter();
+}
+
+function selectChapter(subjectSlug, chapterSlug) {
+    state.view = 'chapter';
+    state.subject = subjectSlug;
+    state.chapter = chapterSlug;
+    state.page = 1;
+    state.expandedExplanations.clear();
+    state.expandedSubjects.add(subjectSlug);
+    state.yearFilter = null;
+    state.typeFilter = null;
+    state.search = '';
+    document.getElementById('searchBox').value = '';
+    renderSidebar();
+    updateBreadcrumb();
+    renderChapterView();
+    updateActiveChapter();
+    document.getElementById('contentArea').scrollTop = 0;
+}
+
+function updateActiveChapter() {
+    document.querySelectorAll('.chapter-btn.active').forEach(el => el.classList.remove('active'));
+    if (state.chapter) {
+        // Find the matching button - it's inside the expanded subject
+        const items = document.querySelectorAll(`.subject-item.expanded .chapter-btn`);
+        items.forEach(btn => {
+            const text = btn.querySelector('span').textContent.trim();
+            const subj = data.subjects.find(s => s.subject === state.subject);
+            const chap = subj?.chapters.find(c => c.chapter_label === text);
+            if (chap && chap.chapter === state.chapter) btn.classList.add('active');
+        });
+    }
+}
+
+function updateBreadcrumb() {
+    const bc = document.getElementById('breadcrumb');
+    let html = '<div class="breadcrumb-item" onclick="goHome()">🏠 Home</div>';
+    if (state.subject) {
+        const subj = data.subjects.find(s => s.subject === state.subject);
+        html += `<span class="breadcrumb-separator">›</span>`;
+        if (state.chapter) {
+            html += `<div class="breadcrumb-item" onclick="selectSubject('${state.subject}')">${subj.subject_label}</div>`;
+            const chap = subj.chapters.find(c => c.chapter === state.chapter);
+            html += `<span class="breadcrumb-separator">›</span>`;
+            html += `<span class="breadcrumb-current">${chap.chapter_label}</span>`;
+        } else {
+            html += `<span class="breadcrumb-current">${subj.subject_label}</span>`;
+        }
+    } else if (state.view === 'search') {
+        html += `<span class="breadcrumb-separator">›</span>`;
+        html += `<span class="breadcrumb-current">Search: "${escapeHtml(state.search)}"</span>`;
+    }
+    bc.innerHTML = html;
+}
+
+// =================== Home View ===================
+function renderHome() {
+    const s = data.stats;
+    document.getElementById('mainContent').innerHTML = `
+        <div class="overview">
+            <div class="overview-hero">
+                <div class="hero-icon">📚</div>
+                <h2>GATE CSE Previous Year Questions</h2>
+                <p>Chapter-wise collection with solutions • Sourced from ExamSIDE.com</p>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">${s.total_questions.toLocaleString()}</div>
+                    <div class="stat-label">Total Questions</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${data.total_subjects}</div>
+                    <div class="stat-label">Subjects</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${data.total_chapters}</div>
+                    <div class="stat-label">Chapters</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${s.year_range.max - s.year_range.min + 1}</div>
+                    <div class="stat-label">Years (${s.year_range.min}–${s.year_range.max})</div>
+                </div>
+            </div>
+
+            <h3 class="section-title">📂 Browse by Subject</h3>
+            <div class="subjects-grid">
+                ${data.subjects.map(s => `
+                    <div class="subject-card" onclick="selectSubject('${s.subject}')">
+                        <div class="card-header">
+                            <div class="card-title">${s.subject_label}</div>
+                            <div class="count-badge">${s.total_questions}</div>
+                        </div>
+                        <div class="card-meta">${s.chapters.length} chapters</div>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+}
+
+// =================== Subject View ===================
+function renderSubjectView() {
+    const subj = data.subjects.find(s => s.subject === state.subject);
+    if (!subj) return;
+    document.getElementById('mainContent').innerHTML = `
+        <div class="overview">
+            <div class="overview-hero">
+                <div class="hero-icon">📂</div>
+                <h2>${subj.subject_label}</h2>
+                <p>${subj.chapters.length} chapters • ${subj.total_questions} questions</p>
+            </div>
+
+            <h3 class="section-title">📖 Chapters</h3>
+            <div class="chapters-grid">
+                ${subj.chapters.map(c => {
+                    const years = c.questions.map(q => q.year);
+                    const minY = years.length ? Math.min(...years) : '—';
+                    const maxY = years.length ? Math.max(...years) : '—';
+                    return `
+                        <div class="chapter-card" onclick="selectChapter('${subj.subject}', '${c.chapter}')">
+                            <div class="card-header">
+                                <div class="card-title">${c.chapter_label}</div>
+                                <div class="count-badge">${c.question_count}</div>
+                            </div>
+                            <div class="card-meta">Years ${minY}–${maxY}</div>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        </div>
+    `;
+}
+
+// =================== Chapter View ===================
+function renderChapterView() {
+    const subj = data.subjects.find(s => s.subject === state.subject);
+    const chap = subj?.chapters.find(c => c.chapter === state.chapter);
+    if (!chap) return;
+
+    // Get unique years (desc) and types
+    const years = [...new Set(chap.questions.map(q => q.year))].sort((a, b) => b - a);
+    const types = [...new Set(chap.questions.map(q => q.normalized_type))];
+
+    // Apply filters
+    let filtered = chap.questions;
+    if (state.yearFilter !== null) filtered = filtered.filter(q => q.year === state.yearFilter);
+    if (state.typeFilter !== null) filtered = filtered.filter(q => q.normalized_type === state.typeFilter);
+    if (state.search) {
+        const s = state.search.toLowerCase();
+        filtered = filtered.filter(q =>
+            (q.question_text || '').toLowerCase().includes(s) ||
+            q.options.some(o => (o.content || '').toLowerCase().includes(s))
+        );
+    }
+
+    const totalPages = Math.max(1, Math.ceil(filtered.length / state.pageSize));
+    if (state.page > totalPages) state.page = 1;
+    const start = (state.page - 1) * state.pageSize;
+    const pageItems = filtered.slice(start, start + state.pageSize);
+
+    document.getElementById('mainContent').innerHTML = `
+        <div class="chapter-header">
+            <h2>${chap.chapter_label}</h2>
+            <div class="meta">${subj.subject_label} • ${filtered.length} of ${chap.question_count} questions</div>
+        </div>
+
+        ${years.length > 1 ? `
+            <div class="filter-row">
+                <span class="filter-label">Year:</span>
+                <button class="filter-chip ${state.yearFilter === null ? 'active' : ''}" onclick="setYearFilter(null)">All</button>
+                ${years.map(y => `<button class="filter-chip ${state.yearFilter === y ? 'active' : ''}" onclick="setYearFilter(${y})">${y}</button>`).join('')}
+            </div>
+        ` : ''}
+
+        ${types.length > 1 ? `
+            <div class="filter-row">
+                <span class="filter-label">Type:</span>
+                <button class="filter-chip ${state.typeFilter === null ? 'active' : ''}" onclick="setTypeFilter(null)">All</button>
+                ${types.map(t => `<button class="filter-chip ${state.typeFilter === t ? 'active' : ''}" onclick="setTypeFilter('${t}')">${typeLabel(t)}</button>`).join('')}
+            </div>
+        ` : ''}
+
+        <div id="questionsList">
+            ${pageItems.length === 0 ? `
+                <div class="empty-state">
+                    <div class="empty-icon">🔍</div>
+                    <h3>No questions match your filters</h3>
+                    <p>Try clearing the filters or searching for something else.</p>
+                    <button class="home-link" style="margin-top:16px;" onclick="clearFilters()">Clear Filters</button>
+                </div>
+            ` : pageItems.map((q, i) => renderQuestionCard(q, start + i + 1)).join('')}
+        </div>
+
+        ${totalPages > 1 ? renderPagination(totalPages) : ''}
+    `;
+
+    // Render math in all q-content blocks
+    document.querySelectorAll('.q-content').forEach(renderMathIn);
+}
+
+function renderQuestionCard(q, idx) {
+    const correctSet = new Set(q.correct_options);
+    const explExpanded = state.expandedExplanations.has(q.question_id);
+    const isMCQType = ['mcq', 'msq', 'true_false'].includes(q.normalized_type);
+    const showAnswerField = q.answer && !isMCQType;
+
+    return `
+        <div class="question-card">
+            <div class="q-header">
+                <span class="q-number">#${idx}</span>
+                <span class="q-badge badge-${q.normalized_type}">${typeLabel(q.normalized_type)}</span>
+                <span class="q-paper">${q.paper_title}</span>
+                <span class="q-marks">+${q.marks}${q.negative_marks ? ` / -${q.negative_marks}` : ''}</span>
+                ${q.is_bonus ? '<span class="q-bonus">BONUS</span>' : ''}
+                ${q.is_out_of_syllabus ? '<span class="q-oos">OUT OF SYLLABUS</span>' : ''}
+                <a class="q-source" href="${q.url}" target="_blank" rel="noopener" title="Open on ExamSIDE">
+                    Source ↗
+                </a>
+            </div>
+
+            <div class="q-content">${sanitize(q.question_text)}</div>
+
+            ${q.options.length > 0 ? `
+                <div class="options-list">
+                    ${q.options.map(opt => `
+                        <div class="option-row ${correctSet.has(opt.identifier) ? 'correct' : ''}">
+                            <div class="option-identifier">${opt.identifier}</div>
+                            <div class="option-content q-content">${sanitize(opt.content)}</div>
+                            ${correctSet.has(opt.identifier) ? `
+                                <svg class="option-check" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="20 6 9 17 4 12"/>
+                                </svg>
+                            ` : ''}
+                        </div>
+                    `).join('')}
+                </div>
+            ` : ''}
+
+            ${showAnswerField ? `
+                <div class="answer-box">
+                    <span class="answer-label">Answer:</span>
+                    <span class="answer-value q-content" style="display:inline">${sanitize(q.answer)}</span>
+                </div>
+            ` : ''}
+
+            ${!q.has_answer ? `
+                <div class="no-answer-box">
+                    ⚠ Official answer is not exposed by the source. See explanation below if available.
+                </div>
+            ` : ''}
+
+            ${q.has_explanation ? `
+                <button class="explanation-toggle ${explExpanded ? 'expanded' : ''}" onclick="toggleExplanation('${q.question_id}', this)">
+                    <span class="chevron">▶</span>
+                    ${explExpanded ? 'Hide' : 'Show'} Explanation
+                </button>
+                <div class="explanation-body q-content ${explExpanded ? '' : 'hidden'}" id="expl-${q.question_id}">
+                    ${sanitize(q.explanation)}
+                </div>
+            ` : ''}
+        </div>
+    `;
+}
+
+function renderPagination(totalPages) {
+    const cur = state.page;
+    let start = Math.max(1, cur - 2);
+    let end = Math.min(totalPages, start + 4);
+    start = Math.max(1, end - 4);
+    const pages = [];
+    for (let i = start; i <= end; i++) pages.push(i);
+
+    return `
+        <div class="pagination">
+            <button class="page-btn" onclick="changePage(${cur - 1})" ${cur === 1 ? 'disabled' : ''}>‹ Prev</button>
+            ${start > 1 ? `<button class="page-btn" onclick="changePage(1)">1</button>${start > 2 ? '<span style="color:#95a5a6;">…</span>' : ''}` : ''}
+            ${pages.map(p => `<button class="page-btn ${p === cur ? 'active' : ''}" onclick="changePage(${p})">${p}</button>`).join('')}
+            ${end < totalPages ? `${end < totalPages - 1 ? '<span style="color:#95a5a6;">…</span>' : ''}<button class="page-btn" onclick="changePage(${totalPages})">${totalPages}</button>` : ''}
+            <button class="page-btn" onclick="changePage(${cur + 1})" ${cur === totalPages ? 'disabled' : ''}>Next ›</button>
+        </div>
+        <div class="page-info">Page ${cur} of ${totalPages}</div>
+    `;
+}
+
+// =================== Search ===================
+let searchTimeout;
+function onSearchInput() {
+    clearTimeout(searchTimeout);
+    const val = document.getElementById('searchBox').value.trim();
+    searchTimeout = setTimeout(() => {
+        state.search = val;
+        state.page = 1;
+        if (val) {
+            state.view = 'search';
+            state.subject = null;
+            state.chapter = null;
+            updateBreadcrumb();
+            renderSearchResults();
+        } else if (state.view === 'search') {
+            goHome();
+        } else if (state.view === 'chapter') {
+            renderChapterView();
+        }
+    }, 250);
+}
+
+function renderSearchResults() {
+    const s = state.search.toLowerCase();
+    const matches = [];
+    for (const subj of data.subjects) {
+        for (const chap of subj.chapters) {
+            for (const q of chap.questions) {
+                if ((q.question_text || '').toLowerCase().includes(s) ||
+                    q.options.some(o => (o.content || '').toLowerCase().includes(s))) {
+                    matches.push({ q, subj, chap });
+                }
+            }
+        }
+    }
+
+    const totalPages = Math.max(1, Math.ceil(matches.length / state.pageSize));
+    if (state.page > totalPages) state.page = 1;
+    const start = (state.page - 1) * state.pageSize;
+    const pageItems = matches.slice(start, start + state.pageSize);
+
+    document.getElementById('mainContent').innerHTML = `
+        <div class="chapter-header">
+            <h2>🔍 Search Results</h2>
+            <div class="meta">${matches.length} questions found for "${escapeHtml(state.search)}"</div>
+        </div>
+
+        <div id="questionsList">
+            ${pageItems.length === 0 ? `
+                <div class="empty-state">
+                    <div class="empty-icon">🔍</div>
+                    <h3>No questions found</h3>
+                    <p>Try different keywords.</p>
+                </div>
+            ` : pageItems.map(({ q, subj, chap }, i) => `
+                <div style="font-size:0.75rem;color:#7f8c8d;margin-bottom:6px;">
+                    <span class="breadcrumb-item" onclick="selectSubject('${subj.subject}')">${subj.subject_label}</span>
+                    <span class="breadcrumb-separator">›</span>
+                    <span class="breadcrumb-item" onclick="selectChapter('${subj.subject}', '${chap.chapter}')">${chap.chapter_label}</span>
+                </div>
+                ${renderQuestionCard(q, start + i + 1)}
+            `).join('')}
+        </div>
+
+        ${totalPages > 1 ? renderPagination(totalPages) : ''}
+    `;
+    document.querySelectorAll('.q-content').forEach(renderMathIn);
+}
+
+// =================== Event Handlers ===================
+function setYearFilter(y) {
+    state.yearFilter = y;
+    state.page = 1;
+    renderChapterView();
+    document.getElementById('contentArea').scrollTop = 0;
+}
+
+function setTypeFilter(t) {
+    state.typeFilter = t;
+    state.page = 1;
+    renderChapterView();
+    document.getElementById('contentArea').scrollTop = 0;
+}
+
+function clearFilters() {
+    state.yearFilter = null;
+    state.typeFilter = null;
+    state.search = '';
+    document.getElementById('searchBox').value = '';
+    state.page = 1;
+    renderChapterView();
+}
+
+function changePage(p) {
+    state.page = p;
+    if (state.view === 'search') renderSearchResults();
+    else renderChapterView();
+    document.getElementById('contentArea').scrollTop = 0;
+}
+
+function toggleExplanation(qid, btn) {
+    const el = document.getElementById(`expl-${qid}`);
+    if (state.expandedExplanations.has(qid)) {
+        state.expandedExplanations.delete(qid);
+        el.classList.add('hidden');
+        btn.classList.remove('expanded');
+        btn.innerHTML = `<span class="chevron">▶</span> Show Explanation`;
+    } else {
+        state.expandedExplanations.add(qid);
+        el.classList.remove('hidden');
+        btn.classList.add('expanded');
+        btn.innerHTML = `<span class="chevron">▶</span> Hide Explanation`;
+        renderMathIn(el);
+    }
+}
+
+// =================== Utilities ===================
+function sanitize(html) {
+    if (!html) return '';
+    return DOMPurify.sanitize(html, { ADD_TAGS: ['sup', 'sub', 'u', 's'], ADD_ATTR: ['target'] });
+}
+
+function renderMathIn(el) {
+    if (typeof renderMathInElement !== 'function') return;
+    renderMathInElement(el, {
+        delimiters: [
+            { left: '$$', right: '$$', display: true },
+            { left: '$', right: '$', display: false },
+            { left: '\\(', right: '\\)', display: false },
+            { left: '\\[', right: '\\]', display: true },
+        ],
+        throwOnError: false,
+        ignoredTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+    });
+}
+
+function escapeHtml(s) {
+    if (!s) return '';
+    return s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+function typeLabel(t) {
+    return { mcq: 'MCQ', msq: 'MSQ', nat: 'NAT', subjective: 'Subjective', fill_blanks: 'Fill', true_false: 'T/F' }[t] || t;
+}
+
+// Start
+init();
+</script>
+</body>
+</html>
