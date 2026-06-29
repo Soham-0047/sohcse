@@ -289,8 +289,12 @@ RULES:
 
                 <div class="ai-chat-input-area">
                     <div class="ai-input-group">
+                        <button class="ai-voice-btn" id="aiVoiceBtn" title="Voice input (if supported)" aria-label="Voice input">🎤</button>
                         <textarea class="ai-chat-input" id="aiChatInput" placeholder="Ask anything about GATE CSE… (Shift+Enter for newline)" rows="1" aria-label="Type your question"></textarea>
                         <button class="ai-send-btn" id="aiSendBtn" aria-label="Send">➤</button>
+                    </div>
+                    <div style="font-size:0.7rem;color:var(--text-muted);text-align:center;margin-top:6px;">
+                        💡 Press <kbd style="background:var(--bg-light);padding:1px 5px;border-radius:3px;border:1px solid var(--border);font-family:monospace;">Ctrl+K</kbd> for quick nav • <kbd style="background:var(--bg-light);padding:1px 5px;border-radius:3px;border:1px solid var(--border);font-family:monospace;">Ctrl+J</kbd> for dark mode
                     </div>
                 </div>
             </div>
@@ -473,6 +477,19 @@ RULES:
         document.getElementById('aiConfigBtn').addEventListener('click', toggleConfig);
         document.getElementById('aiClearBtn').addEventListener('click', clearChat);
         document.getElementById('aiSendBtn').addEventListener('click', () => sendMessage());
+
+        // Voice input button
+        const voiceBtn = document.getElementById('aiVoiceBtn');
+        if (voiceBtn) {
+            voiceBtn.addEventListener('click', toggleVoiceInput);
+            // Check if speech recognition is supported
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                voiceBtn.style.opacity = '0.4';
+                voiceBtn.title = 'Voice input not supported in this browser';
+            }
+        }
+
         document.getElementById('aiChatInput').addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
@@ -533,6 +550,85 @@ RULES:
         document.getElementById('aiChatPanel').classList.remove('active');
         document.getElementById('aiToggleBtn').classList.remove('active');
     }
+
+    // ============ Voice Input (Web Speech API) ============
+    let recognition = null;
+    let isRecording = false;
+
+    function toggleVoiceInput() {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            if (window.showToast) {
+                window.showToast('Voice input not supported. Try Chrome or Edge.', 'warning');
+            } else {
+                alert('Voice input not supported in this browser. Try Chrome or Edge.');
+            }
+            return;
+        }
+
+        const voiceBtn = document.getElementById('aiVoiceBtn');
+
+        if (isRecording) {
+            // Stop recording
+            if (recognition) recognition.stop();
+            isRecording = false;
+            voiceBtn.classList.remove('recording');
+            voiceBtn.textContent = '🎤';
+            return;
+        }
+
+        // Start recording
+        recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = true;
+        recognition.lang = 'en-US';
+
+        const input = document.getElementById('aiChatInput');
+        let finalTranscript = '';
+
+        recognition.onstart = () => {
+            isRecording = true;
+            voiceBtn.classList.add('recording');
+            voiceBtn.textContent = '⏹';
+            if (window.showToast) window.showToast('🎤 Listening... speak now', 'info', 2000);
+        };
+
+        recognition.onresult = (event) => {
+            let interimTranscript = '';
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+                const transcript = event.results[i][0].transcript;
+                if (event.results[i].isFinal) {
+                    finalTranscript += transcript;
+                } else {
+                    interimTranscript += transcript;
+                }
+            }
+            input.value = finalTranscript + interimTranscript;
+            input.style.height = 'auto';
+            input.style.height = Math.min(120, input.scrollHeight) + 'px';
+        };
+
+        recognition.onerror = (event) => {
+            isRecording = false;
+            voiceBtn.classList.remove('recording');
+            voiceBtn.textContent = '🎤';
+            if (window.showToast) {
+                window.showToast('Voice error: ' + event.error, 'error');
+            }
+        };
+
+        recognition.onend = () => {
+            isRecording = false;
+            voiceBtn.classList.remove('recording');
+            voiceBtn.textContent = '🎤';
+            if (finalTranscript) {
+                input.focus();
+            }
+        };
+
+        recognition.start();
+    }
+
     function toggleConfig() {
         document.getElementById('aiChatConfig').classList.toggle('open');
     }
