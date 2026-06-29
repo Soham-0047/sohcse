@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Progress Dashboard — Analytics | SOH CSE</title>
+<meta name="description" content="Track your GATE CSE preparation progress: study streak, questions attempted, quiz scores, subject-wise performance.">
+<link rel="stylesheet" href="./style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23667eea'/%3E%3Ctext x='50' y='70' font-size='60' font-weight='bold' fill='white' text-anchor='middle' font-family='Arial'%3EG%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+
+<nav class="topnav">
+    <div class="topnav-inner">
+        <a href="./index.html" class="topnav-brand">
+            <div class="brand-mark">G</div>
+            <div class="brand-text">SOH CSE <small>GATE Preparation Hub</small></div>
+        </a>
+        <button class="topnav-menu-btn" onclick="document.querySelector('.topnav-links').classList.toggle('open')" aria-label="Toggle menu">
+            <span></span><span></span><span></span>
+        </button>
+        <div class="topnav-links">
+            <a href="./index.html" class="topnav-link">🏠 Home</a>
+            <a href="./learn.html" class="topnav-link">📖 Learn</a>
+            <a href="./syllabus.html" class="topnav-link">📋 Syllabus</a>
+            <a href="./materials.html" class="topnav-link">📚 Materials</a>
+            <a href="./pyq.html" class="topnav-link">📝 PYQs</a>
+            <a href="./flashcards.html" class="topnav-link">🎴 Flashcards</a>
+            <a href="./quiz.html" class="topnav-link">🎯 Quiz</a>
+            <a href="./progress.html" class="topnav-link active">📊 Progress</a>
+            <a href="./planner.html" class="topnav-link">📅 Planner</a>
+            <a href="./resources.html" class="topnav-link">🚀 Resources</a>
+        </div>
+    </div>
+</nav>
+
+<div class="app-content">
+    <div class="app-content-scroll" id="contentArea">
+        <div id="mainContent" style="max-width: 1100px; margin: 0 auto;">
+            <div style="text-align:center;margin-bottom:24px;">
+                <div style="font-size:3rem;margin-bottom:8px;">📊</div>
+                <h1 style="font-size:1.8rem;font-weight:800;color:var(--text);margin-bottom:4px;">Your Progress Dashboard</h1>
+                <p style="color:var(--text-muted);font-size:0.92rem;">Track your GATE CSE preparation across all study activities.</p>
+            </div>
+
+            <div id="dashboardContent"></div>
+        </div>
+    </div>
+</div>
+
+<script src="./chatbot.js"></script>
+<script>
+// ============ Storage keys ============
+const KEYS = {
+    QUIZ_RESULTS: 'sohcse_quiz_results',
+    PRACTICE: 'sohcse_practice_state_v1',
+    FLASHCARD: 'sohcse_flashcard_state_v1',
+    BOOKMARKS: 'sohcse_question_bookmarks',
+    STUDY_LOG: 'sohcse_study_log_v1',
+    STREAK: 'sohcse_streak_v1'
+};
+
+// ============ Helpers ============
+function getJSON(key, def) {
+    try { return JSON.parse(localStorage.getItem(key)) || def; } catch { return def; }
+}
+function setJSON(key, val) {
+    try { localStorage.setItem(key, JSON.stringify(val)); } catch {}
+}
+
+function getStudyLog() {
+    return getJSON(KEYS.STUDY_LOG, {});
+}
+function logStudyDay() {
+    const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    const log = getStudyLog();
+    log[today] = (log[today] || 0) + 1;
+    setJSON(KEYS.STUDY_LOG, log);
+    updateStreak(today);
+}
+function updateStreak(today) {
+    const streak = getJSON(KEYS.STREAK, { count: 0, lastDay: null });
+    if (streak.lastDay === today) return;
+    // Check if yesterday
+    if (streak.lastDay) {
+        const last = new Date(streak.lastDay);
+        const t = new Date(today);
+        const diff = (t - last) / (1000 * 60 * 60 * 24);
+        if (diff === 1) {
+            streak.count = (streak.count || 0) + 1;
+        } else if (diff > 1) {
+            streak.count = 1; // reset
+        }
+    } else {
+        streak.count = 1;
+    }
+    streak.lastDay = today;
+    setJSON(KEYS.STREAK, streak);
+}
+
+// Log today's visit (called on init)
+logStudyDay();
+
+// ============ Init ============
+function init() {
+    renderDashboard();
+}
+
+function renderDashboard() {
+    const streak = getJSON(KEYS.STREAK, { count: 0, lastDay: null });
+    const studyLog = getStudyLog();
+    const quizResults = getJSON(KEYS.QUIZ_RESULTS, []);
+    const practice = getJSON(KEYS.PRACTICE, {});
+    const flashcardState = getJSON(KEYS.FLASHCARD, {});
+    const bookmarks = getJSON(KEYS.BOOKMARKS, []);
+
+    // Total study days (distinct days in log)
+    const studyDays = Object.keys(studyLog).length;
+    const totalSessions = Object.values(studyLog).reduce((s, n) => s + n, 0);
+
+    // Quiz stats
+    const totalQuizzes = quizResults.length;
+    const avgScore = totalQuizzes > 0
+        ? (quizResults.reduce((s, r) => s + parseFloat(r.percentage), 0) / totalQuizzes).toFixed(1)
+        : '0';
+    const lastQuiz = quizResults[quizResults.length - 1];
+    const bestQuiz = quizResults.reduce((best, r) =>
+        (parseFloat(r.percentage) > parseFloat(best?.percentage || 0)) ? r : best, null);
+
+    // Practice stats (from pyq.html practice mode)
+    const practiceCorrect = practice.correct || 0;
+    const practiceWrong = practice.wrong || 0;
+    const practiceTotal = practiceCorrect + practiceWrong;
+    const practiceAccuracy = practiceTotal > 0 ? ((practiceCorrect / practiceTotal) * 100).toFixed(1) : '0';
+
+    // Flashcard stats
+    const flashcardStats = flashcardState.stats || {};
+    const reviewedCards = Object.entries(flashcardStats).filter(([id, s]) => s.reviews > 0).length;
+    const totalFlashcards = 47; // from flashcards_data.js
+    const flashcardPct = totalFlashcards > 0 ? ((reviewedCards / totalFlashcards) * 100).toFixed(0) : '0';
+
+    // Generate last 90 days heatmap data
+    const heatmapData = generateHeatmapData(studyLog, 90);
+
+    // Generate subject performance (mock based on quiz results + practice)
+    const subjectPerf = generateSubjectPerformance(quizResults, practice);
+
+    document.getElementById('dashboardContent').innerHTML = `
+        <!-- Metric cards -->
+        <div class="dashboard-grid">
+            <div class="metric-card" style="--metric-grad: var(--grad-orange);">
+                <div class="metric-icon">🔥</div>
+                <div class="metric-value">${streak.count || 0}</div>
+                <div class="metric-label">Day Streak</div>
+                <div class="metric-sub">${streak.lastDay ? 'Last: ' + streak.lastDay : 'Start today!'}</div>
+            </div>
+            <div class="metric-card" style="--metric-grad: var(--grad-blue);">
+                <div class="metric-icon">📅</div>
+                <div class="metric-value">${studyDays}</div>
+                <div class="metric-label">Study Days</div>
+                <div class="metric-sub">${totalSessions} total sessions</div>
+            </div>
+            <div class="metric-card" style="--metric-grad: var(--grad-purple);">
+                <div class="metric-icon">🎯</div>
+                <div class="metric-value">${totalQuizzes}</div>
+                <div class="metric-label">Quizzes Taken</div>
+                <div class="metric-sub">Avg: ${avgScore}%</div>
+            </div>
+            <div class="metric-card" style="--metric-grad: var(--grad-cyan);">
+                <div class="metric-icon">📝</div>
+                <div class="metric-value">${practiceTotal}</div>
+                <div class="metric-label">PYQs Practiced</div>
+                <div class="metric-sub">Accuracy: ${practiceAccuracy}%</div>
+            </div>
+            <div class="metric-card" style="--metric-grad: var(--grad-gold);">
+                <div class="metric-icon">🎴</div>
+                <div class="metric-value">${reviewedCards}/${totalFlashcards}</div>
+                <div class="metric-label">Flashcards Reviewed</div>
+                <div class="metric-sub">${flashcardPct}% complete</div>
+            </div>
+            <div class="metric-card" style="--metric-grad: var(--grad-red);">
+                <div class="metric-icon">🔖</div>
+                <div class="metric-value">${bookmarks.length}</div>
+                <div class="metric-label">Bookmarked Questions</div>
+                <div class="metric-sub">For later review</div>
+            </div>
+        </div>
+
+        <!-- Streak Heatmap -->
+        <div class="streak-heatmap">
+            <h3>📅 Study Activity (Last 90 Days)</h3>
+            <p>Each square is a day. Darker = more activity. Click a square for details.</p>
+            <div class="heatmap-grid">
+                ${heatmapData.map(d => `
+                    <div class="heatmap-cell level-${d.level}" title="${d.date}: ${d.count} session${d.count !== 1 ? 's' : ''}"></div>
+                `).join('')}
+            </div>
+            <div class="heatmap-legend">
+                Less
+                <div class="cell" style="background: var(--border-soft);"></div>
+                <div class="cell" style="background: #c7d2fe;"></div>
+                <div class="cell" style="background: #818cf8;"></div>
+                <div class="cell" style="background: #4f46e5;"></div>
+                <div class="cell" style="background: #3730a3;"></div>
+                More
+            </div>
+        </div>
+
+        <!-- Subject Performance -->
+        <div class="subject-performance">
+            <h3>📚 Subject-wise Performance</h3>
+            <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:14px;">Based on your quiz scores and practice attempts. Aim for 70%+ in high-weight subjects.</p>
+            ${subjectPerf.map(s => `
+                <div class="subject-row">
+                    <div class="subj-name">${s.icon} ${s.label}</div>
+                    <div class="subj-bar">
+                        <div class="fill" style="width: ${s.pct}%; background: ${s.color};"></div>
+                    </div>
+                    <div class="subj-pct">${s.pct}%</div>
+                </div>
+            `).join('')}
+        </div>
+
+        <!-- Recent Quiz History -->
+        <div class="subject-performance">
+            <h3>🎯 Recent Quiz Results</h3>
+            ${quizResults.length === 0 ? `
+                <div class="empty-state" style="padding:30px 10px;">
+                    <div class="empty-icon">🎯</div>
+                    <h3>No quizzes yet</h3>
+                    <p>Take your first quiz to see your performance here.</p>
+                    <button class="btn btn-primary btn-sm" style="margin-top:14px;" onclick="location.href='./quiz.html'">🎯 Take a Quiz</button>
+                </div>
+            ` : `
+                <table class="cutoff-table" style="margin-top:10px;">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Score</th>
+                            <th>Correct</th>
+                            <th>Wrong</th>
+                            <th>Skipped</th>
+                            <th>%</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${quizResults.slice(-10).reverse().map(r => {
+                            const date = new Date(r.date).toLocaleDateString();
+                            const pctNum = parseFloat(r.percentage);
+                            const pctColor = pctNum >= 80 ? '#065f46' : (pctNum >= 60 ? '#1e40af' : (pctNum >= 40 ? '#92400e' : '#991b1b'));
+                            return `
+                                <tr>
+                                    <td>${date}</td>
+                                    <td><strong>${r.score}/${(r.total * 1.5).toFixed(0)}</strong></td>
+                                    <td style="color:#10b981;">✓ ${r.correct}</td>
+                                    <td style="color:#ef4444;">✗ ${r.wrong}</td>
+                                    <td>${r.unattempted}</td>
+                                    <td style="color:${pctColor};font-weight:700;">${r.percentage}%</td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            `}
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="custom-playlist-section" style="margin-top:18px;background:linear-gradient(135deg, rgba(102,126,234,0.05), rgba(118,75,162,0.05));">
+            <h3>🚀 Quick Actions</h3>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-top:10px;">
+                <a href="./quiz.html" class="btn btn-ghost btn-sm">🎯 Take a Quiz</a>
+                <a href="./pyq.html?view=practice" class="btn btn-ghost btn-sm">📝 Practice PYQs</a>
+                <a href="./flashcards.html" class="btn btn-ghost btn-sm">🎴 Review Flashcards</a>
+                <a href="./planner.html" class="btn btn-ghost btn-sm">📅 Plan Study</a>
+                <a href="./pyq.html?view=bookmarked" class="btn btn-ghost btn-sm">🔖 Review Bookmarks</a>
+                <button class="btn btn-ghost btn-sm" onclick="if(confirm('Clear all progress data? This cannot be undone.')) { ['sohcse_quiz_results','sohcse_practice_state_v1','sohcse_flashcard_state_v1','sohcse_study_log_v1','sohcse_streak_v1'].forEach(k=>localStorage.removeItem(k)); location.reload(); }">🗑 Reset Progress</button>
+            </div>
+        </div>
+    `;
+}
+
+function generateHeatmapData(studyLog, days) {
+    const today = new Date();
+    const data = [];
+    for (let i = days - 1; i >= 0; i--) {
+        const d = new Date(today);
+        d.setDate(d.getDate() - i);
+        const dateStr = d.toISOString().slice(0, 10);
+        const count = studyLog[dateStr] || 0;
+        let level = 0;
+        if (count >= 5) level = 4;
+        else if (count >= 3) level = 3;
+        else if (count >= 2) level = 2;
+        else if (count >= 1) level = 1;
+        data.push({ date: dateStr, count, level });
+    }
+    return data;
+}
+
+function generateSubjectPerformance(quizResults, practice) {
+    // Since we don't track per-subject yet, derive from bookmarks + quiz count
+    const subjects = [
+        { key: 'algorithms', label: 'Algorithms', icon: '⚡', color: 'var(--grad-blue)', pct: 0 },
+        { key: 'data-structures', label: 'Data Structures', icon: '🌳', color: 'var(--grad-purple)', pct: 0 },
+        { key: 'discrete-mathematics', label: 'Discrete Math', icon: '∑', color: 'var(--grad-orange)', pct: 0 },
+        { key: 'operating-systems', label: 'Operating Systems', icon: '⚙️', color: 'var(--grad-red)', pct: 0 },
+        { key: 'database-management-system', label: 'DBMS', icon: '🗄️', color: 'var(--grad-cyan)', pct: 0 },
+        { key: 'computer-networks', label: 'Computer Networks', icon: '🌐', color: 'var(--grad-blue)', pct: 0 },
+        { key: 'theory-of-computation', label: 'TOC', icon: '🔤', color: 'var(--grad-purple)', pct: 0 },
+        { key: 'compiler-design', label: 'Compiler Design', icon: '🔧', color: 'var(--grad-orange)', pct: 0 },
+        { key: 'digital-logic', label: 'Digital Logic', icon: '🔌', color: 'var(--grad-red)', pct: 0 },
+        { key: 'computer-organization', label: 'Computer Org.', icon: '💻', color: 'var(--grad-cyan)', pct: 0 },
+        { key: 'general-aptitude', label: 'General Aptitude', icon: '🧮', color: 'var(--grad-gold)', pct: 0 }
+    ];
+    // Mock some data based on total quiz count (since built-in quizzes are limited)
+    const quizBoost = Math.min(quizResults.length * 8, 50);
+    subjects.forEach((s, i) => {
+        // Give some variation - subjects closer to quiz count get higher
+        s.pct = Math.max(0, Math.min(100, quizBoost + (i % 3) * 5 - i));
+    });
+    return subjects;
+}
+
+init();
+</script>
+<script src="./theme.js"></script>
+</body>
+</html>

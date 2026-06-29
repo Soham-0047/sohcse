@@ -1,0 +1,107 @@
+/* ==========================================================================
+   GATE CSE — Flashcard Database
+   Curated high-yield concepts, formulas, and definitions for quick revision.
+   Uses spaced repetition: cards rated "Again" show in 10 min, "Hard" in 1 day,
+   "Good" in 3 days, "Easy" in 7 days.
+   ========================================================================== */
+
+const FLASHCARDS = [
+    // ============ Algorithms ============
+    { id: 'alg-1', subject: 'algorithms', front: 'Time complexity of Binary Search', back: '$O(\\log n)$ — halves the search space each step. Requires sorted array.' },
+    { id: 'alg-2', subject: 'algorithms', front: 'Master Theorem', back: 'For $T(n) = aT(n/b) + f(n)$:<br>• Case 1: $f(n) = O(n^{\\log_b a - \\epsilon})$ → $\\Theta(n^{\\log_b a})$<br>• Case 2: $f(n) = \\Theta(n^{\\log_b a})$ → $\\Theta(n^{\\log_b a} \\log n)$<br>• Case 3: $f(n) = \\Omega(n^{\\log_b a + \\epsilon})$ → $\\Theta(f(n))$' },
+    { id: 'alg-3', subject: 'algorithms', front: 'Time complexity of Merge Sort', back: '$\\Theta(n \\log n)$ in all cases (best, average, worst).<br>Space: $O(n)$ — needs auxiliary array.<br>Stable sort, not in-place.' },
+    { id: 'alg-4', subject: 'algorithms', front: 'Time complexity of Quick Sort (worst case)', back: '$O(n^2)$ — when pivot is smallest/largest element (e.g., sorted array with first/last pivot).<br>Average: $O(n \\log n)$.<br>In-place, not stable.' },
+    { id: 'alg-5', subject: 'algorithms', front: 'Dijkstra\'s Algorithm complexity', back: 'With binary heap: $O((V + E) \\log V)$<br>With array: $O(V^2)$<br>Does NOT work with negative weights — use Bellman-Ford ($O(VE)$).' },
+    { id: 'alg-6', subject: 'algorithms', front: 'Dynamic Programming vs Greedy', back: '<strong>DP</strong>: Optimal substructure + overlapping subproblems. Considers all choices. e.g., LCS, 0/1 Knapsack.<br><strong>Greedy</strong>: Optimal substructure + greedy choice property. Picks local optimum. e.g., Huffman, Activity selection, Fractional Knapsack.' },
+    { id: 'alg-7', subject: 'algorithms', front: 'NP-Complete vs NP-Hard', back: '<strong>NP-Complete</strong>: In NP AND every problem in NP reduces to it (e.g., SAT, TSP-decision).<br><strong>NP-Hard</strong>: At least as hard as NP-Complete but may not be in NP (e.g., Halting Problem, TSP-optimization).' },
+
+    // ============ Data Structures ============
+    { id: 'ds-1', subject: 'data-structures', front: 'Height of balanced BST with n nodes', back: '$O(\\log n)$ — e.g., AVL, Red-Black trees guarantee this.<br>Unbalanced BST worst case: $O(n)$ (degenerate to linked list).' },
+    { id: 'ds-2', subject: 'data-structures', front: 'AVL Tree rotation conditions', back: 'Balance Factor = height(left) - height(right), must be in {-1, 0, 1}.<br>4 rotations: LL, RR, LR, RL.<br>Insertion: at most 1 rotation needed.' },
+    { id: 'ds-3', subject: 'data-structures', front: 'Hash table — load factor (α)', back: '$\\alpha = n/m$ where n = keys, m = slots.<br>Chaining: search $O(1 + \\alpha)$, insert $O(1)$<br>Open addressing: search $O(1/(1-\\alpha))$, requires $\\alpha < 1$' },
+    { id: 'ds-4', subject: 'data-structures', front: 'Binary Heap operations complexity', back: 'Build heap: $O(n)$ (not $O(n \\log n)$!)<br>Insert: $O(\\log n)$<br>Extract-min/max: $O(\\log n)$<br>Find-min/max: $O(1)$<br>Increase/decrease key: $O(\\log n)$' },
+    { id: 'ds-5', subject: 'data-structures', front: 'Number of edges in complete graph $K_n$', back: '$\\binom{n}{2} = \\frac{n(n-1)}{2}$<br>For directed complete graph: $n(n-1)$' },
+    { id: 'ds-6', subject: 'data-structures', front: 'BST property', back: 'For every node x: all keys in left subtree < x.key < all keys in right subtree.<br>Inorder traversal gives sorted output.<br>No duplicates allowed (typically).' },
+    { id: 'ds-7', subject: 'data-structures', front: 'BFS vs DFS complexity', back: 'Both: $O(V + E)$ with adjacency list, $O(V^2)$ with adjacency matrix.<br><strong>BFS</strong>: Uses queue, finds shortest path in unweighted graph.<br><strong>DFS</strong>: Uses stack/recursion, good for cycle detection, topological sort.' },
+
+    // ============ Operating Systems ============
+    { id: 'os-1', subject: 'operating-systems', front: 'Banker\'s Algorithm', back: 'Deadlock <strong>avoidance</strong> (not prevention). Allocates resources only if system stays in safe state.<br>Safe state: exists a sequence where all processes can finish.<br>Time complexity: $O(m \\times n^2)$ where m = resources, n = processes.' },
+    { id: 'os-2', subject: 'operating-systems', front: 'Four necessary conditions for deadlock', back: '1. <strong>Mutual Exclusion</strong>: resource held in non-shareable mode<br>2. <strong>Hold and Wait</strong>: process holds resources while waiting for others<br>3. <strong>No Preemption</strong>: resources released only voluntarily<br>4. <strong>Circular Wait</strong>: cycle in resource allocation graph' },
+    { id: 'os-3', subject: 'operating-systems', front: 'Belady\'s Anomaly', back: 'Page fault rate may <em>increase</em> when more frames are given. Happens in FIFO.<br>Does NOT happen in LRU or Optimal (these are "stack algorithms").' },
+    { id: 'os-4', subject: 'operating-systems', front: 'Process scheduling — SJF (Shortest Job First)', back: 'Non-preemptive SJF: optimal (minimum average waiting time).<br>Preemptive SJF = SRTF (Shortest Remaining Time First).<br>Risk: starvation of long jobs → solve with aging.' },
+    { id: 'os-5', subject: 'operating-systems', front: 'Thrashing', back: 'A process is thrashing if it spends more time paging than executing.<br>Cause: too many processes compete for frames, working set not satisfied.<br>Solution: working set model, load control, more RAM.' },
+    { id: 'os-6', subject: 'operating-systems', front: 'Mutex vs Semaphore', back: '<strong>Mutex</strong>: binary (0/1), owned by the thread that locks it (must unlock itself). Used for mutual exclusion.<br><strong>Semaphore</strong>: integer, can be signaled by any thread. Counting semaphore for resource pools.' },
+    { id: 'os-7', subject: 'operating-systems', front: 'Virtual address to physical address translation', back: 'Page number → page table → frame number → physical address.<br>TLB hit: 1 memory access. TLB miss: 2 memory accesses (page table + data).<br>Effective access time = $h \\cdot (t_{TLB} + t_{mem}) + (1-h) \\cdot (t_{TLB} + 2 \\cdot t_{mem})$' },
+
+    // ============ DBMS ============
+    { id: 'dbms-1', subject: 'database-management-system', front: 'ACID Properties', back: '<strong>A</strong>tomicity: all or nothing<br><strong>C</strong>onsistency: DB remains valid before/after<br><strong>I</strong>solation: concurrent transactions don\'t interfere<br><strong>D</strong>urability: committed data survives crashes' },
+    { id: 'dbms-2', subject: 'database-management-system', front: 'Normal forms summary', back: '<strong>1NF</strong>: atomic values, no repeating groups<br><strong>2NF</strong>: 1NF + no partial dependency (no non-prime attr depends on part of CK)<br><strong>3NF</strong>: 2NF + no transitive dependency<br><strong>BCNF</strong>: for every FD X→Y, X is superkey' },
+    { id: 'dbms-3', subject: 'database-management-system', front: 'Conflict serializability check', back: 'Build precedence graph:<br>• Node per transaction<br>• Edge $T_i → T_j$ if action of $T_i$ conflicts with $T_j$ and happens first<br><br>Serializable ⟺ graph is acyclic.' },
+    { id: 'dbms-4', subject: 'database-management-system', front: 'B+ Tree vs B Tree', back: '<strong>B+ Tree</strong>: data only in leaf nodes, leaves linked list (range queries fast), all searches same length.<br><strong>B Tree</strong>: data in internal nodes too, may be faster for exact match.<br>Databases prefer B+ Trees.' },
+    { id: 'dbms-5', subject: 'database-management-system', front: 'Inner vs Outer Join', back: '<strong>Inner Join</strong>: only matching rows from both tables.<br><strong>Left Outer</strong>: all left rows + matching right (NULL if no match).<br><strong>Right Outer</strong>: all right rows + matching left.<br><strong>Full Outer</strong>: all rows from both.' },
+    { id: 'dbms-6', subject: 'database-management-system', front: '2-Phase Locking (2PL)', back: 'Guarantees conflict serializability.<br><strong>Phase 1 (Growing)</strong>: acquire locks only.<br><strong>Phase 2 (Shrinking)</strong>: release locks only.<br>Strict 2PL: exclusive locks held till commit (avoids cascading rollback).' },
+
+    // ============ Computer Networks ============
+    { id: 'cn-1', subject: 'computer-networks', front: 'TCP vs UDP', back: '<strong>TCP</strong>: connection-oriented, reliable, ordered, flow & congestion control, 20-byte header.<br><strong>UDP</strong>: connectionless, unreliable, unordered, no flow control, 8-byte header.<br>TCP: HTTP, FTP, SMTP. UDP: DNS, DHCP, video streaming.' },
+    { id: 'cn-2', subject: 'computer-networks', front: 'Subnet mask /CIDR — hosts formula', back: 'For /n subnet (n = prefix length, IPv4):<br>Host bits = 32 - n<br>Hosts = $2^{32-n} - 2$ (subtract network & broadcast)<br>e.g., /24 → $2^8 - 2 = 254$ hosts' },
+    { id: 'cn-3', subject: 'computer-networks', front: 'Three-way handshake (TCP)', back: '1. Client → SYN (seq=x)<br>2. Server → SYN+ACK (seq=y, ack=x+1)<br>3. Client → ACK (ack=y+1)<br>Connection established. Both sides can send data after.' },
+    { id: 'cn-4', subject: 'computer-networks', front: 'CSMA/CD', back: 'Carrier Sense Multiple Access with Collision Detection. Used in wired Ethernet.<br>1. Listen before send<br>2. Send + listen for collision<br>3. If collision: jam signal, wait random time (binary exponential backoff), retry' },
+    { id: 'cn-5', subject: 'computer-networks', front: 'DHCP DORA process', back: '<strong>D</strong>iscover: client broadcasts<br><strong>O</strong>ffer: server offers IP<br><strong>R</strong>equest: client requests offered IP<br><strong>A</strong>cknowledge: server confirms with IP, lease time, gateway, DNS' },
+    { id: 'cn-6', subject: 'computer-networks', front: 'Class A/B/C IP ranges', back: '<strong>Class A</strong>: 1.0.0.0 — 126.255.255.255 (/8)<br><strong>Class B</strong>: 128.0.0.0 — 191.255.255.255 (/16)<br><strong>Class C</strong>: 192.0.0.0 — 223.255.255.255 (/24)<br>Private: 10.x, 172.16-31.x, 192.168.x' },
+
+    // ============ Theory of Computation ============
+    { id: 'toc-1', subject: 'theory-of-computation', front: 'DFA vs NFA', back: '<strong>DFA</strong>: exactly one transition per (state, symbol). Deterministic.<br><strong>NFA</strong>: zero or more transitions per (state, symbol). May have ε-transitions.<br>Both recognize the same class: regular languages.<br>Subset construction converts NFA → DFA: worst case $2^n$ states.' },
+    { id: 'toc-2', subject: 'theory-of-computation', front: 'Regular expression identities', back: '• $R + \\emptyset = R$, $R \\cdot \\epsilon = R$, $R \\cdot \\emptyset = \\emptyset$<br>• $R + R = R$, $R^* = \\epsilon + R R^*$<br>• $(R^*)^* = R^*$, $(R+S)^* = (R^* S^*)^*$<br>• Distributive: $R(S+T) = RS + RT$' },
+    { id: 'toc-3', subject: 'theory-of-computation', front: 'Pumping Lemma for Regular Languages', back: 'For every regular L, there exists p (pumping length) such that any $w \\in L$ with $|w| \\ge p$ can be split $w = xyz$ with:<br>1. $|xy| \\le p$<br>2. $|y| \\ge 1$<br>3. $xy^i z \\in L$ for all $i \\ge 0$<br>Used to prove languages are NOT regular.' },
+    { id: 'toc-4', subject: 'theory-of-computation', front: 'Chomsky Hierarchy', back: '<strong>Type 3</strong>: Regular — FA / regex<br><strong>Type 2</strong>: Context-Free — PDA<br><strong>Type 1</strong>: Context-Sensitive — LBA<br><strong>Type 0</strong>: Recursively Enumerable — Turing Machine<br>Each level subsumes the previous.' },
+    { id: 'toc-5', subject: 'theory-of-computation', front: 'Closure properties — Regular Languages', back: 'Closed under: ∪, ∩, complement, concatenation, *, reversal, difference<br>NOT closed under: subset, prefix (some sources)<br>CFLs: closed under ∪, concatenation, *; NOT closed under ∩ or complement.' },
+    { id: 'toc-6', subject: 'theory-of-computation', front: 'Halting Problem', back: 'Undecidable. No Turing Machine can decide for all (M, w) whether M halts on w.<br>Proof: diagonalization. Assume decider H exists, construct D(M) = halt if H(M,M)=no, loop otherwise. Then D(D) creates contradiction.' },
+
+    // ============ Compiler Design ============
+    { id: 'cd-1', subject: 'compiler-design', front: 'Phases of compiler', back: '1. Lexical Analyzer → tokens<br>2. Syntax Analyzer → parse tree / AST<br>3. Semantic Analyzer → check types, scope<br>4. Intermediate Code Gen → 3-address code<br>5. Code Optimizer → optimize IR<br>6. Code Generator → target machine code<br>Symbol table interacts with all phases.' },
+    { id: 'cd-2', subject: 'compiler-design', front: 'Regular expression for identifier', back: 'letter (letter | digit)*<br>Where letter = [A-Za-z], digit = [0-9]<br>Must start with letter, can have any number of letters/digits after.' },
+    { id: 'cd-3', subject: 'compiler-design', front: 'FIRST and FOLLOW — usage', back: '<strong>FIRST(X)</strong>: set of terminals that can begin strings derived from X.<br><strong>FOLLOW(A)</strong>: set of terminals that can appear immediately after A in some derivation.<br>Used to build LL(1) predictive parser table: M[A, a] = production A→α if a ∈ FIRST(α) or (ε ∈ FIRST(α) and a ∈ FOLLOW(A)).' },
+    { id: 'cd-4', subject: 'compiler-design', front: 'LL(1) vs LR(1) parsing', back: '<strong>LL(1)</strong>: Top-down, predictive, scans L→R, leftmost derivation, 1 token lookahead. Harder to write grammar for.<br><strong>LR(1)</strong>: Bottom-up, shift-reduce, scans L→R, reverse rightmost derivation, 1 token lookahead. Handles more grammars (e.g., left-recursive).' },
+    { id: 'cd-5', subject: 'compiler-design', front: 'LR(0) vs SLR(1) vs LALR(1) vs LR(1)', back: '<strong>LR(0)</strong>: shift if any item has dot before terminal; reduce if dot at end. Conflicts common.<br><strong>SLR(1)</strong>: uses FOLLOW sets to resolve conflicts.<br><strong>LALR(1)</strong>: merges LR(1) states with same LR(0) items. yacc/bison default.<br><strong>LR(1)</strong>: full canonical, most tables large.' },
+
+    // ============ Digital Logic ============
+    { id: 'dl-1', subject: 'digital-logic', front: 'De Morgan\'s Laws', back: '$\\overline{A \\cdot B} = \\bar A + \\bar B$<br>$\\overline{A + B} = \\bar A \\cdot \\bar B$<br>"Break the bar, change the operator."' },
+    { id: 'dl-2', subject: 'digital-logic', front: '2\'s Complement range (n bits)', back: 'Range: $-2^{n-1}$ to $+2^{n-1} - 1$<br>e.g., 8 bits: -128 to +127<br>To negate: invert all bits, add 1.<br>Advantage: zero is unique, addition works uniformly.' },
+    { id: 'dl-3', subject: 'digital-logic', front: 'K-Map — adjacent cells', back: 'Cells adjacent (horizontally/vertically, wrapping at edges) differ by exactly one variable.<br>Group sizes must be powers of 2: 1, 2, 4, 8, 16.<br>For n variables: K-map has $2^n$ cells.<br>Each group of size $2^k$ eliminates k variables.' },
+    { id: 'dl-4', subject: 'digital-logic', front: 'JK Flip-Flop truth table', back: 'J=0, K=0: No change (hold)<br>J=0, K=1: Reset (Q=0)<br>J=1, K=0: Set (Q=1)<br>J=1, K=1: Toggle (Q = Q\')<br>Resolves the "invalid" state of SR flip-flop.' },
+    { id: 'dl-5', subject: 'digital-logic', front: 'SR Flip-Flop invalid state', back: 'S=1, R=1 is forbidden — both Q and Q\' become 0 (violates complement), and when S=R=0 simultaneously released, the next state is unpredictable.<br>JK flip-flop solves this by toggling instead.' },
+
+    // ============ Computer Organization ============
+    { id: 'co-1', subject: 'computer-organization', front: 'Average memory access time (AMAT)', back: 'AMAT = Hit time + Miss rate × Miss penalty<br>For multi-level cache:<br>AMAT = $H_1 \\cdot T_1 + (1-H_1) \\cdot [H_2 \\cdot (T_1 + T_2) + (1-H_2) \\cdot (T_1 + T_2 + T_3)]$<br>where $H_i$ = hit rate, $T_i$ = access time.' },
+    { id: 'co-2', subject: 'computer-organization', front: 'Pipelining hazards', back: '<strong>Structural</strong>: same resource needed by multiple instructions simultaneously → solve with separate I/D caches, pipelined ALU.<br><strong>Data</strong>: RAW, WAW, WAR dependencies → solve with forwarding, stall, reordering.<br><strong>Control</strong>: branch outcome unknown → solve with branch prediction, delay slot.' },
+    { id: 'co-3', subject: 'computer-organization', front: 'Cache mapping techniques', back: '<strong>Direct Mapped</strong>: each block → exactly 1 line. Fast lookup, conflict misses.<br><strong>Fully Associative</strong>: block → any line. Flexible, slow search, costly.<br><strong>Set Associative</strong>: block → 1 set of N lines. Compromise. N-way associative means N blocks per set.' },
+    { id: 'co-4', subject: 'computer-organization', front: 'Endianness', back: '<strong>Big-endian</strong>: most significant byte at lowest address (network byte order).<br><strong>Little-endian</strong>: least significant byte at lowest address (x86).<br>Affects how multi-byte data is stored/transmitted.' },
+    { id: 'co-5', subject: 'computer-organization', front: 'Pipeline speedup formula', back: 'Speedup = $\\frac{n \\cdot k}{k + n - 1}$ for n instructions, k stages (ideal, no stalls).<br>As n → ∞: speedup → k (number of stages).<br>Real speedup is lower due to hazards.' },
+
+    // ============ Discrete Mathematics ============
+    { id: 'dm-1', subject: 'discrete-mathematics', front: 'Pigeonhole Principle', back: 'If n items are placed into m containers and n > m, then at least one container has ≥ $\\lceil n/m \\rceil$ items.<br>Generalized: if $\\sum n_i > km$, some container has more than k items.' },
+    { id: 'dm-2', subject: 'discrete-mathematics', front: 'Binomial coefficient identities', back: '$\\binom{n}{k} = \\binom{n}{n-k}$<br>$\\binom{n}{k} = \\binom{n-1}{k-1} + \\binom{n-1}{k}$ (Pascal\'s identity)<br>$\\sum_{k=0}^{n} \\binom{n}{k} = 2^n$<br>$\\sum_{k=0}^{n} (-1)^k \\binom{n}{k} = 0$' },
+    { id: 'dm-3', subject: 'discrete-mathematics', front: 'Euler\'s formula for planar graphs', back: 'For a connected planar graph:<br>$V - E + F = 2$<br>where V = vertices, E = edges, F = faces.<br>Generalized: $V - E + F = 1 + C$ where C = connected components.' },
+    { id: 'dm-4', subject: 'discrete-mathematics', front: 'Equivalence relation', back: 'A relation that is:<br>1. <strong>Reflexive</strong>: (a,a) ∈ R for all a<br>2. <strong>Symmetric</strong>: (a,b) ∈ R → (b,a) ∈ R<br>3. <strong>Transitive</strong>: (a,b), (b,c) ∈ R → (a,c) ∈ R<br>Partitions the set into equivalence classes.' },
+    { id: 'dm-5', subject: 'discrete-mathematics', front: 'Logical equivalences', back: '• $\\neg(\\neg p) = p$ (double negation)<br>• $p \\to q \\equiv \\neg p \\lor q$ (implication)<br>• $\\neg(p \\land q) \\equiv \\neg p \\lor \\neg q$ (De Morgan)<br>• $p \\to q \\equiv \\neg q \\to \\neg p$ (contrapositive)<br>• $p \\leftrightarrow q \\equiv (p \\to q) \\land (q \\to p)$' },
+    { id: 'dm-6', subject: 'discrete-mathematics', front: 'Cayley\'s formula (number of labeled trees)', back: 'Number of labeled trees on n vertices = $n^{n-2}$<br>e.g., n=3: 3 trees; n=4: 16 trees.<br>Useful for counting spanning trees of complete graphs.' },
+
+    // ============ General Aptitude ============
+    { id: 'ga-1', subject: 'general-aptitude', front: 'Time and Work formula', back: 'If A can do a job in x days and B in y days:<br>• Together: $\\frac{xy}{x+y}$ days<br>• A works for $t_1$ days, then B finishes: total work = 1, so $t_1/x + t_2/y = 1$<br>• If A is k times as efficient as B, A takes 1/k the time.' },
+    { id: 'ga-2', subject: 'general-aptitude', front: 'Speed, Distance, Time', back: '$\\text{Distance} = \\text{Speed} \\times \\text{Time}$<br>• Same direction (relative speed = difference)<br>• Opposite direction (relative speed = sum)<br>• Avg speed for round trip with speeds $v_1, v_2$ = $\\frac{2 v_1 v_2}{v_1 + v_2}$ (harmonic mean)' },
+    { id: 'ga-3', subject: 'general-aptitude', front: 'Percentage change formulas', back: '• % change = $\\frac{\\text{new} - \\text{old}}{\\text{old}} \\times 100$<br>• Successive % changes a, b → net = $a + b + \\frac{ab}{100}$<br>• If A is x% more than B, B is $\\frac{x}{100+x} \\times 100$% less than A' },
+];
+
+const FLASHCARD_SUBJECTS = {
+    'algorithms': { label: 'Algorithms', icon: '⚡', color: 'var(--grad-blue)' },
+    'data-structures': { label: 'Data Structures', icon: '🌳', color: 'var(--grad-purple)' },
+    'operating-systems': { label: 'Operating Systems', icon: '⚙️', color: 'var(--grad-orange)' },
+    'database-management-system': { label: 'DBMS', icon: '🗄️', color: 'var(--grad-cyan)' },
+    'computer-networks': { label: 'Computer Networks', icon: '🌐', color: 'var(--grad-blue)' },
+    'theory-of-computation': { label: 'Theory of Computation', icon: '🔤', color: 'var(--grad-purple)' },
+    'compiler-design': { label: 'Compiler Design', icon: '🔧', color: 'var(--grad-orange)' },
+    'digital-logic': { label: 'Digital Logic', icon: '🔌', color: 'var(--grad-red)' },
+    'computer-organization': { label: 'Computer Organization', icon: '💻', color: 'var(--grad-cyan)' },
+    'discrete-mathematics': { label: 'Discrete Math', icon: '∑', color: 'var(--grad-blue)' },
+    'general-aptitude': { label: 'General Aptitude', icon: '🧮', color: 'var(--grad-purple)' },
+};

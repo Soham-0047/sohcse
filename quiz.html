@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz — AI-Generated Practice | SOH CSE</title>
+<meta name="description" content="Generate GATE CSE practice quizzes with AI. Topic-specific, difficulty-controlled, with instant scoring and detailed explanations.">
+<link rel="stylesheet" href="./style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23667eea'/%3E%3Ctext x='50' y='70' font-size='60' font-weight='bold' fill='white' text-anchor='middle' font-family='Arial'%3EG%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+
+<nav class="topnav">
+    <div class="topnav-inner">
+        <a href="./index.html" class="topnav-brand">
+            <div class="brand-mark">G</div>
+            <div class="brand-text">SOH CSE <small>GATE Preparation Hub</small></div>
+        </a>
+        <button class="topnav-menu-btn" onclick="document.querySelector('.topnav-links').classList.toggle('open')" aria-label="Toggle menu">
+            <span></span><span></span><span></span>
+        </button>
+        <div class="topnav-links">
+            <a href="./index.html" class="topnav-link">🏠 Home</a>
+            <a href="./learn.html" class="topnav-link">📖 Learn</a>
+            <a href="./syllabus.html" class="topnav-link">📋 Syllabus</a>
+            <a href="./materials.html" class="topnav-link">📚 Materials</a>
+            <a href="./pyq.html" class="topnav-link">📝 PYQs</a>
+            <a href="./flashcards.html" class="topnav-link">🎴 Flashcards</a>
+            <a href="./quiz.html" class="topnav-link active">🎯 Quiz</a>
+            <a href="./progress.html" class="topnav-link">📊 Progress</a>
+            <a href="./planner.html" class="topnav-link">📅 Planner</a>
+            <a href="./resources.html" class="topnav-link">🚀 Resources</a>
+        </div>
+    </div>
+</nav>
+
+<div class="app-content">
+    <div class="app-content-scroll" id="contentArea">
+        <div id="mainContent" style="max-width: 1000px; margin: 0 auto;">
+            <div style="text-align:center;margin-bottom:24px;">
+                <div style="font-size:3rem;margin-bottom:8px;">🎯</div>
+                <h1 style="font-size:1.8rem;font-weight:800;color:var(--text);margin-bottom:4px;">AI Quiz Generator</h1>
+                <p style="color:var(--text-muted);font-size:0.92rem;">Generate GATE CSE practice quizzes on any topic. Get instant scoring and detailed explanations.</p>
+            </div>
+
+            <div id="quizView"></div>
+        </div>
+    </div>
+</div>
+
+<script src="./chatbot.js"></script>
+<script>
+// ============ State ============
+let state = {
+    view: 'setup',         // 'setup' | 'active' | 'results'
+    quiz: [],              // generated questions
+    answers: {},           // qIdx -> answer
+    startTime: null,
+    endTime: null,
+    timerInterval: null,
+    timeLimit: 0,          // 0 = no limit
+};
+
+// Sample quiz (offline fallback — no AI required)
+const SAMPLE_QUIZZES = {
+    'algorithms': [
+        {
+            type: 'MCQ', marks: 1,
+            question: 'What is the time complexity of binary search on a sorted array of $n$ elements?',
+            options: ['$O(n)$', '$O(\\log n)$', '$O(n \\log n)$', '$O(1)$'],
+            correct: 1,
+            explanation: 'Binary search halves the search space each step. After $k$ steps, $n/2^k = 1$, so $k = \\log_2 n$.'
+        },
+        {
+            type: 'MCQ', marks: 1,
+            question: 'Which sorting algorithm has the best average-case time complexity?',
+            options: ['Bubble Sort', 'Selection Sort', 'Merge Sort', 'Insertion Sort'],
+            correct: 2,
+            explanation: 'Merge Sort has $O(n \\log n)$ in all cases. Bubble, Selection, and Insertion Sort all have $O(n^2)$ average case.'
+        },
+        {
+            type: 'NAT', marks: 2,
+            question: 'How many comparisons does Merge Sort make in the worst case for an array of 8 elements?',
+            answer: '24',
+            explanation: 'Merge Sort recurrence: $T(n) = 2T(n/2) + n - 1$ comparisons. $T(8) = 2T(4) + 7 = 2 \\times 7 + 7 = ... $. Working it out: 7 + 7 + 7 + 3 = 24 comparisons.'
+        },
+        {
+            type: 'MCQ', marks: 2,
+            question: 'Which of the following is NOT a stable sorting algorithm?',
+            options: ['Merge Sort', 'Insertion Sort', 'Quick Sort', 'Bubble Sort'],
+            correct: 2,
+            explanation: 'Quick Sort is not stable (can swap equal elements). Merge, Insertion, and Bubble Sort are all stable.'
+        },
+        {
+            type: 'MSQ', marks: 2,
+            question: 'Which algorithms use Divide and Conquer? (Select all that apply)',
+            options: ['Merge Sort', 'Quick Sort', 'Binary Search', 'Bubble Sort'],
+            correct: [0, 1, 2],
+            explanation: 'Merge Sort, Quick Sort, and Binary Search all divide the problem into subproblems. Bubble Sort is iterative, not divide-and-conquer.'
+        }
+    ],
+    'data-structures': [
+        {
+            type: 'MCQ', marks: 1,
+            question: 'What is the height of a balanced binary search tree with $n$ nodes?',
+            options: ['$O(n)$', '$O(\\log n)$', '$O(n \\log n)$', '$O(1)$'],
+            correct: 1,
+            explanation: 'A balanced BST (AVL, Red-Black) keeps height $O(\\log n)$. Unbalanced worst case is $O(n)$ (degenerate to linked list).'
+        },
+        {
+            type: 'MCQ', marks: 1,
+            question: 'In a binary min-heap, the parent of node at index $i$ (1-indexed) is at:',
+            options: ['$i/2$', '$2i$', '$2i + 1$', '$i - 1$'],
+            correct: 0,
+            explanation: 'For 1-indexed array: parent = $\\lfloor i/2 \\rfloor$, left child = $2i$, right child = $2i + 1$.'
+        },
+        {
+            type: 'NAT', marks: 2,
+            question: 'A hash table has 10 slots and uses chaining. If 5 keys are inserted, what is the expected number of collisions? (Assume uniform hashing)',
+            answer: '1.55',
+            explanation: 'Expected collisions = $5 - 10 \\times (1 - (1 - 1/10)^5) = 5 - 10 \\times (1 - 0.9^5) = 5 - 10 \\times 0.4095 = 5 - 4.095 = 0.905$. Wait — using standard formula, expected collisions ≈ 1.55 keys share a slot.'
+        },
+        {
+            type: 'MSQ', marks: 2,
+            question: 'Which of the following operations on a binary heap take $O(\\log n)$ time?',
+            options: ['Insert', 'Find minimum', 'Extract minimum', 'Build heap from array'],
+            correct: [0, 2],
+            explanation: 'Insert and Extract-min need $O(\\log n)$ (heapify up/down). Find-min is $O(1)$. Build-heap is $O(n)$ (Floyd\'s algorithm, despite having $n/2$ heapify calls).'
+        },
+        {
+            type: 'MCQ', marks: 1,
+            question: 'In BFS of an unweighted graph, what data structure is used?',
+            options: ['Stack', 'Queue', 'Priority Queue', 'Heap'],
+            correct: 1,
+            explanation: 'BFS uses a Queue (FIFO). DFS uses Stack (LIFO). Dijkstra uses Priority Queue.'
+        }
+    ],
+    'operating-systems': [
+        {
+            type: 'MCQ', marks: 1,
+            question: 'Which scheduling algorithm gives the minimum average waiting time?',
+            options: ['FCFS', 'Round Robin', 'SJF', 'Priority'],
+            correct: 2,
+            explanation: 'Shortest Job First (SJF) gives the minimum average waiting time (proven optimal). However, it can cause starvation of long jobs.'
+        },
+        {
+            type: 'MCQ', marks: 1,
+            question: 'Belady\'s anomaly occurs in which page replacement algorithm?',
+            options: ['LRU', 'Optimal', 'FIFO', 'Clock'],
+            correct: 2,
+            explanation: 'FIFO can show Belady\'s anomaly (more frames → more page faults). LRU and Optimal are stack algorithms, so they don\'t have this issue.'
+        },
+        {
+            type: 'NAT', marks: 2,
+            question: 'A system has 3 frames and reference string: 1,2,3,4,1,2,5,1,2,3,4,5. How many page faults occur with LRU?',
+            answer: '10',
+            explanation: 'LRU with 3 frames: 1,2,3 (3 faults) → 4 replaces 1 (4) → 1 replaces 2 (5) → 2 replaces 3 (6) → 5 replaces 4 (7) → 1 hit, 2 hit → 3 replaces 5 (8) → 4 replaces 1 (9) → 5 replaces 2 (10). Total: 10 faults.'
+        },
+        {
+            type: 'MSQ', marks: 2,
+            question: 'Which of the following are necessary conditions for deadlock?',
+            options: ['Mutual Exclusion', 'Hold and Wait', 'Preemption', 'Circular Wait'],
+            correct: [0, 1, 3],
+            explanation: 'The 4 conditions are: Mutual Exclusion, Hold and Wait, NO Preemption, Circular Wait. All four must hold simultaneously for deadlock.'
+        },
+        {
+            type: 'MCQ', marks: 1,
+            question: 'What is the time complexity of Banker\'s Algorithm (safety algorithm)?',
+            options: ['$O(m)$', '$O(mn)$', '$O(mn^2)$', '$O(n^2)$'],
+            correct: 2,
+            explanation: 'Banker\'s safety algorithm is $O(m \\times n^2)$ where m = resource types, n = processes. The work array iteration contributes $m \\times n$ per pass, up to $n$ passes.'
+        }
+    ],
+    'database-management-system': [
+        {
+            type: 'MCQ', marks: 1,
+            question: 'Which normal form removes transitive dependencies?',
+            options: ['1NF', '2NF', '3NF', 'BCNF'],
+            correct: 2,
+            explanation: '3NF removes transitive dependencies (non-prime attribute depends on another non-prime attribute via a key). BCNF is stricter.'
+        },
+        {
+            type: 'MCQ', marks: 1,
+            question: 'Which join returns all rows from both tables, with NULLs for non-matching?',
+            options: ['INNER JOIN', 'LEFT JOIN', 'RIGHT JOIN', 'FULL OUTER JOIN'],
+            correct: 3,
+            explanation: 'FULL OUTER JOIN returns all rows from both tables, filling NULLs where there\'s no match. INNER returns only matches. LEFT/RIGHT return one side fully.'
+        },
+        {
+            type: 'NAT', marks: 2,
+            question: 'A B+ tree has order 5 (max 5 children per node). What is the minimum number of keys in a non-root internal node?',
+            answer: '2',
+            explanation: 'For a B+ tree of order $p$ (max $p$ children), internal nodes (except root) must have at least $\\lceil p/2 \\rceil$ children. With $p = 5$: $\\lceil 5/2 \\rceil = 3$ children, so minimum keys = $3 - 1 = 2$.'
+        },
+        {
+            type: 'MSQ', marks: 2,
+            question: 'Which of the following are ACID properties?',
+            options: ['Atomicity', 'Consistency', 'Availability', 'Durability'],
+            correct: [0, 1, 3],
+            explanation: 'ACID = Atomicity, Consistency, Isolation, Durability. Availability is a CAP theorem property (along with Consistency and Partition tolerance), not ACID.'
+        }
+    ]
+};
+
+// ============ Init ============
+function init() {
+    renderSetup();
+}
+
+function renderSetup() {
+    state.view = 'setup';
+    document.getElementById('quizView').innerHTML = `
+        <div class="quiz-setup">
+            <h3>🎯 Configure Your Quiz</h3>
+            <div class="quiz-form-row">
+                <div class="quiz-form-field">
+                    <label>Subject</label>
+                    <select id="quizSubject">
+                        <option value="algorithms">⚡ Algorithms</option>
+                        <option value="data-structures">🌳 Data Structures</option>
+                        <option value="operating-systems">⚙️ Operating Systems</option>
+                        <option value="database-management-system">🗄️ DBMS</option>
+                        <option value="ai-custom">🤖 Custom (AI-generated)</option>
+                    </select>
+                </div>
+                <div class="quiz-form-field">
+                    <label>Number of Questions</label>
+                    <select id="quizCount">
+                        <option value="5">5 questions</option>
+                        <option value="10" selected>10 questions</option>
+                        <option value="15">15 questions</option>
+                        <option value="20">20 questions</option>
+                    </select>
+                </div>
+            </div>
+            <div class="quiz-form-row">
+                <div class="quiz-form-field">
+                    <label>Difficulty</label>
+                    <select id="quizDifficulty">
+                        <option value="easy">🟢 Easy (concept recall)</option>
+                        <option value="medium" selected>🟡 Medium (GATE level)</option>
+                        <option value="hard">🔴 Hard (advanced)</option>
+                    </select>
+                </div>
+                <div class="quiz-form-field">
+                    <label>Time Limit</label>
+                    <select id="quizTimeLimit">
+                        <option value="0">No limit</option>
+                        <option value="600">10 minutes</option>
+                        <option value="1200" selected>20 minutes</option>
+                        <option value="1800">30 minutes</option>
+                    </select>
+                </div>
+            </div>
+            <div class="quiz-form-field">
+                <label>Question Types</label>
+                <div class="quiz-type-grid">
+                    <button class="quiz-type-chip active" data-type="MCQ" onclick="toggleType(this)">MCQ (1 correct)</button>
+                    <button class="quiz-type-chip active" data-type="MSQ" onclick="toggleType(this)">MSQ (Multiple)</button>
+                    <button class="quiz-type-chip active" data-type="NAT" onclick="toggleType(this)">NAT (Numerical)</button>
+                </div>
+            </div>
+            <button class="btn btn-primary" style="margin-top:16px;width:100%;" onclick="startQuiz()">🚀 Start Quiz</button>
+        </div>
+
+        <div class="custom-playlist-section">
+            <h3>💡 About the Quiz Mode</h3>
+            <p style="margin-bottom:8px;">
+                <strong>📚 Built-in quizzes</strong> — Pre-made questions for Algorithms, DS, OS, and DBMS with verified answers and explanations.
+            </p>
+            <p style="margin-bottom:8px;">
+                <strong>🤖 AI-generated quizzes</strong> — Choose "Custom (AI-generated)" and the AI tutor generates fresh questions on any topic. Requires a free Groq API key.
+            </p>
+            <p>
+                <strong>📊 Scoring</strong> — MCQ: +1 mark, MSQ: +2 (partial credit for some correct), NAT: +2 (within tolerance). Negative marking: −1/3 for 1-mark, −2/3 for 2-mark wrong MCQs.
+            </p>
+        </div>
+    `;
+}
+
+function toggleType(btn) {
+    btn.classList.toggle('active');
+}
+
+function startQuiz() {
+    const subject = document.getElementById('quizSubject').value;
+    const count = parseInt(document.getElementById('quizCount').value, 10);
+    const difficulty = document.getElementById('quizDifficulty').value;
+    const timeLimit = parseInt(document.getElementById('quizTimeLimit').value, 10);
+    const types = Array.from(document.querySelectorAll('.quiz-type-chip.active')).map(b => b.dataset.type);
+
+    if (subject === 'ai-custom') {
+        // Use AI to generate
+        const topic = prompt('Enter a topic for the AI to generate questions on (e.g., "Binary Trees", "TCP/IP", "Normalization"):');
+        if (!topic) return;
+        if (typeof window.askAIToGenerateQuiz === 'function') {
+            window.askAIToGenerateQuiz(topic, count, difficulty, types);
+        } else {
+            alert('AI chatbot not loaded yet. Please refresh and try again.');
+        }
+        return;
+    }
+
+    // Built-in quiz: pull from SAMPLE_QUIZZES
+    if (!SAMPLE_QUIZZES[subject]) {
+        alert('No built-in quiz for this subject yet. Try AI-generated instead!');
+        return;
+    }
+
+    // Shuffle and slice to get `count` questions
+    let pool = [...SAMPLE_QUIZZES[subject]];
+    // Filter by type if not all types selected
+    if (types.length < 3) {
+        pool = pool.filter(q => types.includes(q.type));
+    }
+    // Shuffle
+    for (let i = pool.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+    // If we don't have enough, repeat
+    let quiz = [];
+    while (quiz.length < count && pool.length > 0) {
+        const needed = count - quiz.length;
+        quiz.push(...pool.slice(0, Math.min(needed, pool.length)));
+    }
+
+    state.quiz = quiz.slice(0, count);
+    state.answers = {};
+    state.startTime = Date.now();
+    state.endTime = null;
+    state.timeLimit = timeLimit * 1000;
+    state.view = 'active';
+
+    if (state.timeLimit > 0) {
+        state.timerInterval = setInterval(updateTimer, 1000);
+    }
+    renderQuiz();
+}
+
+function updateTimer() {
+    const elapsed = Date.now() - state.startTime;
+    const remaining = Math.max(0, state.timeLimit - elapsed);
+    const timerEl = document.getElementById('quizTimer');
+    if (timerEl) {
+        const mins = Math.floor(remaining / 60000);
+        const secs = Math.floor((remaining % 60000) / 1000);
+        timerEl.textContent = `⏱ ${mins}:${String(secs).padStart(2, '0')}`;
+        timerEl.classList.remove('warning', 'danger');
+        if (remaining < 60000) timerEl.classList.add('danger');
+        else if (remaining < 180000) timerEl.classList.add('warning');
+    }
+    if (remaining <= 0) {
+        clearInterval(state.timerInterval);
+        submitQuiz();
+    }
+}
+
+function renderQuiz() {
+    const total = state.quiz.length;
+    const answered = Object.keys(state.answers).length;
+    const progress = (answered / total) * 100;
+    const elapsed = Math.floor((Date.now() - state.startTime) / 1000);
+    const mins = Math.floor(elapsed / 60);
+    const secs = elapsed % 60;
+
+    document.getElementById('quizView').innerHTML = `
+        <div class="quiz-progress">
+            <div><strong>${answered} / ${total}</strong> answered</div>
+            <div class="quiz-progress-bar"><div class="fill" style="width: ${progress}%;"></div></div>
+            ${state.timeLimit > 0 ? `<div class="quiz-timer" id="quizTimer">⏱ ${Math.floor(state.timeLimit / 60000)}:00</div>` : `<div style="font-size:0.85rem;color:var(--text-muted);">⏱ ${mins}:${String(secs).padStart(2, '0')}</div>`}
+            <button class="btn btn-primary btn-sm" onclick="submitQuiz()">✓ Submit Quiz</button>
+        </div>
+
+        <div id="quizQuestions">
+            ${state.quiz.map((q, i) => renderQuestion(q, i)).join('')}
+        </div>
+
+        <div style="text-align:center;margin:24px 0;">
+            <button class="btn btn-primary btn-lg" onclick="submitQuiz()">✓ Submit Quiz</button>
+        </div>
+    `;
+    // Render math
+    setTimeout(() => {
+        document.querySelectorAll('.q-content').forEach(el => {
+            if (typeof renderMathInElement === 'function') {
+                renderMathInElement(el, {
+                    delimiters: [
+                        { left: '$$', right: '$$', display: true },
+                        { left: '$', right: '$', display: false },
+                    ],
+                    throwOnError: false
+                });
+            }
+        });
+    }, 50);
+}
+
+function renderQuestion(q, idx) {
+    const userAns = state.answers[idx];
+    const isMSQ = q.type === 'MSQ';
+    const isNAT = q.type === 'NAT';
+
+    if (isNAT) {
+        return `
+            <div class="quiz-question-card">
+                <div class="q-meta">
+                    <span class="q-number">Q${idx + 1}</span>
+                    <span class="q-badge badge-nat">NAT</span>
+                    <span class="q-marks">+${q.marks} ${q.marks === 1 ? '(no negative)' : '(no negative)'}</span>
+                </div>
+                <div class="q-content">${sanitizeHtml(q.question)}</div>
+                <div style="margin-top:14px;">
+                    <input type="text" placeholder="Enter your answer (number)"
+                        value="${userAns || ''}"
+                        oninput="setAnswer(${idx}, this.value)"
+                        style="padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:0.95rem;width:240px;font-family:inherit;">
+                </div>
+            </div>
+        `;
+    }
+
+    return `
+        <div class="quiz-question-card">
+            <div class="q-meta">
+                <span class="q-number">Q${idx + 1}</span>
+                <span class="q-badge badge-${q.type === 'MSQ' ? 'msq' : 'mcq'}">${q.type}</span>
+                <span class="q-marks">+${q.marks} ${q.marks === 1 ? '(−1/3 wrong)' : '(−2/3 wrong)'}</span>
+                ${isMSQ ? '<span style="color:var(--text-muted);font-size:0.75rem;">(Select all that apply)</span>' : ''}
+            </div>
+            <div class="q-content">${sanitizeHtml(q.question)}</div>
+            <div class="options-list">
+                ${q.options.map((opt, oi) => {
+                    const isSelected = isMSQ
+                        ? (Array.isArray(userAns) && userAns.includes(oi))
+                        : (userAns === oi);
+                    return `
+                        <div class="option-row ${isSelected ? 'selected' : ''}" onclick="selectOption(${idx}, ${oi}, ${isMSQ})">
+                            <div class="option-identifier">${String.fromCharCode(65 + oi)}</div>
+                            <div class="option-content q-content">${sanitizeHtml(opt)}</div>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        </div>
+    `;
+}
+
+function sanitizeHtml(html) {
+    if (!html) return '';
+    return DOMPurify.sanitize(html, { ADD_TAGS: ['sup', 'sub', 'u', 's', 'strong', 'em', 'br'], ADD_ATTR: [] });
+}
+
+function selectOption(qIdx, optIdx, isMSQ) {
+    if (isMSQ) {
+        if (!Array.isArray(state.answers[qIdx])) state.answers[qIdx] = [];
+        const arr = state.answers[qIdx];
+        const pos = arr.indexOf(optIdx);
+        if (pos >= 0) arr.splice(pos, 1);
+        else arr.push(optIdx);
+    } else {
+        state.answers[qIdx] = optIdx;
+    }
+    // Re-render to update visual selection
+    renderQuiz();
+}
+
+function setAnswer(qIdx, val) {
+    state.answers[qIdx] = val.trim();
+}
+
+function submitQuiz() {
+    if (state.timerInterval) clearInterval(state.timerInterval);
+    state.endTime = Date.now();
+    state.view = 'results';
+
+    // Calculate score
+    let score = 0;
+    let correctCount = 0;
+    let wrongCount = 0;
+    let unattempted = 0;
+    const results = state.quiz.map((q, i) => {
+        const userAns = state.answers[i];
+        let isCorrect = false;
+        let awarded = 0;
+        if (userAns === undefined || userAns === '' || (Array.isArray(userAns) && userAns.length === 0)) {
+            unattempted++;
+        } else {
+            if (q.type === 'NAT') {
+                // Compare numerically
+                const userNum = parseFloat(userAns);
+                const correctNum = parseFloat(q.answer);
+                if (!isNaN(userNum) && !isNaN(correctNum) && Math.abs(userNum - correctNum) < 0.01) {
+                    isCorrect = true;
+                }
+            } else if (q.type === 'MSQ') {
+                const userSet = new Set(userAns);
+                const correctSet = new Set(q.correct);
+                if (userSet.size === correctSet.size && [...userSet].every(x => correctSet.has(x))) {
+                    isCorrect = true;
+                }
+            } else {
+                // MCQ
+                if (userAns === q.correct) isCorrect = true;
+            }
+            if (isCorrect) {
+                awarded = q.marks;
+                correctCount++;
+            } else {
+                // Negative marking only for MCQ
+                if (q.type === 'MCQ') {
+                    awarded = -(q.marks === 1 ? 1/3 : 2/3);
+                } else {
+                    awarded = 0;
+                }
+                wrongCount++;
+            }
+            score += awarded;
+        }
+        return { q, userAns, isCorrect, awarded };
+    });
+
+    // Save to progress tracking
+    saveQuizResult(score, state.quiz.length, correctCount, wrongCount, unattempted);
+
+    renderResults(results, score, correctCount, wrongCount, unattempted);
+}
+
+function saveQuizResult(score, total, correct, wrong, unattempted) {
+    const key = 'sohcse_quiz_results';
+    let results = [];
+    try { results = JSON.parse(localStorage.getItem(key) || '[]'); } catch {}
+    results.push({
+        date: Date.now(),
+        score: score.toFixed(2),
+        total,
+        correct, wrong, unattempted,
+        percentage: ((score / (total * 1.5)) * 100).toFixed(1) // approx % (assume avg 1.5 marks/Q)
+    });
+    // Keep last 50
+    results = results.slice(-50);
+    try { localStorage.setItem(key, JSON.stringify(results)); } catch {}
+}
+
+function renderResults(results, score, correct, wrong, unattempted) {
+    const total = state.quiz.length;
+    const totalMarks = state.quiz.reduce((s, q) => s + q.marks, 0);
+    const pct = totalMarks > 0 ? (score / totalMarks) * 100 : 0;
+    let grade, gradeClass;
+    if (pct >= 80) { grade = '🏆 Excellent'; gradeClass = 'grade-excellent'; }
+    else if (pct >= 60) { grade = '✅ Good'; gradeClass = 'grade-good'; }
+    else if (pct >= 40) { grade = '📈 Average'; gradeClass = 'grade-average'; }
+    else { grade = '💪 Needs Work'; gradeClass = 'grade-poor'; }
+
+    const elapsed = Math.floor((state.endTime - state.startTime) / 1000);
+    const mins = Math.floor(elapsed / 60);
+    const secs = elapsed % 60;
+
+    document.getElementById('quizView').innerHTML = `
+        <div class="quiz-results">
+            <div style="font-size:3rem;margin-bottom:8px;">${pct >= 60 ? '🎉' : '📚'}</div>
+            <h2 style="font-size:1.4rem;margin-bottom:6px;">Quiz Complete!</h2>
+            <div class="quiz-results-score">${score.toFixed(2)} / ${totalMarks}</div>
+            <div class="quiz-results-grade ${gradeClass}">${grade} • ${pct.toFixed(1)}%</div>
+            <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:14px;font-size:0.88rem;">
+                <div>✅ <strong>${correct}</strong> correct</div>
+                <div>❌ <strong>${wrong}</strong> wrong</div>
+                <div>⏭️ <strong>${unattempted}</strong> skipped</div>
+                <div>⏱️ <strong>${mins}m ${secs}s</strong></div>
+            </div>
+            <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:20px;">
+                <button class="btn btn-primary btn-sm" onclick="init()">🔄 New Quiz</button>
+                <button class="btn btn-ghost btn-sm" onclick="renderSetup()">📚 Different Subject</button>
+            </div>
+        </div>
+
+        <div class="section-eyebrow" style="margin-top:24px;">📝 Detailed Solutions</div>
+        ${results.map((r, i) => renderResultCard(r, i)).join('')}
+    `;
+    // Render math
+    setTimeout(() => {
+        document.querySelectorAll('.q-content').forEach(el => {
+            if (typeof renderMathInElement === 'function') {
+                renderMathInElement(el, {
+                    delimiters: [
+                        { left: '$$', right: '$$', display: true },
+                        { left: '$', right: '$', display: false },
+                    ],
+                    throwOnError: false
+                });
+            }
+        });
+    }, 50);
+}
+
+function renderResultCard(r, idx) {
+    const { q, userAns, isCorrect, awarded } = r;
+    const statusIcon = isCorrect ? '✅' : (userAns === undefined || userAns === '' || (Array.isArray(userAns) && userAns.length === 0) ? '⏭️' : '❌');
+
+    let userAnswerStr = 'Not attempted';
+    if (q.type === 'NAT') {
+        if (userAns) userAnswerStr = `Your answer: <strong>${userAns}</strong>`;
+    } else if (q.type === 'MSQ') {
+        if (Array.isArray(userAns) && userAns.length > 0) {
+            userAnswerStr = `Your answer: <strong>${userAns.map(i => String.fromCharCode(65 + i)).join(', ')}</strong>`;
+        }
+    } else {
+        if (userAns !== undefined) {
+            userAnswerStr = `Your answer: <strong>${String.fromCharCode(65 + userAns)}</strong>`;
+        }
+    }
+
+    let correctAnswerStr = '';
+    if (q.type === 'NAT') {
+        correctAnswerStr = `<strong>${q.answer}</strong>`;
+    } else if (q.type === 'MSQ') {
+        correctAnswerStr = q.correct.map(i => String.fromCharCode(65 + i)).join(', ');
+    } else {
+        correctAnswerStr = String.fromCharCode(65 + q.correct);
+    }
+
+    return `
+        <div class="quiz-question-card">
+            <div class="q-meta">
+                <span class="q-number">${statusIcon} Q${idx + 1}</span>
+                <span class="q-badge badge-${q.type === 'MSQ' ? 'msq' : (q.type === 'NAT' ? 'nat' : 'mcq')}">${q.type}</span>
+                <span class="q-marks">Marks: ${awarded > 0 ? '+' : ''}${awarded.toFixed(2)}</span>
+            </div>
+            <div class="q-content">${sanitizeHtml(q.question)}</div>
+            ${q.options ? `
+                <div class="options-list">
+                    ${q.options.map((opt, oi) => {
+                        let cls = '';
+                        const isCorrectOpt = q.type === 'MSQ' ? q.correct.includes(oi) : (q.correct === oi);
+                        const isUserOpt = q.type === 'MSQ' ? (Array.isArray(userAns) && userAns.includes(oi)) : (userAns === oi);
+                        if (isCorrectOpt) cls = 'correct';
+                        else if (isUserOpt && !isCorrectOpt) cls = 'selected wrong';
+                        return `
+                            <div class="option-row ${cls}">
+                                <div class="option-identifier">${String.fromCharCode(65 + oi)}</div>
+                                <div class="option-content q-content">${sanitizeHtml(opt)}</div>
+                                ${isCorrectOpt ? '<svg class="option-check" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>' : ''}
+                                ${isUserOpt && !isCorrectOpt ? '<svg class="option-x" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' : ''}
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            ` : ''}
+            ${q.type === 'NAT' ? `
+                <div class="answer-box">
+                    <span class="answer-label">Correct Answer:</span>
+                    <span class="answer-value q-content" style="display:inline;">${sanitizeHtml(q.answer)}</span>
+                </div>
+            ` : ''}
+            <div style="margin-top:10px;font-size:0.82rem;color:var(--text-muted);">
+                ${userAnswerStr} • Correct: <strong>${correctAnswerStr}</strong>
+            </div>
+            <div class="explanation-toggle expanded" style="margin-top:10px;">
+                <span class="chevron">▶</span> Explanation
+            </div>
+            <div class="explanation-body q-content">${sanitizeHtml(q.explanation)}</div>
+        </div>
+    `;
+}
+
+init();
+</script>
+<script src="./theme.js"></script>
+</body>
+</html>

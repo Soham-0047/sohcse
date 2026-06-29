@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GATE CSE Syllabus — Complete Topic-wise Breakdown | SOH CSE</title>
+<meta name="description" content="Complete GATE CSE 2027 syllabus with topic-wise breakdown, weightage analysis, and direct links to practice PYQs for each chapter.">
+<link rel="stylesheet" href="./style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23667eea'/%3E%3Ctext x='50' y='70' font-size='60' font-weight='bold' fill='white' text-anchor='middle' font-family='Arial'%3EG%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+
+<nav class="topnav">
+    <div class="topnav-inner">
+        <a href="./index.html" class="topnav-brand">
+            <div class="brand-mark">G</div>
+            <div class="brand-text">SOH CSE <small>GATE Preparation Hub</small></div>
+        </a>
+        <button class="topnav-menu-btn" onclick="document.querySelector('.topnav-links').classList.toggle('open')" aria-label="Toggle menu">
+            <span></span><span></span><span></span>
+        </button>
+        <div class="topnav-links">
+            <a href="./index.html" class="topnav-link">🏠 Home</a>
+            <a href="./learn.html" class="topnav-link">📖 Learn</a>
+            <a href="./syllabus.html" class="topnav-link active">📋 Syllabus</a>
+            <a href="./pyq.html" class="topnav-link">📝 PYQs</a>
+            <a href="./videos.html" class="topnav-link">🎥 Videos</a>
+            <a href="./flashcards.html" class="topnav-link">🎴 Flashcards</a>
+            <a href="./quiz.html" class="topnav-link">🎯 Quiz</a>
+            <a href="./planner.html" class="topnav-link">📅 Planner</a>
+            <a href="./resources.html" class="topnav-link">🚀 Resources</a>
+        </div>
+    </div>
+</nav>
+
+<div class="app-content">
+    <div class="app-content-scroll" id="contentArea">
+        <div id="mainContent" style="max-width: 1100px; margin: 0 auto;">
+
+            <div style="text-align:center;margin-bottom:30px;">
+                <div style="font-size:3rem;margin-bottom:8px;">📋</div>
+                <h1 style="font-size:2rem;font-weight:800;color:var(--text);margin-bottom:6px;">GATE CSE 2027 Syllabus</h1>
+                <p style="color:var(--text-muted);font-size:0.95rem;max-width:680px;margin:0 auto;">
+                    Complete topic-wise breakdown of the official GATE CSE syllabus with approximate weightage.
+                    Click any chapter to practice its previous year questions.
+                </p>
+            </div>
+
+            <!-- Exam structure summary -->
+            <div class="section-card" style="margin-bottom:24px;">
+                <div class="section-eyebrow">Exam Structure</div>
+                <h2 class="section-title" style="font-size:1.3rem;">Paper Composition</h2>
+                <div class="stats-grid" style="margin-bottom:18px;">
+                    <div class="stat-card"><div class="stat-value">65</div><div class="stat-label">Questions</div></div>
+                    <div class="stat-card" style="--card-grad: var(--grad-blue);"><div class="stat-value">100</div><div class="stat-label">Total Marks</div></div>
+                    <div class="stat-card" style="--card-grad: var(--grad-orange);"><div class="stat-value">85%</div><div class="stat-label">CSE Subjects</div></div>
+                    <div class="stat-card" style="--card-grad: var(--grad-red);"><div class="stat-value">15%</div><div class="stat-label">General Aptitude</div></div>
+                </div>
+                <p style="font-size:0.86rem;color:var(--text-muted);">
+                    The GATE CSE paper has <strong>10 questions on General Aptitude (15 marks)</strong> and <strong>55 questions on CSE subjects (85 marks)</strong>.
+                    Question types: <strong>MCQ</strong> (single correct, negative marking), <strong>MSQ</strong> (multiple correct, no negative), <strong>NAT</strong> (numerical answer, no negative).
+                </p>
+            </div>
+
+            <!-- Section 1: Engineering Mathematics -->
+            <div class="section-card" style="margin-bottom:24px;">
+                <div class="section-eyebrow">Section 1 • ~15% Weightage</div>
+                <h2 class="section-title" style="font-size:1.3rem;">∑ Engineering Mathematics</h2>
+                <p style="font-size:0.88rem;color:var(--text-muted);margin-bottom:14px;">Discrete Mathematics + Linear Algebra + Calculus + Probability. High weightage — strong area to score.</p>
+                <div id="mathTopics"></div>
+            </div>
+
+            <!-- Section 2: Digital Logic -->
+            <div class="section-card" style="margin-bottom:24px;">
+                <div class="section-eyebrow">Section 2 • ~5% Weightage</div>
+                <h2 class="section-title" style="font-size:1.3rem;">🔌 Digital Logic</h2>
+                <div id="dlTopics"></div>
+            </div>
+
+            <!-- Section 3: Computer Organization -->
+            <div class="section-card" style="margin-bottom:24px;">
+                <div class="section-eyebrow">Section 3 • ~8% Weightage</div>
+                <h2 class="section-title" style="font-size:1.3rem;">💻 Computer Organization and Architecture</h2>
+                <div id="coTopics"></div>
+            </div>
+
+            <!-- Section 4: Programming & DS -->
+            <div class="section-card" style="margin-bottom:24px;">
+                <div class="section-eyebrow">Section 4 • ~12% Weightage</div>
+                <h2 class="section-title" style="font-size:1.3rem;">🌳 Programming and Data Structures</h2>
+                <div id="dsTopics"></div>
+            </div>
+
+            <!-- Section 5: Algorithms -->
+            <div class="section-card" style="margin-bottom:24px;">
+                <div class="section-eyebrow">Section 5 • ~12% Weightage</div>
+                <h2 class="section-title" style="font-size:1.3rem;">⚡ Algorithms</h2>
+                <div id="algTopics"></div>
+            </div>
+
+            <!-- Section 6: TOC -->
+            <div class="section-card" style="margin-bottom:24px;">
+                <div class="section-eyebrow">Section 6 • ~7% Weightage</div>
+                <h2 class="section-title" style="font-size:1.3rem;">🔤 Theory of Computation</h2>
+                <div id="tocTopics"></div>
+            </div>
+
+            <!-- Section 7: Compiler Design -->
+            <div class="section-card" style="margin-bottom:24px;">
+                <div class="section-eyebrow">Section 7 • ~5% Weightage</div>
+                <h2 class="section-title" style="font-size:1.3rem;">🔧 Compiler Design</h2>
+                <div id="cdTopics"></div>
+            </div>
+
+            <!-- Section 8: OS -->
+            <div class="section-card" style="margin-bottom:24px;">
+                <div class="section-eyebrow">Section 8 • ~10% Weightage</div>
+                <h2 class="section-title" style="font-size:1.3rem;">⚙️ Operating System</h2>
+                <div id="osTopics"></div>
+            </div>
+
+            <!-- Section 9: DBMS -->
+            <div class="section-card" style="margin-bottom:24px;">
+                <div class="section-eyebrow">Section 9 • ~10% Weightage</div>
+                <h2 class="section-title" style="font-size:1.3rem;">🗄️ Databases</h2>
+                <div id="dbmsTopics"></div>
+            </div>
+
+            <!-- Section 10: CN -->
+            <div class="section-card" style="margin-bottom:24px;">
+                <div class="section-eyebrow">Section 10 • ~8% Weightage</div>
+                <h2 class="section-title" style="font-size:1.3rem;">🌐 Computer Networks</h2>
+                <div id="cnTopics"></div>
+            </div>
+
+            <!-- Section 11: General Aptitude -->
+            <div class="section-card" style="margin-bottom:24px;">
+                <div class="section-eyebrow">Section 11 • 15% Weightage (compulsory)</div>
+                <h2 class="section-title" style="font-size:1.3rem;">🧮 General Aptitude</h2>
+                <p style="font-size:0.88rem;color:var(--text-muted);margin-bottom:14px;">15 marks of easy-to-moderate questions. Don't ignore this section — it's the easiest 15 marks in the paper.</p>
+                <div id="gaTopics"></div>
+            </div>
+
+            <!-- Other topics -->
+            <div class="section-card" style="margin-bottom:24px;">
+                <div class="section-eyebrow">Other Topics • ~3% Weightage</div>
+                <h2 class="section-title" style="font-size:1.3rem;">📐 Software Engineering & Web Technologies</h2>
+                <p style="font-size:0.88rem;color:var(--text-muted);">Low weightage but easy marks. Quick revision is sufficient.</p>
+                <div id="otherTopics"></div>
+            </div>
+
+            <!-- CTA -->
+            <div class="section-card" style="background:var(--grad-brand);color:white;text-align:center;padding:40px 30px;margin-bottom:24px;">
+                <h2 style="color:white;font-size:1.3rem;margin-bottom:10px;">Ready to start studying?</h2>
+                <p style="opacity:0.92;margin-bottom:20px;">Pick any subject above to practice PYQs, or explore our in-app learning resources.</p>
+                <div class="hero-cta">
+                    <a href="./learn.html" class="btn btn-primary btn-sm">📖 Learn Concepts</a>
+                    <a href="./pyq.html" class="btn btn-secondary btn-sm">📝 Practice PYQs</a>
+                    <a href="./videos.html" class="btn btn-secondary btn-sm">🎥 Watch Videos</a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script src="./chatbot.js"></script>
+<script>
+// Complete GATE CSE syllabus with topics mapped to PYQ chapters
+const SYLLABUS = {
+    math: {
+        title: 'Engineering Mathematics',
+        topics: [
+            { name: 'Discrete Mathematics: Set Theory & Algebra', chapter: 'set-theory-and-algebra', subject: 'discrete-mathematics', desc: 'Sets, relations, functions, groups, lattices, Boolean algebra' },
+            { name: 'Discrete Mathematics: Graph Theory', chapter: 'graph-theory', subject: 'discrete-mathematics', desc: 'Graphs, trees, connectivity, planarity, coloring, Euler/Hamilton paths' },
+            { name: 'Discrete Mathematics: Combinatorics', chapter: 'combinatorics', subject: 'discrete-mathematics', desc: 'Counting, recurrence, generating functions, pigeonhole principle' },
+            { name: 'Discrete Mathematics: Mathematical Logic', chapter: 'mathematical-logic', subject: 'discrete-mathematics', desc: 'Propositional & first-order logic, predicates, normal forms' },
+            { name: 'Linear Algebra', chapter: 'linear-algebra', subject: 'discrete-mathematics', desc: 'Matrices, determinants, system of equations, eigenvalues, eigenvectors' },
+            { name: 'Calculus', chapter: 'calculus', subject: 'discrete-mathematics', desc: 'Limits, continuity, differentiability, maxima-minima, integration' },
+            { name: 'Probability', chapter: 'probability', subject: 'discrete-mathematics', desc: 'Random variables, distributions, Bayes theorem, mean, variance' }
+        ]
+    },
+    dl: {
+        title: 'Digital Logic',
+        topics: [
+            { name: 'Number Systems', chapter: 'number-systems', subject: 'digital-logic', desc: 'Binary, octal, hex, conversions, signed numbers, 1s/2s complement' },
+            { name: 'Boolean Algebra', chapter: 'boolean-algebra', subject: 'digital-logic', desc: 'Laws, identities, simplification, De Morgan, SOP/POS forms' },
+            { name: 'K-Maps', chapter: 'k-maps', subject: 'digital-logic', desc: 'Karnaugh maps, grouping, minimization (2,3,4,5 variable)' },
+            { name: 'Combinational Circuits', chapter: 'combinational-circuits', subject: 'digital-logic', desc: 'Adders, multiplexers, decoders, encoders, comparators' },
+            { name: 'Sequential Circuits', chapter: 'sequential-circuits', subject: 'digital-logic', desc: 'Flip-flops (SR, JK, D, T), counters, registers, Moore/Mealy machines' }
+        ]
+    },
+    co: {
+        title: 'Computer Organization and Architecture',
+        topics: [
+            { name: 'Machine Instructions & Addressing Modes', chapter: 'machine-instructions-and-addressing-modes', subject: 'computer-organization', desc: 'Instruction formats, addressing modes (immediate, direct, indirect, indexed)' },
+            { name: 'ALU, Data-path & Control Unit', chapter: 'alu-data-path-and-control-unit', subject: 'computer-organization', desc: 'ALU design, hardwired vs microprogrammed control' },
+            { name: 'Computer Arithmetic', chapter: 'computer-arithmetic', subject: 'computer-organization', desc: 'Addition, subtraction, multiplication (Booth), division, floating point' },
+            { name: 'Memory Interfacing (Cache & Main Memory)', chapter: 'memory-interfacing', subject: 'computer-organization', desc: 'Cache mapping (direct, associative, set-associative), hit/miss, AMAT, virtual memory, paging' },
+            { name: 'Pipelining', chapter: 'pipelining', subject: 'computer-organization', desc: 'Pipeline stages, hazards (structural, data, control), forwarding, stalls' },
+            { name: 'I/O Interface', chapter: 'io-interface', subject: 'computer-organization', desc: 'Programmed I/O, interrupt-driven, DMA, I/O controllers' },
+            { name: 'Secondary Memory', chapter: 'secondary-memory', subject: 'computer-organization', desc: 'HDD, SSD, disk scheduling (FCFS, SSTF, SCAN, C-SCAN)' }
+        ]
+    },
+    ds: {
+        title: 'Programming and Data Structures',
+        topics: [
+            { name: 'Basics of Programming Language (C)', chapter: 'basic-of-programming-language', subject: 'programming-languages', desc: 'Variables, operators, control flow, scope, static/dynamic' },
+            { name: 'Functions & Recursion', chapter: 'function-and-recursion', subject: 'programming-languages', desc: 'Recursion, stack usage, tail recursion, recursion vs iteration' },
+            { name: 'Pointers & Structures in C', chapter: 'pointer-and-structure-in-c', subject: 'programming-languages', desc: 'Pointers, pointer arithmetic, structures, unions, dynamic memory' },
+            { name: 'Arrays', chapter: 'arrays', subject: 'data-structures', desc: '1D/2D arrays, addressing formulas, traversals' },
+            { name: 'Stacks & Queues', chapter: 'stacks-and-queues', subject: 'data-structures', desc: 'LIFO/FIFO, implementations (array/linked list), applications' },
+            { name: 'Linked Lists', chapter: 'linked-list', subject: 'data-structures', desc: 'Singly, doubly, circular — insertion, deletion, traversal' },
+            { name: 'Trees', chapter: 'trees', subject: 'data-structures', desc: 'Binary trees, BST, AVL, B/B+ trees, traversals (inorder, preorder, postorder)' },
+            { name: 'Graphs', chapter: 'graphs', subject: 'data-structures', desc: 'Representations (adjacency matrix/list), BFS, DFS, spanning trees' },
+            { name: 'Hashing', chapter: 'hashing', subject: 'data-structures', desc: 'Hash functions, collision resolution (chaining, open addressing), load factor' }
+        ]
+    },
+    alg: {
+        title: 'Algorithms',
+        topics: [
+            { name: 'Complexity & Asymptotic Notations', chapter: 'complexity-analysis-and-asymptotic-notations', subject: 'algorithms', desc: 'Big-O, Omega, Theta, best/avg/worst case, recurrence relations' },
+            { name: 'Divide and Conquer', chapter: 'divide-and-conquer-method', subject: 'algorithms', desc: 'Master theorem, merge sort, quick sort, binary search, strassen' },
+            { name: 'Dynamic Programming', chapter: 'dynamic-programming', subject: 'algorithms', desc: 'Optimal substructure, overlapping subproblems, 0/1 knapsack, LCS, matrix chain' },
+            { name: 'Greedy Method', chapter: 'greedy-method', subject: 'algorithms', desc: 'Greedy choice, Huffman coding, activity selection, Dijkstra, Kruskal, Prim' },
+            { name: 'P and NP Concepts', chapter: 'p-and-np-concepts', subject: 'algorithms', desc: 'NP, NP-complete, NP-hard, reductions, Cook-Levin theorem' },
+            { name: 'Searching & Sorting', chapter: 'searching-and-sorting', subject: 'algorithms', desc: 'Linear search, binary search, bubble, selection, insertion, merge, quick, heap sort' }
+        ]
+    },
+    toc: {
+        title: 'Theory of Computation',
+        topics: [
+            { name: 'Finite Automata & Regular Languages', chapter: 'finite-automata-and-regular-language', subject: 'theory-of-computation', desc: 'DFA, NFA, ε-NFA, regular expressions, pumping lemma, closure properties' },
+            { name: 'Pushdown Automata & Context-Free Languages', chapter: 'push-down-automata-and-context-free-language', subject: 'theory-of-computation', desc: 'CFG, ambiguity, CNF/GNF, PDA, deterministic PDA' },
+            { name: 'Recursively Enumerable & Turing Machines', chapter: 'recursively-enumerable-language-and-turing-machine', subject: 'theory-of-computation', desc: 'Turing machines, variants, Church-Turing thesis, RE languages' },
+            { name: 'Undecidability', chapter: 'undecidability', subject: 'theory-of-computation', desc: 'Halting problem, Rice theorem, decidability vs recognizability' }
+        ]
+    },
+    cd: {
+        title: 'Compiler Design',
+        topics: [
+            { name: 'Lexical Analysis', chapter: 'lexical-analysis', subject: 'compiler-design', desc: 'Tokens, lexemes, regular expressions, finite automata, scanner' },
+            { name: 'Parsing', chapter: 'parsing', subject: 'compiler-design', desc: 'Top-down (LL), bottom-up (LR, SLR, LALR, CLR), ambiguity, FIRST/FOLLOW' },
+            { name: 'Syntax Directed Translation', chapter: 'syntax-directed-translation', subject: 'compiler-design', desc: 'Synthesized/inherited attributes, SDD, SDT, annotated parse trees' },
+            { name: 'Code Generation & Optimization', chapter: 'code-generation-and-optimization', subject: 'compiler-design', desc: 'Intermediate code (3-address), DAG, basic blocks, peephole optimization' }
+        ]
+    },
+    os: {
+        title: 'Operating System',
+        topics: [
+            { name: 'Process Concepts & CPU Scheduling', chapter: 'process-concepts-and-cpu-scheduling', subject: 'operating-systems', desc: 'Process states, PCB, FCFS, SJF, SRTF, Priority, Round Robin, throughput' },
+            { name: 'Synchronization & Concurrency', chapter: 'synchronization-and-concurrency', subject: 'operating-systems', desc: 'Critical section, mutex, semaphore, Peterson, producers-consumers' },
+            { name: 'Deadlocks', chapter: 'deadlocks', subject: 'operating-systems', desc: 'Conditions, prevention/avoidance (Banker), detection, recovery' },
+            { name: 'Memory Management', chapter: 'memory-management', subject: 'operating-systems', desc: 'Paging, segmentation, virtual memory, page replacement (FIFO, LRU, Optimal)' },
+            { name: 'File System, I/O & Protection', chapter: 'file-system-io-and-protection', subject: 'operating-systems', desc: 'File allocation, directory structure, disk scheduling, access control' }
+        ]
+    },
+    dbms: {
+        title: 'Databases',
+        topics: [
+            { name: 'ER Diagrams', chapter: 'er-diagrams', subject: 'database-management-system', desc: 'Entities, attributes, relationships, cardinality, weak entities' },
+            { name: 'Relational Algebra', chapter: 'relational-algebra', subject: 'database-management-system', desc: 'Select, project, join, division, set operations, tuple calculus' },
+            { name: 'SQL', chapter: 'structured-query-language', subject: 'database-management-system', desc: 'DDL, DML, DCL, joins, subqueries, aggregate functions, views' },
+            { name: 'Functional Dependencies & Normalization', chapter: 'functional-dependencies-and-normalization', subject: 'database-management-system', desc: '1NF, 2NF, 3NF, BCNF, lossless join, dependency preservation' },
+            { name: 'File Structures & Indexing', chapter: 'file-structures-and-indexing', subject: 'database-management-system', desc: 'B/B+ trees, hashing, primary/secondary/clustered indexes' },
+            { name: 'Transactions & Concurrency', chapter: 'transactions-and-concurrency', subject: 'database-management-system', desc: 'ACID, conflict serializability, 2PL, recoverability, deadlock' }
+        ]
+    },
+    cn: {
+        title: 'Computer Networks',
+        topics: [
+            { name: 'Concepts of Layering', chapter: 'concepts-of-layering', subject: 'computer-networks', desc: 'OSI model, TCP/IP model, layers and their functions' },
+            { name: 'LAN Technologies & Wi-Fi', chapter: 'lan-technologies-and-wi-fi', subject: 'computer-networks', desc: 'Ethernet, CSMA/CD, CSMA/CA, token passing, Wi-Fi' },
+            { name: 'Data Link Layer & Switching', chapter: 'data-link-layer-and-switching', subject: 'computer-networks', desc: 'Framing, error detection (CRC), flow control, switches, VLANs' },
+            { name: 'Network Layer', chapter: 'network-layer', subject: 'computer-networks', desc: 'IPv4/IPv6, subnetting, NAT, routing algorithms (DV, LS)' },
+            { name: 'Routing Algorithms', chapter: 'routing-algorithm', subject: 'computer-networks', desc: 'Distance vector, link state, Dijkstra, Bellman-Ford' },
+            { name: 'TCP/UDP, Sockets & Congestion Control', chapter: 'tcp-udp-sockets-and-congestion-control', subject: 'computer-networks', desc: 'TCP 3-way handshake, flow control, slow start, congestion avoidance' },
+            { name: 'Network Security', chapter: 'network-security', subject: 'computer-networks', desc: 'Symmetric/asymmetric encryption, RSA, digital signatures, firewalls' },
+            { name: 'Application Layer Protocols', chapter: 'application-layer-protocol', subject: 'computer-networks', desc: 'HTTP, DNS, DHCP, FTP, SMTP, POP3, IMAP' }
+        ]
+    },
+    ga: {
+        title: 'General Aptitude',
+        topics: [
+            { name: 'Verbal Ability', chapter: 'verbal-ability', subject: 'general-aptitude', desc: 'Grammar, vocabulary, sentence completion, reading comprehension' },
+            { name: 'Numerical Ability', chapter: 'numerical-ability', subject: 'general-aptitude', desc: 'Percentages, profit-loss, time-speed-distance, ratios, averages' },
+            { name: 'Logical Reasoning', chapter: 'logical-reasoning', subject: 'general-aptitude', desc: 'Series, coding-decoding, blood relations, puzzles, data interpretation' }
+        ]
+    },
+    other: {
+        title: 'Software Engineering & Web Technologies',
+        topics: [
+            { name: 'Software Engineering', chapter: 'software-engineering', subject: 'software-engineering', desc: 'SDLC, waterfall, agile, testing, COCOMO, risk management' },
+            { name: 'Web Technologies', chapter: 'web-technologies', subject: 'web-technologies', desc: 'HTML, CSS, basics of web (low weightage)' }
+        ]
+    }
+};
+
+function renderTopicList(containerId, topics) {
+    const html = topics.map(t => `
+        <div style="background:var(--bg-light);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;margin-bottom:8px;transition:all 0.2s;cursor:pointer;" onclick="location.href='./pyq.html?subject=${t.subject}&chapter=${t.chapter}'" onmouseover="this.style.borderColor='var(--primary)';this.style.transform='translateX(4px)';" onmouseout="this.style.borderColor='var(--border)';this.style.transform='translateX(0)';">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">
+                <div style="flex:1;">
+                    <div style="font-weight:700;font-size:0.92rem;color:var(--text);margin-bottom:2px;">${t.name}</div>
+                    <div style="font-size:0.8rem;color:var(--text-muted);">${t.desc}</div>
+                </div>
+                <div style="flex-shrink:0;display:flex;gap:6px;">
+                    <a href="./pyq.html?subject=${t.subject}&chapter=${t.chapter}" class="btn btn-ghost btn-sm" style="text-decoration:none;" onclick="event.stopPropagation()">📝 PYQs</a>
+                    <a href="./learn.html?subject=${t.subject}" class="btn btn-ghost btn-sm" style="text-decoration:none;" onclick="event.stopPropagation()">📖 Learn</a>
+                </div>
+            </div>
+        </div>
+    `).join('');
+    document.getElementById(containerId).innerHTML = html;
+}
+
+// Render all sections
+renderTopicList('mathTopics', SYLLABUS.math.topics);
+renderTopicList('dlTopics', SYLLABUS.dl.topics);
+renderTopicList('coTopics', SYLLABUS.co.topics);
+renderTopicList('dsTopics', SYLLABUS.ds.topics);
+renderTopicList('algTopics', SYLLABUS.alg.topics);
+renderTopicList('tocTopics', SYLLABUS.toc.topics);
+renderTopicList('cdTopics', SYLLABUS.cd.topics);
+renderTopicList('osTopics', SYLLABUS.os.topics);
+renderTopicList('dbmsTopics', SYLLABUS.dbms.topics);
+renderTopicList('cnTopics', SYLLABUS.cn.topics);
+renderTopicList('gaTopics', SYLLABUS.ga.topics);
+renderTopicList('otherTopics', SYLLABUS.other.topics);
+</script>
+<script src="./theme.js"></script>
+</body>
+</html>

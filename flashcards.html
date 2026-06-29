@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flashcards — Spaced Repetition | SOH CSE</title>
+<meta name="description" content="Spaced repetition flashcards for GATE CSE revision. High-yield concepts, formulas, and definitions with smart review scheduling.">
+<link rel="stylesheet" href="./style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23667eea'/%3E%3Ctext x='50' y='70' font-size='60' font-weight='bold' fill='white' text-anchor='middle' font-family='Arial'%3EG%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+
+<!-- ============ Top Navigation ============ -->
+<nav class="topnav">
+    <div class="topnav-inner">
+        <a href="./index.html" class="topnav-brand">
+            <div class="brand-mark">G</div>
+            <div class="brand-text">SOH CSE <small>GATE Preparation Hub</small></div>
+        </a>
+        <button class="topnav-menu-btn" onclick="document.querySelector('.topnav-links').classList.toggle('open')" aria-label="Toggle menu">
+            <span></span><span></span><span></span>
+        </button>
+        <div class="topnav-links">
+            <a href="./index.html" class="topnav-link">🏠 Home</a>
+            <a href="./learn.html" class="topnav-link">📖 Learn</a>
+            <a href="./syllabus.html" class="topnav-link">📋 Syllabus</a>
+            <a href="./materials.html" class="topnav-link">📚 Materials</a>
+            <a href="./pyq.html" class="topnav-link">📝 PYQs</a>
+            <a href="./flashcards.html" class="topnav-link active">🎴 Flashcards</a>
+            <a href="./quiz.html" class="topnav-link">🎯 Quiz</a>
+            <a href="./progress.html" class="topnav-link">📊 Progress</a>
+            <a href="./planner.html" class="topnav-link">📅 Planner</a>
+            <a href="./resources.html" class="topnav-link">🚀 Resources</a>
+        </div>
+    </div>
+</nav>
+
+<div class="app-content">
+    <div class="app-content-scroll" id="contentArea">
+        <div id="mainContent" style="max-width: 1000px; margin: 0 auto;">
+            <div style="text-align:center;margin-bottom:24px;">
+                <div style="font-size:3rem;margin-bottom:8px;">🎴</div>
+                <h1 style="font-size:1.8rem;font-weight:800;color:var(--text);margin-bottom:4px;">Flashcards — Spaced Repetition</h1>
+                <p style="color:var(--text-muted);font-size:0.92rem;">High-yield GATE CSE concepts. Rate how hard each card was — we'll show harder ones more often.</p>
+            </div>
+
+            <div id="flashcardView"></div>
+        </div>
+    </div>
+</div>
+
+<script src="./chatbot.js"></script>
+<script src="./flashcards_data.js"></script>
+<script>
+// ============ State ============
+const STATE_KEY = 'sohcse_flashcard_state_v1';
+let state = {
+    view: 'home',          // 'home' | 'study'
+    subject: null,         // null = all subjects
+    currentIdx: 0,
+    queue: [],             // array of card IDs to review
+    stats: {}              // cardId -> { again, hard, good, easy, lastReview, dueDate }
+};
+
+// Load saved state
+try {
+    const saved = JSON.parse(localStorage.getItem(STATE_KEY) || '{}');
+    state.stats = saved.stats || {};
+} catch {}
+
+function saveState() {
+    try { localStorage.setItem(STATE_KEY, JSON.stringify({ stats: state.stats })); } catch {}
+}
+
+// ============ Spaced repetition logic ============
+// Returns due date (timestamp) based on rating
+function getDueDate(rating, prevDue, prevRating) {
+    const now = Date.now();
+    const intervals = {
+        again: 10 * 60 * 1000,          // 10 minutes
+        hard: 1 * 24 * 60 * 60 * 1000,  // 1 day
+        good: 3 * 24 * 60 * 60 * 1000,  // 3 days
+        easy: 7 * 24 * 60 * 60 * 1000   // 7 days
+    };
+    // If rating is 'good' or 'easy' and previous was also good/easy, double the interval
+    let interval = intervals[rating] || intervals.good;
+    if (prevRating && (rating === 'good' || rating === 'easy') && (prevRating === 'good' || prevRating === 'easy')) {
+        interval = Math.min(interval * 2, 30 * 24 * 60 * 60 * 1000); // cap at 30 days
+    }
+    return now + interval;
+}
+
+function isCardDue(cardId) {
+    const s = state.stats[cardId];
+    if (!s || !s.dueDate) return true; // never reviewed = due now
+    return Date.now() >= s.dueDate;
+}
+
+function getDueCards(subject) {
+    return FLASHCARDS.filter(c => {
+        if (subject && c.subject !== subject) return false;
+        return isCardDue(c.id);
+    });
+}
+
+function rateCard(cardId, rating) {
+    const prev = state.stats[cardId] || {};
+    state.stats[cardId] = {
+        lastReview: Date.now(),
+        dueDate: getDueDate(rating, prev.dueDate, prev.lastRating),
+        lastRating: rating,
+        reviews: (prev.reviews || 0) + 1
+    };
+    saveState();
+}
+
+// ============ Init ============
+function init() {
+    renderHome();
+}
+
+function renderHome() {
+    state.view = 'home';
+    const subjectKeys = Object.keys(FLASHCARD_SUBJECTS);
+    const totalCards = FLASHCARDS.length;
+    const dueCards = FLASHCARDS.filter(c => isCardDue(c.id)).length;
+    const learnedCards = FLASHCARDS.filter(c => {
+        const s = state.stats[c.id];
+        return s && s.reviews > 0 && !isCardDue(c.id);
+    }).length;
+
+    document.getElementById('flashcardView').innerHTML = `
+        <div class="stats-grid">
+            <div class="metric-card" style="--metric-grad: var(--grad-brand);">
+                <div class="metric-icon">📚</div>
+                <div class="metric-value">${totalCards}</div>
+                <div class="metric-label">Total Cards</div>
+            </div>
+            <div class="metric-card" style="--metric-grad: var(--grad-orange);">
+                <div class="metric-icon">🎯</div>
+                <div class="metric-value">${dueCards}</div>
+                <div class="metric-label">Due for Review</div>
+            </div>
+            <div class="metric-card" style="--metric-grad: var(--grad-cyan);">
+                <div class="metric-icon">✅</div>
+                <div class="metric-value">${learnedCards}</div>
+                <div class="metric-label">Learned</div>
+            </div>
+            <div class="metric-card" style="--metric-grad: var(--grad-purple);">
+                <div class="metric-icon">🏆</div>
+                <div class="metric-value">${Math.round(learnedCards / totalCards * 100)}%</div>
+                <div class="metric-label">Completion</div>
+            </div>
+        </div>
+
+        <div class="section-eyebrow" style="margin-top:24px;">Choose Subject</div>
+        <div class="subjects-grid">
+            <div class="subject-card" onclick="startStudy(null)" style="cursor:pointer;">
+                <div class="card-top">
+                    <div class="card-icon">🎲</div>
+                    <div class="count-badge">${dueCards} due</div>
+                </div>
+                <div class="card-title">All Subjects</div>
+                <div class="card-meta">Study any due card</div>
+            </div>
+            ${subjectKeys.map(k => {
+                const subj = FLASHCARD_SUBJECTS[k];
+                const total = FLASHCARDS.filter(c => c.subject === k).length;
+                const due = FLASHCARDS.filter(c => c.subject === k && isCardDue(c.id)).length;
+                return `
+                    <div class="subject-card" onclick="startStudy('${k}')" style="cursor:pointer;">
+                        <div class="card-top">
+                            <div class="card-icon">${subj.icon}</div>
+                            <div class="count-badge">${due} due</div>
+                        </div>
+                        <div class="card-title">${subj.label}</div>
+                        <div class="card-meta">${total} cards</div>
+                    </div>
+                `;
+            }).join('')}
+        </div>
+
+        <div class="custom-playlist-section" style="margin-top:24px;background:linear-gradient(135deg, rgba(102,126,234,0.05), rgba(118,75,162,0.05));">
+            <h3>📋 How spaced repetition works</h3>
+            <p style="margin-bottom:8px;">
+                <strong>🎯 Again</strong> (red) — Show again in 10 minutes. Use when you completely forgot.
+            </p>
+            <p style="margin-bottom:8px;">
+                <strong>💪 Hard</strong> (orange) — Show tomorrow. Use when you struggled but got it.
+            </p>
+            <p style="margin-bottom:8px;">
+                <strong>✅ Good</strong> (green) — Show in 3 days. Use when you got it with some effort.
+            </p>
+            <p>
+                <strong>🚀 Easy</strong> (blue) — Show in 7 days. Use when you knew it instantly. Consecutive "good"/"easy" ratings double the interval (up to 30 days).
+            </p>
+        </div>
+    `;
+}
+
+function startStudy(subject) {
+    state.subject = subject;
+    state.queue = getDueCards(subject).map(c => c.id);
+    state.currentIdx = 0;
+    if (state.queue.length === 0) {
+        // No due cards — show all from subject
+        state.queue = FLASHCARDS.filter(c => !subject || c.subject === subject).map(c => c.id);
+    }
+    if (state.queue.length === 0) {
+        alert('No flashcards available for this subject.');
+        return;
+    }
+    state.view = 'study';
+    renderStudy();
+}
+
+function renderStudy() {
+    if (state.currentIdx >= state.queue.length) {
+        // Session complete
+        renderSessionComplete();
+        return;
+    }
+    const cardId = state.queue[state.currentIdx];
+    const card = FLASHCARDS.find(c => c.id === cardId);
+    if (!card) {
+        state.currentIdx++;
+        renderStudy();
+        return;
+    }
+    const subj = FLASHCARD_SUBJECTS[card.subject];
+    const total = state.queue.length;
+    const progress = ((state.currentIdx) / total) * 100;
+    const prevStats = state.stats[cardId];
+
+    document.getElementById('flashcardView').innerHTML = `
+        <div class="quiz-progress">
+            <div><strong>${state.currentIdx + 1} / ${total}</strong> cards</div>
+            <div class="quiz-progress-bar"><div class="fill" style="width: ${progress}%;"></div></div>
+            <button class="btn btn-ghost btn-sm" onclick="renderHome()">✕ Exit</button>
+        </div>
+
+        <div style="text-align:center;margin-bottom:14px;">
+            <span class="q-badge" style="background:${subj.color};color:white;font-size:0.78rem;padding:4px 12px;">
+                ${subj.icon} ${subj.label}
+            </span>
+            ${prevStats ? `<span style="margin-left:8px;font-size:0.75rem;color:var(--text-muted);">Reviews: ${prevStats.reviews || 0}</span>` : ''}
+        </div>
+
+        <div class="flashcard-container">
+            <div class="flashcard" id="flashcard" onclick="flipCard()">
+                <div class="flashcard-face flashcard-front">
+                    <div class="card-label">Question</div>
+                    <div class="card-content" id="frontContent">${sanitizeHtml(card.front)}</div>
+                    <div class="card-hint">Tap to reveal answer</div>
+                </div>
+                <div class="flashcard-face flashcard-back">
+                    <div class="card-label">Answer</div>
+                    <div class="card-content" id="backContent">${sanitizeHtml(card.back)}</div>
+                    <div class="card-hint">How did you do?</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="flashcard-controls">
+            <button class="btn btn-ghost btn-sm" onclick="prevCard()">← Previous</button>
+            <button class="btn btn-ghost btn-sm" onclick="flipCard()">🔄 Flip</button>
+            <button class="btn btn-ghost btn-sm" onclick="nextCardWithoutRating()">Skip →</button>
+        </div>
+
+        <div class="flashcard-rating" id="ratingButtons" style="display:none;">
+            <button class="rating-btn again" onclick="rateAndNext('again')">🎯 Again</button>
+            <button class="rating-btn hard" onclick="rateAndNext('hard')">💪 Hard</button>
+            <button class="rating-btn good" onclick="rateAndNext('good')">✅ Good</button>
+            <button class="rating-btn easy" onclick="rateAndNext('easy')">🚀 Easy</button>
+        </div>
+    `;
+
+    // Render math in both faces
+    setTimeout(() => {
+        document.querySelectorAll('.flashcard-face .card-content').forEach(el => {
+            if (typeof renderMathInElement === 'function') {
+                renderMathInElement(el, {
+                    delimiters: [
+                        { left: '$$', right: '$$', display: true },
+                        { left: '$', right: '$', display: false },
+                        { left: '\\(', right: '\\)', display: false },
+                        { left: '\\[', right: '\\]', display: true },
+                    ],
+                    throwOnError: false
+                });
+            }
+        });
+    }, 50);
+}
+
+function sanitizeHtml(html) {
+    if (!html) return '';
+    return DOMPurify.sanitize(html, { ADD_TAGS: ['sup', 'sub', 'u', 's', 'strong', 'em', 'br'], ADD_ATTR: [] });
+}
+
+function flipCard() {
+    const card = document.getElementById('flashcard');
+    if (card) {
+        card.classList.toggle('flipped');
+        // Show rating buttons only when on the back (answer shown)
+        const isFlipped = card.classList.contains('flipped');
+        const rating = document.getElementById('ratingButtons');
+        if (rating) rating.style.display = isFlipped ? 'flex' : 'none';
+    }
+}
+
+function rateAndNext(rating) {
+    const cardId = state.queue[state.currentIdx];
+    rateCard(cardId, rating);
+    state.currentIdx++;
+    renderStudy();
+}
+
+function nextCardWithoutRating() {
+    state.currentIdx++;
+    renderStudy();
+}
+
+function prevCard() {
+    if (state.currentIdx > 0) state.currentIdx--;
+    renderStudy();
+}
+
+function renderSessionComplete() {
+    const reviewedCount = state.queue.length;
+    document.getElementById('flashcardView').innerHTML = `
+        <div class="quiz-results">
+            <div style="font-size:4rem;margin-bottom:14px;">🎉</div>
+            <h2 style="font-size:1.6rem;margin-bottom:8px;">Session Complete!</h2>
+            <p style="color:var(--text-muted);margin-bottom:14px;">You reviewed ${reviewedCount} flashcard${reviewedCount !== 1 ? 's' : ''}.</p>
+            <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:18px;">
+                <button class="btn btn-primary btn-sm" onclick="startStudy(state.subject)">🔄 Study Again</button>
+                <button class="btn btn-ghost btn-sm" onclick="renderHome()">🏠 Back to Home</button>
+            </div>
+        </div>
+    `;
+}
+
+init();
+</script>
+<script src="./theme.js"></script>
+</body>
+</html>

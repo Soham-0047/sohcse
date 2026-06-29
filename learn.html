@@ -1,0 +1,1156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Learn — GATE CSE Concept Notes | SOH CSE</title>
+<meta name="description" content="Comprehensive GATE CSE concept notes with formulas, examples, and code. Study everything inside the app — no external redirects.">
+<link rel="stylesheet" href="./style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23667eea'/%3E%3Ctext x='50' y='70' font-size='60' font-weight='bold' fill='white' text-anchor='middle' font-family='Arial'%3EG%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+
+<nav class="topnav">
+    <div class="topnav-inner">
+        <a href="./index.html" class="topnav-brand">
+            <div class="brand-mark">G</div>
+            <div class="brand-text">SOH CSE <small>GATE Preparation Hub</small></div>
+        </a>
+        <button class="topnav-menu-btn" onclick="document.querySelector('.topnav-links').classList.toggle('open')" aria-label="Toggle menu">
+            <span></span><span></span><span></span>
+        </button>
+        <div class="topnav-links">
+            <a href="./index.html" class="topnav-link">🏠 Home</a>
+            <a href="./learn.html" class="topnav-link active">📖 Learn</a>
+            <a href="./syllabus.html" class="topnav-link">📋 Syllabus</a>
+            <a href="./pyq.html" class="topnav-link">📝 PYQs</a>
+            <a href="./videos.html" class="topnav-link">🎥 Videos</a>
+            <a href="./flashcards.html" class="topnav-link">🎴 Flashcards</a>
+            <a href="./quiz.html" class="topnav-link">🎯 Quiz</a>
+            <a href="./planner.html" class="topnav-link">📅 Planner</a>
+            <a href="./resources.html" class="topnav-link">🚀 Resources</a>
+        </div>
+    </div>
+</nav>
+
+<div class="app-container">
+    <!-- Sidebar with subject + topic list -->
+    <div class="app-sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-header-text">
+                <h2>📖 Learn</h2>
+                <p>Concept notes & formulas</p>
+            </div>
+            <div class="sidebar-stats" id="sidebarStats">Loading…</div>
+        </div>
+        <div class="breadcrumb" id="breadcrumb">
+            <span class="breadcrumb-item" onclick="goHome()">🏠 Home</span>
+        </div>
+        <div class="sidebar-content">
+            <input type="text" class="search-box" id="searchBox" placeholder="🔍 Search topics..." oninput="onSearch()">
+            <div id="topicList"></div>
+        </div>
+    </div>
+    <button class="toggle-sidebar-btn" onclick="toggleSidebar()" title="Toggle sidebar">◀</button>
+
+    <div class="app-content">
+        <div class="app-content-scroll" id="contentArea">
+            <div id="mainContent"></div>
+        </div>
+    </div>
+</div>
+
+<script src="./chatbot.js"></script>
+<script>
+// ============ Concept Notes Database ============
+const NOTES = {
+    'algorithms': {
+        label: 'Algorithms', icon: '⚡',
+        topics: {
+            'complexity-basics': {
+                title: 'Time Complexity & Asymptotic Notations',
+                content: `
+<h2>Asymptotic Notations</h2>
+<p>Asymptotic notations describe the running time of an algorithm as input size $n$ grows toward infinity.</p>
+
+<h3>The Three Notations</h3>
+<table>
+<tr><th>Notation</th><th>Meaning</th><th>Analogy</th></tr>
+<tr><td><strong>$O(g(n))$</strong></td><td>Upper bound (worst case)</td><td>"No worse than"</td></tr>
+<tr><td><strong>$\\Omega(g(n))$</strong></td><td>Lower bound (best case)</td><td>"At least as much as"</td></tr>
+<tr><td><strong>$\\Theta(g(n))$</strong></td><td>Tight bound (both)</td><td>"Exactly grows like"</td></tr>
+</table>
+
+<h3>Common Complexities (best to worst)</h3>
+<ul>
+<li>$O(1)$ — constant: array index access</li>
+<li>$O(\\log n)$ — logarithmic: binary search</li>
+<li>$O(\\sqrt{n})$ — square root: primality check</li>
+<li>$O(n)$ — linear: linear search, traversal</li>
+<li>$O(n \\log n)$ — linearithmic: merge sort, heap sort</li>
+<li>$O(n^2)$ — quadratic: bubble sort, nested loops</li>
+<li>$O(n^3)$ — cubic: matrix multiplication (naive)</li>
+<li>$O(2^n)$ — exponential: subset sum (naive)</li>
+<li>$O(n!)$ — factorial: traveling salesman (naive)</li>
+</ul>
+
+<h3>Master Theorem</h3>
+<p>For recurrences of the form $T(n) = aT(n/b) + f(n)$ where $a \\geq 1$, $b > 1$:</p>
+<ul>
+<li><strong>Case 1:</strong> If $f(n) = O(n^{\\log_b a - \\epsilon})$ for some $\\epsilon > 0$, then $T(n) = \\Theta(n^{\\log_b a})$.</li>
+<li><strong>Case 2:</strong> If $f(n) = \\Theta(n^{\\log_b a})$, then $T(n) = \\Theta(n^{\\log_b a} \\log n)$.</li>
+<li><strong>Case 3:</strong> If $f(n) = \\Omega(n^{\\log_b a + \\epsilon})$ for some $\\epsilon > 0$ AND regularity condition holds, then $T(n) = \\Theta(f(n))$.</li>
+</ul>
+
+<h3>Examples</h3>
+<p><strong>Binary Search:</strong> $T(n) = T(n/2) + O(1)$ → $a=1, b=2, f(n)=1=n^{\\log_2 1}$. Case 2: $T(n) = O(\\log n)$.</p>
+<p><strong>Merge Sort:</strong> $T(n) = 2T(n/2) + O(n)$ → $a=2, b=2, f(n)=n=n^{\\log_2 2}$. Case 2: $T(n) = O(n \\log n)$.</p>
+<p><strong>Strassen's Matrix Multiplication:</strong> $T(n) = 7T(n/2) + O(n^2)$ → $a=7, b=2, \\log_2 7 \\approx 2.81 > 2$. Case 1: $T(n) = O(n^{2.81})$.</p>
+
+<div class="info-box">
+<strong>🎯 GATE Tip:</strong> Always remember $\\log_b n = \\frac{\\log_a n}{\\log_a b}$. So $\\log_2 n$ and $\\log_{10} n$ differ only by a constant — both are $O(\\log n)$.
+</div>
+`
+            },
+            'sorting': {
+                title: 'Sorting Algorithms Comparison',
+                content: `
+<h2>Sorting Algorithms — Complete Comparison</h2>
+<table>
+<tr><th>Algorithm</th><th>Best</th><th>Average</th><th>Worst</th><th>Space</th><th>Stable?</th><th>In-place?</th></tr>
+<tr><td>Bubble Sort</td><td>$O(n)$</td><td>$O(n^2)$</td><td>$O(n^2)$</td><td>$O(1)$</td><td>✅ Yes</td><td>✅ Yes</td></tr>
+<tr><td>Selection Sort</td><td>$O(n^2)$</td><td>$O(n^2)$</td><td>$O(n^2)$</td><td>$O(1)$</td><td>❌ No</td><td>✅ Yes</td></tr>
+<tr><td>Insertion Sort</td><td>$O(n)$</td><td>$O(n^2)$</td><td>$O(n^2)$</td><td>$O(1)$</td><td>✅ Yes</td><td>✅ Yes</td></tr>
+<tr><td>Merge Sort</td><td>$O(n\\log n)$</td><td>$O(n\\log n)$</td><td>$O(n\\log n)$</td><td>$O(n)$</td><td>✅ Yes</td><td>❌ No</td></tr>
+<tr><td>Quick Sort</td><td>$O(n\\log n)$</td><td>$O(n\\log n)$</td><td>$O(n^2)$</td><td>$O(\\log n)$</td><td>❌ No</td><td>✅ Yes</td></tr>
+<tr><td>Heap Sort</td><td>$O(n\\log n)$</td><td>$O(n\\log n)$</td><td>$O(n\\log n)$</td><td>$O(1)$</td><td>❌ No</td><td>✅ Yes</td></tr>
+</table>
+
+<h3>Key Points</h3>
+<ul>
+<li><strong>Stable sort</strong>: Equal elements retain their relative order. Important when sorting by multiple keys.</li>
+<li><strong>In-place</strong>: Uses $O(1)$ extra space (excluding recursion stack).</li>
+<li><strong>Quick Sort</strong> worst case $O(n^2)$: when pivot is always min/max (sorted array with bad pivot choice).</li>
+<li><strong>Merge Sort</strong>: Always $O(n \\log n)$, but needs $O(n)$ extra space. Used for external sorting.</li>
+<li><strong>Heap Sort</strong>: Build heap is $O(n)$, not $O(n \\log n)$. Each extract-min is $O(\\log n)$.</li>
+</ul>
+
+<h3>Quick Sort Code (C)</h3>
+<pre><code>int partition(int arr[], int low, int high) {
+    int pivot = arr[high];
+    int i = low - 1;
+    for (int j = low; j < high; j++) {
+        if (arr[j] <= pivot) {
+            i++;
+            swap(&arr[i], &arr[j]);
+        }
+    }
+    swap(&arr[i+1], &arr[high]);
+    return i + 1;
+}
+
+void quickSort(int arr[], int low, int high) {
+    if (low < high) {
+        int pi = partition(arr, low, high);
+        quickSort(arr, low, pi - 1);
+        quickSort(arr, pi + 1, high);
+    }
+}</code></pre>
+
+<div class="info-box">
+<strong>🎯 GATE Tip:</strong> Insertion sort is best for <em>nearly sorted</em> arrays (best case $O(n)$). For small arrays (< 20 elements), it's faster than quicksort due to low overhead.
+</div>
+`
+            },
+            'dp': {
+                title: 'Dynamic Programming — Key Patterns',
+                content: `
+<h2>Dynamic Programming (DP)</h2>
+<p>DP solves problems by breaking them into <strong>overlapping subproblems</strong> and storing results (memoization/tabulation).</p>
+
+<h3>Two Key Properties</h3>
+<ol>
+<li><strong>Optimal Substructure</strong>: Optimal solution to the problem contains optimal solutions to subproblems.</li>
+<li><strong>Overlapping Subproblems</strong>: Same subproblems are solved multiple times.</li>
+</ol>
+
+<h3>Two Approaches</h3>
+<ul>
+<li><strong>Top-down (Memoization)</strong>: Recursive + cache. Easier to write.</li>
+<li><strong>Bottom-up (Tabulation)</strong>: Iterative, fill table from smallest to largest. Usually faster (no recursion overhead).</li>
+</ul>
+
+<h3>Classic DP Problems</h3>
+
+<h4>1. 0/1 Knapsack</h4>
+<p>$dp[i][w]$ = max value using first $i$ items with capacity $w$.</p>
+<p>$dp[i][w] = \\max(dp[i-1][w], \\; v_i + dp[i-1][w - w_i])$</p>
+<p>Time: $O(nW)$, Space: $O(nW)$ (can be reduced to $O(W)$).</p>
+
+<h4>2. Longest Common Subsequence (LCS)</h4>
+<p>$dp[i][j]$ = LCS length of first $i$ chars of $X$ and first $j$ chars of $Y$.</p>
+<p>If $X[i] = Y[j]$: $dp[i][j] = 1 + dp[i-1][j-1]$</p>
+<p>Else: $dp[i][j] = \\max(dp[i-1][j], dp[i][j-1])$</p>
+<p>Time: $O(mn)$.</p>
+
+<h4>3. Matrix Chain Multiplication</h4>
+<p>$dp[i][j]$ = min cost to multiply matrices $i$ to $j$.</p>
+<p>$dp[i][j] = \\min_{i \\leq k < j} \\{ dp[i][k] + dp[k+1][j] + p_{i-1} p_k p_j \\}$</p>
+<p>Time: $O(n^3)$.</p>
+
+<h4>4. Floyd-Warshall (All-pairs shortest path)</h4>
+<p>$dp[k][i][j]$ = shortest path from $i$ to $j$ using vertices $\\{1, ..., k\\}$ as intermediates.</p>
+<p>$dp[k][i][j] = \\min(dp[k-1][i][j], dp[k-1][i][k] + dp[k-1][k][j])$</p>
+<p>Time: $O(n^3)$, Space: $O(n^2)$.</p>
+
+<div class="info-box">
+<strong>🎯 GATE Tip:</strong> DP vs Greedy: DP tries all choices and picks the best; Greedy makes an irrevocable local choice. <strong>0/1 Knapsack needs DP</strong>; <strong>Fractional Knapsack can use Greedy</strong>.
+</div>
+`
+            }
+        }
+    },
+    'data-structures': {
+        label: 'Data Structures', icon: '🌳',
+        topics: {
+            'bst-avl': {
+                title: 'BST and AVL Trees',
+                content: `
+<h2>Binary Search Tree (BST)</h2>
+<p>A BST has the property: for every node $x$, all keys in left subtree $< x.key <$ all keys in right subtree.</p>
+
+<h3>Operations</h3>
+<ul>
+<li><strong>Search</strong>: $O(h)$ where $h$ = height</li>
+<li><strong>Insert</strong>: $O(h)$</li>
+<li><strong>Delete</strong>: $O(h)$ — 3 cases: leaf, one child, two children (replace with successor)</li>
+<li><strong>Inorder traversal</strong>: gives sorted output</li>
+</ul>
+
+<h3>Height Analysis</h3>
+<ul>
+<li>Skewed BST: $h = n-1$, so all operations $O(n)$</li>
+<li>Balanced BST: $h = O(\\log n)$, so all operations $O(\\log n)$</li>
+</ul>
+
+<h2>AVL Tree (Self-balancing BST)</h2>
+<p>AVL tree maintains <strong>balance factor</strong> $BF = h_{left} - h_{right} \\in \\{-1, 0, 1\\}$ for every node.</p>
+
+<h3>Rotations</h3>
+<p>After insert/delete, if $|BF| > 1$, perform rotation(s):</p>
+
+<h4>4 Cases:</h4>
+<ol>
+<li><strong>LL (Left-Left)</strong>: Right rotation once</li>
+<li><strong>RR (Right-Right)</strong>: Left rotation once</li>
+<li><strong>LR (Left-Right)</strong>: Left rotation on child, then right rotation on node</li>
+<li><strong>RL (Right-Left)</strong>: Right rotation on child, then left rotation on node</li>
+</ol>
+
+<h3>Key Facts</h3>
+<ul>
+<li>AVL tree height: $h \\leq 1.44 \\log_2(n+2)$ — always $O(\\log n)$</li>
+<li>Insertion: at most <strong>1 rotation</strong> needed</li>
+<li>Deletion: may need $O(\\log n)$ rotations (propagates up)</li>
+<li>Red-Black tree: less strict balance, fewer rotations on insert/delete</li>
+</ul>
+
+<h3>Minimum nodes in AVL tree of height $h$</h3>
+<p>$N(h) = N(h-1) + N(h-2) + 1$ with $N(0) = 1, N(1) = 2$.</p>
+<p>This is Fibonacci-like — gives the tightest possible AVL tree.</p>
+
+<div class="info-box">
+<strong>🎯 GATE Tip:</strong> AVL is <em>strictly balanced</em> (BF ≤ 1), so searches are fast but insertions need more rotations. Red-Black is <em>loosely balanced</em> (height ≤ $2\\log n$), so insertions are faster — preferred in practice (Linux kernel, Java TreeMap).
+</div>
+`
+            },
+            'hashing': {
+                title: 'Hashing — Collision Resolution',
+                content: `
+<h2>Hashing</h2>
+<p>Hash tables provide $O(1)$ average case search/insert/delete. The hash function $h(k)$ maps keys to slot indices.</p>
+
+<h3>Load Factor</h3>
+<p>$\\alpha = \\frac{n}{m}$ where $n$ = number of keys, $m$ = number of slots.</p>
+<ul>
+<li>Chaining: $\\alpha$ can be $> 1$. Search: $O(1 + \\alpha)$.</li>
+<li>Open addressing: $\\alpha$ must be $< 1$. Search: $O\\left(\\frac{1}{1-\\alpha}\\right)$.</li>
+</ul>
+
+<h3>Collision Resolution Techniques</h3>
+
+<h4>1. Separate Chaining</h4>
+<p>Each slot holds a linked list of all keys that hash to it.</p>
+<ul>
+<li>Search: $O(1 + \\alpha)$ average, $O(n)$ worst (all in one chain)</li>
+<li>Insert: $O(1)$ (insert at head)</li>
+<li>Delete: $O(1 + \\alpha)$</li>
+<li>$\\alpha$ can exceed 1</li>
+</ul>
+
+<h4>2. Open Addressing (Linear Probing)</h4>
+<p>If slot $h(k)$ is full, try $h(k)+1, h(k)+2, ...$ (mod $m$).</p>
+<p>Probe sequence: $h(k, i) = (h'(k) + i) \\mod m$ for $i = 0, 1, 2, ...$</p>
+<ul>
+<li>Suffers from <strong>primary clustering</strong> — long runs of filled slots</li>
+<li>Search: $O\\left(\\frac{1}{1-\\alpha}\\right)$ for unsuccessful</li>
+</ul>
+
+<h4>3. Quadratic Probing</h4>
+<p>Probe: $h(k, i) = (h'(k) + i^2) \\mod m$</p>
+<ul>
+<li>Avoids primary clustering</li>
+<li>Suffers from <strong>secondary clustering</strong> — same probe sequence for same $h'(k)$</li>
+</ul>
+
+<h4>4. Double Hashing</h4>
+<p>Probe: $h(k, i) = (h_1(k) + i \\cdot h_2(k)) \\mod m$</p>
+<ul>
+<li>No clustering</li>
+<li>$h_2(k)$ must not be 0 and should be relatively prime to $m$</li>
+<li>Best open addressing technique</li>
+</ul>
+
+<h3>Common Hash Functions</h3>
+<ul>
+<li><strong>Division method</strong>: $h(k) = k \\mod m$. Choose $m$ prime, away from powers of 2.</li>
+<li><strong>Multiplication method</strong>: $h(k) = \\lfloor m \\cdot (kA \\mod 1) \\rfloor$ where $0 < A < 1$.</li>
+<li><strong>Universal hashing</strong>: Random choice from a family of hash functions — guarantees good average case.</li>
+</ul>
+
+<div class="info-box">
+<strong>🎯 GATE Tip:</strong> For $n$ keys in a hash table with $m$ slots using chaining, the <strong>expected number of collisions</strong> is $\\binom{n}{2} \\cdot \\frac{1}{m} = \\frac{n(n-1)}{2m}$.
+</div>
+`
+            }
+        }
+    },
+    'operating-systems': {
+        label: 'Operating Systems', icon: '⚙️',
+        topics: {
+            'cpu-scheduling': {
+                title: 'CPU Scheduling Algorithms',
+                content: `
+<h2>CPU Scheduling Algorithms</h2>
+
+<h3>Key Formulas</h3>
+<ul>
+<li><strong>Turnaround Time (TAT)</strong> = Completion Time − Arrival Time</li>
+<li><strong>Waiting Time (WT)</strong> = TAT − Burst Time</li>
+<li><strong>Response Time</strong> = First CPU allocation − Arrival Time</li>
+<li><strong>Average WT</strong> = $\\frac{\\sum WT_i}{n}$</li>
+</ul>
+
+<h3>Algorithms</h3>
+
+<h4>1. FCFS (First-Come, First-Served)</h4>
+<ul>
+<li>Non-preemptive</li>
+<li>Simple, fair</li>
+<li><strong>Convoy effect</strong>: short processes wait behind one long process</li>
+<li>No starvation</li>
+</ul>
+
+<h4>2. SJF (Shortest Job First)</h4>
+<ul>
+<li>Non-preemptive version</li>
+<li><strong>Optimal</strong> — gives minimum average waiting time (proven)</li>
+<li>Can cause <strong>starvation</strong> of long jobs</li>
+<li>Requires knowing burst time in advance (impractical)</li>
+</ul>
+
+<h4>3. SRTF (Shortest Remaining Time First)</h4>
+<ul>
+<li>Preemptive version of SJF</li>
+<li>Even better average WT than SJF</li>
+<li>More context switches (overhead)</li>
+<li>Starvation possible</li>
+</ul>
+
+<h4>4. Round Robin (RR)</h4>
+<ul>
+<li>Preemptive, time quantum $q$</li>
+<li>Fair, no starvation</li>
+<li>If $q \\to \\infty$, becomes FCFS</li>
+<li>If $q \\to 0$, too many context switches</li>
+<li>Typical $q$ = 10-100 ms</li>
+<li>Response time is better than SJF</li>
+</ul>
+
+<h4>5. Priority Scheduling</h4>
+<ul>
+<li>Can be preemptive or non-preemptive</li>
+<li>Starvation of low-priority processes</li>
+<li><strong>Solution: Aging</strong> — gradually increase priority over time</li>
+</ul>
+
+<h3>Comparison Example</h3>
+<p>Processes: P1(AT=0, BT=7), P2(AT=2, BT=4), P3(AT=4, BT=1), P4(AT=5, BT=4)</p>
+<table>
+<tr><th>Algo</th><th>Avg WT</th></tr>
+<tr><td>FCFS</td><td>5.25</td></tr>
+<tr><td>SJF (non-preemptive)</td><td>4.0</td></tr>
+<tr><td>SRTF (preemptive)</td><td>3.5</td></tr>
+<tr><td>RR (q=2)</td><td>~5.5</td></tr>
+</table>
+
+<div class="info-box">
+<strong>🎯 GATE Tip:</strong> SJF is provably optimal for average waiting time, but in <em>preemptive</em> context, SRTF is even better. Always compute the Gantt chart carefully — a single misplaced preemption point changes everything.
+</div>
+`
+            },
+            'deadlocks': {
+                title: 'Deadlocks — Conditions & Banker\'s Algorithm',
+                content: `
+<h2>Deadlocks</h2>
+<p>A deadlock is a state where a set of processes are blocked because each process is holding a resource and waiting for another resource held by some other process.</p>
+
+<h3>Four Necessary Conditions (Coffman Conditions)</h3>
+<p>All four must hold simultaneously for a deadlock:</p>
+<ol>
+<li><strong>Mutual Exclusion</strong>: At least one resource must be held in non-shareable mode.</li>
+<li><strong>Hold and Wait</strong>: A process holds at least one resource and is waiting for additional resources held by others.</li>
+<li><strong>No Preemption</strong>: Resources can only be released voluntarily by the process holding them.</li>
+<li><strong>Circular Wait</strong>: There exists a cycle $\\{P_0, P_1, ..., P_n\\}$ where $P_i$ waits for a resource held by $P_{i+1 \\mod n}$.</li>
+</ol>
+
+<h3>Methods to Handle Deadlocks</h3>
+
+<h4>1. Deadlock Prevention</h4>
+<p>Break one of the 4 conditions:</p>
+<ul>
+<li>Break mutual exclusion: make resources shareable (e.g., read-only files)</li>
+<li>Break hold and wait: request all resources at once</li>
+<li>Break no preemption: allow resource preemption (impractical)</li>
+<li>Break circular wait: impose total ordering on resources — request in increasing order</li>
+</ul>
+
+<h4>2. Deadlock Avoidance — Banker's Algorithm</h4>
+<p>Allocates resources only if the resulting state is <strong>safe</strong>.</p>
+
+<p><strong>Safe state</strong>: There exists a sequence $\\langle P_{i_1}, P_{i_2}, ..., P_{i_n} \\rangle$ such that for each $P_{i_j}$, the resources that $P_{i_j}$ can still request can be satisfied by the currently available resources + resources held by all $P_{i_k}$ where $k < j$.</p>
+
+<p><strong>Banker's Algorithm</strong> (multiple instances of each resource type):</p>
+<ol>
+<li>Let Work = Available, Finish[i] = false for all $i$.</li>
+<li>Find $i$ such that Finish[i] = false AND Need[i] ≤ Work. If no such $i$, go to step 4.</li>
+<li>Work = Work + Allocation[i]; Finish[i] = true; go to step 2.</li>
+<li>If Finish[i] = true for all $i$, system is safe. Otherwise, unsafe (possible deadlock).</li>
+</ol>
+
+<p>Where Need[i] = Max[i] − Allocation[i].</p>
+
+<h4>3. Deadlock Detection</h4>
+<p>Allow deadlocks to occur, then detect and recover:</p>
+<ul>
+<li>Single instance per resource type: use <strong>Resource Allocation Graph (RAG)</strong> — cycle = deadlock</li>
+<li>Multiple instances: algorithm similar to Banker's but uses "Available" and "Request" matrices</li>
+</ul>
+
+<h4>4. Deadlock Recovery</h4>
+<ul>
+<li>Process termination: kill all (expensive) or kill one at a time until deadlock resolves</li>
+<li>Resource preemption: select victim, rollback, must handle starvation</li>
+</ul>
+
+<h3>Time Complexity</h3>
+<ul>
+<li>Banker's safety algorithm: $O(m \\times n^2)$ where $m$ = resource types, $n$ = processes</li>
+<li>RAG cycle detection: $O(n^2)$ using DFS-based cycle detection</li>
+</ul>
+
+<div class="info-box">
+<strong>🎯 GATE Tip:</strong> If a system is in a <em>safe state</em>, it is NOT deadlocked. But an <em>unsafe state</em> does NOT mean deadlock — it only means deadlock is <em>possible</em>. Always check carefully.
+</div>
+`
+            }
+        }
+    },
+    'database-management-system': {
+        label: 'DBMS', icon: '🗄️',
+        topics: {
+            'normalization': {
+                title: 'Normalization — 1NF to BCNF',
+                content: `
+<h2>Normalization</h2>
+<p>Normalization is the process of organizing data to reduce redundancy and avoid anomalies.</p>
+
+<h3>Three Anomalies</h3>
+<ul>
+<li><strong>Insertion anomaly</strong>: Cannot insert some data without other data</li>
+<li><strong>Deletion anomaly</strong>: Deleting one fact inadvertently deletes another</li>
+<li><strong>Update anomaly</strong>: Updating one fact requires updating multiple rows</li>
+</ul>
+
+<h3>Functional Dependency (FD)</h3>
+<p>$X \\to Y$ means: for any two tuples, if they agree on $X$, they must agree on $Y$.</p>
+
+<h3>Normal Forms</h3>
+
+<h4>1NF (First Normal Form)</h4>
+<ul>
+<li>All attributes are <strong>atomic</strong> (no multi-valued attributes, no repeating groups)</li>
+<li>Each cell has a single value</li>
+</ul>
+
+<h4>2NF (Second Normal Form)</h4>
+<ul>
+<li>1NF + <strong>no partial dependency</strong></li>
+<li>Partial dependency: a non-prime attribute depends on part of a composite candidate key</li>
+<li>For single-attribute keys, 1NF automatically satisfies 2NF</li>
+</ul>
+
+<h4>3NF (Third Normal Form)</h4>
+<ul>
+<li>2NF + <strong>no transitive dependency</strong></li>
+<li>Transitive dependency: $A \\to B$ and $B \\to C$ (where $B$ is not a key) gives $A \\to C$ transitively</li>
+<li>Formal: For every non-trivial FD $X \\to Y$, either $X$ is a superkey OR $Y$ is a prime attribute</li>
+</ul>
+
+<h4>BCNF (Boyce-Codd Normal Form)</h4>
+<ul>
+<li>Stricter than 3NF</li>
+<li>For every non-trivial FD $X \\to Y$, $X$ must be a <strong>superkey</strong></li>
+<li>Removes all redundancy based on FDs</li>
+<li>Sometimes not achievable without losing FDs (dependency preservation)</li>
+</ul>
+
+<h3>Key Terms</h3>
+<ul>
+<li><strong>Prime attribute</strong>: Part of any candidate key</li>
+<li><strong>Non-prime attribute</strong>: Not part of any candidate key</li>
+<li><strong>Superkey</strong>: Uniquely identifies a tuple (may have extra attributes)</li>
+<li><strong>Candidate key</strong>: Minimal superkey</li>
+</ul>
+
+<h3>Lossless Join & Dependency Preservation</h3>
+<ul>
+<li><strong>Lossless join</strong>: Joining the decomposed tables gives back the original (no spurious tuples)</li>
+<li><strong>Dependency preservation</strong>: All FDs can be checked from FDs in the decomposed tables</li>
+<li>BCNF may not preserve dependencies; 3NF always does</li>
+</ul>
+
+<h3>Example</h3>
+<p>Relation $R(A, B, C)$ with FDs: $AB \\to C$, $C \\to B$.</p>
+<ul>
+<li>Candidate keys: $AB$ and $AC$ (since $C \\to B$, $AC$ also uniquely determines $B$)</li>
+<li>Prime attributes: $A, B, C$ (all)</li>
+<li>$C \\to B$: $C$ is not a superkey but $B$ is prime → satisfies 3NF</li>
+<li>But $C$ is not a superkey → <strong>not BCNF</strong></li>
+</ul>
+
+<div class="info-box">
+<strong>🎯 GATE Tip:</strong> Always find <strong>all candidate keys</strong> first — this tells you which attributes are prime. Then check each FD against the normal form rules. Common mistake: assuming there's only one candidate key.
+</div>
+`
+            },
+            'transactions': {
+                title: 'Transactions & ACID Properties',
+                content: `
+<h2>Transactions</h2>
+<p>A transaction is a sequence of database operations executed as a single logical unit.</p>
+
+<h3>ACID Properties</h3>
+<ul>
+<li><strong>A — Atomicity</strong>: All operations execute completely or none do. (Undo via rollback)</li>
+<li><strong>C — Consistency</strong>: Database transitions from one valid state to another.</li>
+<li><strong>I — Isolation</strong>: Concurrent transactions don't interfere with each other.</li>
+<li><strong>D — Durability</strong>: Once committed, changes survive system crashes. (Redo log)</li>
+</ul>
+
+<h3>Schedules</h3>
+<ul>
+<li><strong>Serial schedule</strong>: Transactions execute one after another (no overlap)</li>
+<li><strong>Concurrent schedule</strong>: Operations from different transactions interleave</li>
+</ul>
+
+<h3>Conflicts</h3>
+<p>Two operations conflict if:</p>
+<ol>
+<li>They belong to different transactions</li>
+<li>They access the same data item</li>
+<li>At least one of them is a write</li>
+</ol>
+<p>Types: Read-Write (RW), Write-Read (WR), Write-Write (WW)</p>
+
+<h3>Serializability</h3>
+
+<h4>Conflict Serializability</h4>
+<p>A schedule is conflict-serializable if it can be transformed into a serial schedule by swapping non-conflicting operations.</p>
+<p><strong>Test</strong>: Build a <strong>precedence graph</strong>:</p>
+<ul>
+<li>One node per transaction</li>
+<li>Edge $T_i \\to T_j$ if an operation of $T_i$ occurs before a conflicting operation of $T_j$</li>
+</ul>
+<p>If the graph is <strong>acyclic</strong> → conflict serializable. The topological sort gives the equivalent serial schedule.</p>
+
+<h4>View Serializability</h4>
+<p>More relaxed than conflict serializability. Two schedules are view-equivalent if:</p>
+<ol>
+<li>Same read-from relationships</li>
+<li>Same final write for each data item</li>
+</ol>
+<p>Every conflict-serializable schedule is view-serializable, but not vice versa.</p>
+
+<h3>2-Phase Locking (2PL)</h3>
+<p>Guarantees conflict serializability. Two phases:</p>
+<ol>
+<li><strong>Growing phase</strong>: Acquire locks only (no releases)</li>
+<li><strong>Shrinking phase</strong>: Release locks only (no new locks)</li>
+</ol>
+<p><strong>Variants</strong>:</p>
+<ul>
+<li><strong>Strict 2PL</strong>: Exclusive locks held until commit (avoids cascading rollback)</li>
+<li><strong>Rigorous 2PL</strong>: All locks held until commit (both shared and exclusive)</li>
+<li><strong>Conservative 2PL</strong>: Acquire all locks at start (avoids deadlock but hard to implement)</li>
+</ul>
+
+<h3>Recoverability</h3>
+<ul>
+<li><strong>Recoverable schedule</strong>: If $T_i$ reads from $T_j$, then $T_j$ commits before $T_i$</li>
+<li><strong>Cascadeless schedule</strong>: Reads only committed data — no cascading rollback</li>
+<li><strong>Strict schedule</strong>: Reads and writes only committed data</li>
+</ul>
+
+<div class="info-box">
+<strong>🎯 GATE Tip:</strong> In precedence graphs, count edges carefully. A common mistake is missing a WW conflict. If there's a cycle, the schedule is NOT conflict-serializable.
+</div>
+`
+            }
+        }
+    },
+    'computer-networks': {
+        label: 'Computer Networks', icon: '🌐',
+        topics: {
+            'ip-addressing': {
+                title: 'IP Addressing & Subnetting',
+                content: `
+<h2>IP Addressing</h2>
+
+<h3>IPv4 Address Classes</h3>
+<table>
+<tr><th>Class</th><th>Leading bits</th><th>First byte</th><th>Network bits</th><th>Host bits</th><th>Range</th></tr>
+<tr><td>A</td><td>0</td><td>1–126</td><td>8</td><td>24</td><td>1.0.0.0 – 126.255.255.255</td></tr>
+<tr><td>B</td><td>10</td><td>128–191</td><td>16</td><td>16</td><td>128.0.0.0 – 191.255.255.255</td></tr>
+<tr><td>C</td><td>110</td><td>192–223</td><td>24</td><td>8</td><td>192.0.0.0 – 223.255.255.255</td></tr>
+<tr><td>D (Multicast)</td><td>1110</td><td>224–239</td><td>—</td><td>—</td><td>224.0.0.0 – 239.255.255.255</td></tr>
+<tr><td>E (Reserved)</td><td>1111</td><td>240–255</td><td>—</td><td>—</td><td>240.0.0.0 – 255.255.255.255</td></tr>
+</table>
+
+<p><strong>Note</strong>: 127.x.x.x is loopback (localhost). 0.x.x.x is "this network".</p>
+
+<h3>Private IP Ranges (RFC 1918)</h3>
+<ul>
+<li>10.0.0.0/8 (Class A private)</li>
+<li>172.16.0.0/12 (Class B private — 172.16 to 172.31)</li>
+<li>192.168.0.0/16 (Class C private)</li>
+</ul>
+
+<h3>Subnetting Formulas</h3>
+<p>For a subnet with $n$ host bits:</p>
+<ul>
+<li><strong>Hosts per subnet</strong> = $2^n - 2$ (subtract network ID and broadcast)</li>
+<li><strong>Subnets</strong> = $2^s$ where $s$ = borrowed bits from host</li>
+</ul>
+
+<h3>Worked Example</h3>
+<p>IP: 192.168.1.130, Subnet mask: 255.255.255.192 (/26)</p>
+<ul>
+<li>Host bits = $32 - 26 = 6$</li>
+<li>Hosts per subnet = $2^6 - 2 = 62$</li>
+<li>Block size = 256 − 192 = 64</li>
+<li>Subnets: 192.168.1.0, 192.168.1.64, 192.168.1.128, 192.168.1.192</li>
+<li>130 falls in 192.168.1.128 subnet</li>
+<li><strong>Network ID</strong>: 192.168.1.128</li>
+<li><strong>Broadcast</strong>: 192.168.1.191 (128 + 63)</li>
+<li><strong>Usable host range</strong>: 192.168.1.129 to 192.168.1.190</li>
+</ul>
+
+<h3>CIDR (Classless Inter-Domain Routing)</h3>
+<p>Notation: A.B.C.D/n where $n$ = prefix length (network bits).</p>
+<p>Example: 10.0.0.0/8 means first 8 bits are network, last 24 are host.</p>
+
+<h3>Quick Reference</h3>
+<table>
+<tr><th>Prefix</th><th>Subnet Mask</th><th>Hosts</th></tr>
+<tr><td>/24</td><td>255.255.255.0</td><td>254</td></tr>
+<tr><td>/25</td><td>255.255.255.128</td><td>126</td></tr>
+<tr><td>/26</td><td>255.255.255.192</td><td>62</td></tr>
+<tr><td>/27</td><td>255.255.255.224</td><td>30</td></tr>
+<tr><td>/28</td><td>255.255.255.240</td><td>14</td></tr>
+<tr><td>/30</td><td>255.255.255.252</td><td>2 (point-to-point links)</td></tr>
+</table>
+
+<div class="info-box">
+<strong>🎯 GATE Tip:</strong> Always remember: <strong>network ID has all host bits 0</strong>, <strong>broadcast has all host bits 1</strong>. The number of valid hosts is $2^n - 2$ (subtract both). For /31, only 2 IPs — used for point-to-point links (special case, 2 hosts allowed).
+</div>
+`
+            },
+            'tcp-congestion': {
+                title: 'TCP Congestion Control',
+                content: `
+<h2>TCP Congestion Control</h2>
+<p>TCP uses a sliding window protocol with <strong>congestion control</strong> to avoid network collapse.</p>
+
+<h3>Key Variables</h3>
+<ul>
+<li><strong>cwnd (Congestion Window)</strong>: Sender-side limit on bytes in flight</li>
+<li><strong>rwnd (Receiver Window)</strong>: Receiver's advertised window</li>
+<li><strong>Effective window</strong> = $\\min(cwnd, rwnd)$</li>
+<li><strong>ssthresh (Slow Start Threshold)</strong>: Threshold for switching to AIMD</li>
+</ul>
+
+<h3>Three Phases</h3>
+
+<h4>1. Slow Start</h4>
+<ul>
+<li>Initial: cwnd = 1 MSS (typically)</li>
+<li>For each ACK received, cwnd += 1 MSS</li>
+<li>So cwnd <strong>doubles every RTT</strong> (exponential growth)</li>
+<li>Continues until cwnd reaches ssthresh, then switches to AIMD</li>
+<li>Misnomer: "slow start" is actually exponential!</li>
+</ul>
+
+<h4>2. Congestion Avoidance (AIMD)</h4>
+<ul>
+<li>cwnd increases by 1 MSS per RTT (linear growth)</li>
+<li>Additive Increase, Multiplicative Decrease</li>
+</ul>
+
+<h4>3. Fast Retransmit & Fast Recovery</h4>
+<ul>
+<li><strong>3 duplicate ACKs</strong> = packet loss detected</li>
+<li>Fast retransmit: retransmit lost packet immediately (don't wait for timeout)</li>
+<li>Fast recovery: ssthresh = cwnd/2, cwnd = ssthresh + 3 (then AIMD)</li>
+<li>Does NOT go back to slow start</li>
+</ul>
+
+<h3>On Timeout (Severe Congestion)</h3>
+<ol>
+<li>ssthresh = cwnd / 2</li>
+<li>cwnd = 1 MSS</li>
+<li>Go back to slow start phase</li>
+</ol>
+
+<h3>On 3 Duplicate ACKs (Mild Congestion)</h3>
+<ol>
+<li>ssthresh = cwnd / 2</li>
+<li>cwnd = ssthresh + 3</li>
+<li>Enter fast recovery (linear growth)</li>
+</ol>
+
+<h3>Example Calculation</h3>
+<p>Given: cwnd = 32 MSS, ssthresh = 16 MSS. Timeout occurs.</p>
+<ol>
+<li>New ssthresh = 32/2 = 16 MSS</li>
+<li>New cwnd = 1 MSS (slow start)</li>
+<li>Next RTTs: cwnd = 2, 4, 8, 16 (slow start, exponential)</li>
+<li>At cwnd = 16 (= ssthresh), switch to AIMD</li>
+<li>Next RTTs: cwnd = 17, 18, 19, ... (linear growth)</li>
+</ol>
+
+<h3>TCP Tahoe vs Reno vs NewReno</h3>
+<table>
+<tr><th>Version</th><th>Fast Retransmit?</th><th>Fast Recovery?</th><th>On 3 dup ACK</th></tr>
+<tr><td>Tahoe</td><td>Yes</td><td>No</td><td>ssthresh = cwnd/2, cwnd = 1</td></tr>
+<tr><td>Reno</td><td>Yes</td><td>Yes</td><td>ssthresh = cwnd/2, cwnd = ssthresh</td></tr>
+<tr><td>NewReno</td><td>Yes</td><td>Yes</td><td>Handles multiple packet loss better</td></tr>
+</table>
+
+<div class="info-box">
+<strong>🎯 GATE Tip:</strong> Counting the number of RTTs to reach congestion avoidance: From cwnd = 1, after $k$ RTTs in slow start, cwnd = $2^k$. To reach ssthresh = $S$, need $k = \\log_2 S$ RTTs.
+</div>
+`
+            }
+        }
+    },
+    'theory-of-computation': {
+        label: 'Theory of Computation', icon: '🔤',
+        topics: {
+            'fa-regular': {
+                title: 'Finite Automata & Regular Languages',
+                content: `
+<h2>Finite Automata</h2>
+
+<h3>DFA (Deterministic Finite Automaton)</h3>
+<p>A DFA is a 5-tuple $(Q, \\Sigma, \\delta, q_0, F)$:</p>
+<ul>
+<li>$Q$: finite set of states</li>
+<li>$\\Sigma$: finite input alphabet</li>
+<li>$\\delta: Q \\times \\Sigma \\to Q$: transition function (exactly one transition per state-symbol pair)</li>
+<li>$q_0 \\in Q$: start state</li>
+<li>$F \\subseteq Q$: set of accept/final states</li>
+</ul>
+
+<h3>NFA (Nondeterministic Finite Automaton)</h3>
+<p>Same as DFA, but $\\delta: Q \\times (\\Sigma \\cup \\{\\epsilon\\}) \\to 2^Q$ (subset of states). Allows:</p>
+<ul>
+<li>Zero, one, or multiple transitions for the same (state, symbol)</li>
+<li>$\\epsilon$-transitions (move without consuming input)</li>
+</ul>
+
+<h3>DFA vs NFA</h3>
+<ul>
+<li>Both recognize the same class of languages: <strong>regular languages</strong></li>
+<li>Subset construction converts NFA → DFA. Worst case: $n$-state NFA → $2^n$-state DFA</li>
+<li>DFA is faster to execute (no backtracking), NFA is more compact</li>
+</ul>
+
+<h3>Regular Expressions</h3>
+<p>Regular expressions denote regular languages. Built from:</p>
+<ul>
+<li>Base: $\\emptyset$ (empty set), $\\epsilon$ (empty string), $a$ (single symbol)</li>
+<li>Operations: $R+S$ (union), $RS$ (concatenation), $R^*$ (Kleene star)</li>
+</ul>
+
+<h3>Identities</h3>
+<ul>
+<li>$R + \\emptyset = R$</li>
+<li>$R \\cdot \\epsilon = R$</li>
+<li>$R \\cdot \\emptyset = \\emptyset$</li>
+<li>$R + R = R$ (idempotent)</li>
+<li>$(R^*)^* = R^*$</li>
+<li>$\\epsilon + R R^* = R^*$</li>
+<li>$(R+S)^* = (R^* S^*)^*$</li>
+</ul>
+
+<h3>Arden's Theorem</h3>
+<p>For equation $R = Q + RP$ (where $\\epsilon \\notin P$), the solution is $R = QP^*$.</p>
+<p>Useful for converting DFA to regular expression.</p>
+
+<h3>Pumping Lemma for Regular Languages</h3>
+<p>For every regular language $L$, there exists a constant $p$ (pumping length) such that any string $w \\in L$ with $|w| \\geq p$ can be split $w = xyz$ satisfying:</p>
+<ol>
+<li>$|xy| \\leq p$</li>
+<li>$|y| \\geq 1$</li>
+<li>$xy^i z \\in L$ for all $i \\geq 0$</li>
+</ol>
+<p><strong>Used to prove a language is NOT regular</strong> (by contradiction).</p>
+
+<h3>Closure Properties of Regular Languages</h3>
+<p>Regular languages are closed under:</p>
+<ul>
+<li>Union, Intersection, Complement</li>
+<li>Concatenation, Kleene star</li>
+<li>Reversal, Difference</li>
+<li>Homomorphism, Inverse homomorphism</li>
+</ul>
+<p><strong>Not closed under</strong>: Subset, Infinite, Equality (decidable but not closed under operation).</p>
+
+<h3>Common Non-Regular Languages</h3>
+<ul>
+<li>$\\{a^n b^n : n \\geq 0\\}$ — needs counting (not regular)</li>
+<li>$\\{ww : w \\in \\Sigma^*\\}$ — palindromes of even length (not regular)</li>
+<li>$\\{a^{n^2} : n \\geq 0\\}$ — gaps grow (not regular)</li>
+</ul>
+
+<div class="info-box">
+<strong>🎯 GATE Tip:</strong> When using pumping lemma, choose $w$ carefully — it must be in $L$ and long enough. Then show that for <em>any</em> valid split $w = xyz$, there exists some $i$ such that $xy^i z \\notin L$. Common mistake: assuming a specific $y$.
+</div>
+`
+            }
+        }
+    },
+    'digital-logic': {
+        label: 'Digital Logic', icon: '🔌',
+        topics: {
+            'number-systems': {
+                title: 'Number Systems & Conversions',
+                content: `
+<h2>Number Systems</h2>
+
+<h3>The Four Systems</h3>
+<table>
+<tr><th>System</th><th>Base</th><th>Digits</th><th>Example</th></tr>
+<tr><td>Binary</td><td>2</td><td>0, 1</td><td>1011₂</td></tr>
+<tr><td>Octal</td><td>8</td><td>0–7</td><td>13₈</td></tr>
+<tr><td>Decimal</td><td>10</td><td>0–9</td><td>11₁₀</td></tr>
+<tr><td>Hexadecimal</td><td>16</td><td>0–9, A–F</td><td>B₁₆</td></tr>
+</table>
+
+<h3>Conversions</h3>
+
+<h4>Any Base → Decimal</h4>
+<p>Multiply each digit by base<sup>position</sup> and sum.</p>
+<p>Example: $1011_2 = 1 \\cdot 8 + 0 \\cdot 4 + 1 \\cdot 2 + 1 \\cdot 1 = 11_{10}$</p>
+
+<h4>Decimal → Any Base</h4>
+<ul>
+<li><strong>Integer part</strong>: Repeatedly divide by base, read remainders from bottom to top</li>
+<li><strong>Fractional part</strong>: Repeatedly multiply by base, read integer parts from top to bottom</li>
+</ul>
+
+<h4>Binary ↔ Octal</h4>
+<p>Group 3 bits: $101111_2 = 101\\;111 = 57_8$</p>
+
+<h4>Binary ↔ Hex</h4>
+<p>Group 4 bits: $10111111_2 = 1010\\;1111 = AF_{16}$</p>
+
+<h3>Signed Number Representation</h3>
+
+<h4>1. Sign-Magnitude</h4>
+<ul>
+<li>MSB = sign bit (0 = +, 1 = −)</li>
+<li>Remaining bits = magnitude</li>
+<li>Two zeros: +0 and −0</li>
+<li>Range (8-bit): −127 to +127</li>
+</ul>
+
+<h4>2. 1's Complement</h4>
+<ul>
+<li>Positive: same as binary</li>
+<li>Negative: flip all bits of magnitude</li>
+<li>Two zeros</li>
+<li>Range (8-bit): −127 to +127</li>
+</ul>
+
+<h4>3. 2's Complement (Most Common)</h4>
+<ul>
+<li>Positive: same as binary</li>
+<li>Negative: 1's complement + 1</li>
+<li>Single zero (all 0s)</li>
+<li>Range (8-bit): −128 to +127 (asymmetric — one more negative)</li>
+<li>n-bit range: $-2^{n-1}$ to $2^{n-1} - 1$</li>
+</ul>
+
+<h3>Finding Range</h3>
+<p>For $n$-bit 2's complement:</p>
+<ul>
+<li>Min: $-2^{n-1}$ (e.g., 8-bit: $-128$)</li>
+<li>Max: $2^{n-1} - 1$ (e.g., 8-bit: $+127$)</li>
+<li>Total values: $2^n$</li>
+</ul>
+
+<h3>2's Complement Subtraction</h3>
+<p>To compute $A - B$: compute $A + (-B)$ where $-B$ is 2's complement of $B$.</p>
+
+<h3>Overflow Detection</h3>
+<ul>
+<li><strong>Carry into MSB ≠ Carry out of MSB</strong> → overflow</li>
+<li>Adding two positives gives negative → overflow</li>
+<li>Adding two negatives gives positive → overflow</li>
+<li>Adding positive and negative → never overflows</li>
+</ul>
+
+<div class="info-box">
+<strong>🎯 GATE Tip:</strong> 2's complement is preferred because: (1) single representation of zero, (2) arithmetic works uniformly (no special handling for negatives), (3) asymmetric range gives one extra negative value. Range for $n$ bits: $-2^{n-1}$ to $+2^{n-1} - 1$.
+</div>
+`
+            }
+        }
+    }
+};
+
+// ============ State ============
+let state = {
+    subject: null,
+    topic: null,
+    search: ''
+};
+
+// ============ Init ============
+function init() {
+    const params = new URLSearchParams(location.search);
+    const subj = params.get('subject');
+    if (subj && NOTES[subj]) {
+        state.subject = subj;
+        const topicKeys = Object.keys(NOTES[subj].topics);
+        if (topicKeys.length > 0) state.topic = topicKeys[0];
+    }
+    renderSidebar();
+    if (state.subject && state.topic) renderTopic();
+    else renderHome();
+}
+
+function renderSidebar() {
+    const total = Object.values(NOTES).reduce((s, subj) => s + Object.keys(subj.topics).length, 0);
+    document.getElementById('sidebarStats').innerHTML = `<strong>${Object.keys(NOTES).length}</strong> Subjects • <strong>${total}</strong> Topics`;
+
+    const list = document.getElementById('topicList');
+    let html = '';
+    for (const [subjKey, subj] of Object.entries(NOTES)) {
+        html += `<div class="pyq-section-title">${subj.icon} ${subj.label}</div>`;
+        for (const [topicKey, topic] of Object.entries(subj.topics)) {
+            const active = state.subject === subjKey && state.topic === topicKey;
+            html += `<button class="chapter-btn ${active ? 'active' : ''}" onclick="selectTopic('${subjKey}', '${topicKey}')"><span>${topic.title}</span></button>`;
+        }
+    }
+    list.innerHTML = html;
+}
+
+function renderHome() {
+    document.getElementById('mainContent').innerHTML = `
+        <div style="max-width:900px;margin:0 auto;">
+            <div style="text-align:center;margin-bottom:30px;">
+                <div style="font-size:3rem;margin-bottom:8px;">📖</div>
+                <h1 style="font-size:1.8rem;font-weight:800;color:var(--text);margin-bottom:6px;">Learn — GATE CSE Concept Notes</h1>
+                <p style="color:var(--text-muted);font-size:0.92rem;max-width:680px;margin:0 auto;">
+                    Comprehensive concept notes with formulas, examples, and GATE tips. Everything renders inside the app — no external redirects.
+                </p>
+            </div>
+
+            <div class="section-eyebrow">Browse by Subject</div>
+            <div class="subjects-grid">
+                ${Object.entries(NOTES).map(([key, subj]) => {
+                    const topicCount = Object.keys(subj.topics).length;
+                    return `
+                        <div class="subject-card" onclick="selectSubject('${key}')" style="cursor:pointer;">
+                            <div class="card-top">
+                                <div class="card-icon">${subj.icon}</div>
+                                <div class="count-badge">${topicCount}</div>
+                            </div>
+                            <div class="card-title">${subj.label}</div>
+                            <div class="card-meta">${topicCount} topic${topicCount !== 1 ? 's' : ''} →</div>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+
+            <div class="custom-playlist-section" style="margin-top:24px;background:linear-gradient(135deg, rgba(102,126,234,0.05), rgba(118,75,162,0.05));">
+                <h3>💡 How to use the Learn section</h3>
+                <p style="margin-bottom:8px;">
+                    <strong>📖 Read</strong> — Concept notes with KaTeX-rendered math, code blocks, and comparison tables.
+                </p>
+                <p style="margin-bottom:8px;">
+                    <strong>🎯 GATE Tips</strong> — Each topic ends with a tip highlighting common pitfalls or must-remember facts.
+                </p>
+                <p>
+                    <strong>📝 Practice</strong> — After reading a topic, click the "Practice PYQs" button at the bottom to attempt related previous year questions.
+                </p>
+            </div>
+        </div>
+    `;
+}
+
+function selectSubject(key) {
+    state.subject = key;
+    const topicKeys = Object.keys(NOTES[key].topics);
+    state.topic = topicKeys[0];
+    renderSidebar();
+    renderTopic();
+    document.getElementById('contentArea').scrollTop = 0;
+}
+
+function selectTopic(subjKey, topicKey) {
+    state.subject = subjKey;
+    state.topic = topicKey;
+    renderSidebar();
+    renderTopic();
+    document.getElementById('contentArea').scrollTop = 0;
+}
+
+function renderTopic() {
+    const subj = NOTES[state.subject];
+    const topic = subj.topics[state.topic];
+
+    // Find the matching PYQ chapter for this subject
+    const pyqChapterMap = {
+        'algorithms': 'complexity-analysis-and-asymptotic-notations',
+        'data-structures': 'trees',
+        'operating-systems': 'process-concepts-and-cpu-scheduling',
+        'database-management-system': 'functional-dependencies-and-normalization',
+        'computer-networks': 'network-layer',
+        'theory-of-computation': 'finite-automata-and-regular-language',
+        'digital-logic': 'number-systems'
+    };
+
+    document.getElementById('mainContent').innerHTML = `
+        <div style="max-width:900px;margin:0 auto;">
+            <div class="chapter-header">
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+                    <span style="font-size:1.5rem;">${subj.icon}</span>
+                    <span style="font-size:0.82rem;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:0.04em;">${subj.label}</span>
+                </div>
+                <h2 style="font-size:1.5rem;font-weight:800;">${topic.title}</h2>
+            </div>
+
+            <div class="article-content" style="background:white;border:1px solid var(--border);border-radius:var(--r-lg);padding:28px 32px;line-height:1.7;font-size:0.95rem;color:var(--text);">
+                ${topic.content}
+            </div>
+
+            <div style="display:flex;gap:10px;justify-content:center;margin:24px 0;flex-wrap:wrap;">
+                <a href="./pyq.html?subject=${state.subject}" class="btn btn-primary btn-sm">📝 Practice PYQs for ${subj.label}</a>
+                <a href="./flashcards.html" class="btn btn-ghost btn-sm">🎴 Review Flashcards</a>
+                <a href="./quiz.html" class="btn btn-ghost btn-sm">🎯 Take a Quiz</a>
+                <button class="btn btn-ghost btn-sm" onclick="SOH_AI && SOH_AI.open()">🤖 Ask AI about this</button>
+            </div>
+        </div>
+    `;
+
+    // Render math
+    setTimeout(() => {
+        document.querySelectorAll('.article-content').forEach(el => {
+            if (typeof renderMathInElement === 'function') {
+                renderMathInElement(el, {
+                    delimiters: [
+                        { left: '$$', right: '$$', display: true },
+                        { left: '$', right: '$', display: false },
+                        { left: '\\(', right: '\\)', display: false },
+                        { left: '\\[', right: '\\]', display: true },
+                    ],
+                    throwOnError: false
+                });
+            }
+        });
+    }, 50);
+
+    // Style tables and code blocks within article-content
+    const style = document.createElement('style');
+    style.textContent = `
+        .article-content h2 { font-size: 1.4rem; font-weight: 800; margin: 20px 0 12px; color: var(--text); }
+        .article-content h3 { font-size: 1.1rem; font-weight: 700; margin: 16px 0 8px; color: var(--text); }
+        .article-content h4 { font-size: 0.98rem; font-weight: 700; margin: 14px 0 6px; color: var(--text-2); }
+        .article-content p { margin: 8px 0; }
+        .article-content ul, .article-content ol { margin: 8px 0 8px 24px; }
+        .article-content ul { list-style: disc; }
+        .article-content ol { list-style: decimal; }
+        .article-content li { margin: 4px 0; }
+        .article-content table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 0.86rem; }
+        .article-content th, .article-content td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; }
+        .article-content th { background: var(--bg-light); font-weight: 700; }
+        .article-content code { background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 0.88em; color: #be185d; }
+        .article-content pre { background: #1e293b; color: #e2e8f0; padding: 14px 18px; border-radius: 8px; overflow-x: auto; margin: 12px 0; font-size: 0.82rem; line-height: 1.5; }
+        .article-content pre code { background: transparent; color: inherit; padding: 0; }
+        .article-content .info-box { background: linear-gradient(135deg, rgba(102,126,234,0.08), rgba(118,75,162,0.08)); border-left: 4px solid var(--primary); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 16px 0; font-size: 0.88rem; }
+    `;
+    if (!document.getElementById('article-styles')) {
+        style.id = 'article-styles';
+        document.head.appendChild(style);
+    }
+}
+
+function goHome() {
+    state.subject = null;
+    state.topic = null;
+    renderSidebar();
+    renderHome();
+}
+
+function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('collapsed');
+}
+
+function onSearch() {
+    const q = document.getElementById('searchBox').value.toLowerCase().trim();
+    if (!q) { renderSidebar(); return; }
+    const list = document.getElementById('topicList');
+    let html = '';
+    for (const [subjKey, subj] of Object.entries(NOTES)) {
+        for (const [topicKey, topic] of Object.entries(subj.topics)) {
+            if (topic.title.toLowerCase().includes(q) || topic.content.toLowerCase().includes(q) || subj.label.toLowerCase().includes(q)) {
+                html += `<button class="chapter-btn" onclick="selectTopic('${subjKey}', '${topicKey}')"><span>${subj.icon} ${topic.title}</span></button>`;
+            }
+        }
+    }
+    list.innerHTML = html || '<div style="text-align:center;color:var(--text-muted);padding:20px;font-size:0.85rem;">No topics found</div>';
+}
+
+init();
+</script>
+<script src="./theme.js"></script>
+</body>
+</html>

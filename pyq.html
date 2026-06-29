@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>GATE CSE PYQs — Previous Year Questions with Solutions | SOH CSE</title>
-<meta name="description" content="2,736 GATE CSE previous year questions (1987-2026) with detailed solutions. Practice mode, year-wise papers, weightage analysis, and chapter-wise filtering.">
+<meta name="description" content="2,736 GATE CSE previous year questions (1987-2026) with detailed solutions. Practice mode, year-wise papers, weightage analysis, AI solver, and chapter-wise filtering.">
 <link rel="stylesheet" href="./style.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
@@ -15,7 +15,6 @@
 </head>
 <body>
 
-<!-- ============ Top Navigation ============ -->
 <nav class="topnav">
     <div class="topnav-inner">
         <a href="./index.html" class="topnav-brand">
@@ -27,18 +26,21 @@
         </button>
         <div class="topnav-links">
             <a href="./index.html" class="topnav-link">🏠 Home</a>
+            <a href="./learn.html" class="topnav-link">📖 Learn</a>
+            <a href="./syllabus.html" class="topnav-link">📋 Syllabus</a>
             <a href="./materials.html" class="topnav-link">📚 Materials</a>
             <a href="./pyq.html" class="topnav-link active">📝 PYQs</a>
             <a href="./videos.html" class="topnav-link">🎥 Videos</a>
+            <a href="./flashcards.html" class="topnav-link">🎴 Flashcards</a>
+            <a href="./quiz.html" class="topnav-link">🎯 Quiz</a>
+            <a href="./progress.html" class="topnav-link">📊 Progress</a>
+            <a href="./planner.html" class="topnav-link">📅 Planner</a>
             <a href="./resources.html" class="topnav-link">🚀 Resources</a>
-            <a href="javascript:void(0)" onclick="setView('practice')" class="topnav-cta">🎯 Practice</a>
         </div>
     </div>
 </nav>
 
-<!-- ============ App Layout ============ -->
 <div class="app-container">
-    <!-- Sidebar -->
     <div class="app-sidebar" id="sidebar">
         <div class="sidebar-header">
             <div class="sidebar-header-text">
@@ -47,47 +49,27 @@
             </div>
             <div class="sidebar-stats" id="sidebarStats">Loading…</div>
         </div>
-
         <div class="breadcrumb" id="breadcrumb">
             <span class="breadcrumb-item" onclick="goHome()">🏠 Home</span>
         </div>
-
         <div class="sidebar-content">
-            <button class="home-link" onclick="goHome()">
-                📖 <span>Study Materials</span>
-            </button>
-
+            <button class="home-link" onclick="location.href='./materials.html'">📖 <span>Study Materials</span></button>
             <input type="text" class="search-box" id="searchBox" placeholder="🔍 Search questions..." oninput="onSearchInput()">
-
             <div class="pyq-section-title">Quick Views</div>
-            <button class="chapter-btn" onclick="setView('home')" data-view="home">
-                <span>🏠 All Subjects</span>
-            </button>
-            <button class="chapter-btn" onclick="setView('weightage')" data-view="weightage">
-                <span>📊 Weightage Analysis</span>
-            </button>
-            <button class="chapter-btn" onclick="setView('papers')" data-view="papers">
-                <span>📅 Year-wise Papers</span>
-            </button>
-            <button class="chapter-btn" onclick="setView('practice')" data-view="practice">
-                <span>🎯 Practice Mode</span>
-            </button>
-
+            <button class="chapter-btn" onclick="setView('home')" data-view="home"><span>🏠 All Subjects</span></button>
+            <button class="chapter-btn" onclick="setView('weightage')" data-view="weightage"><span>📊 Weightage Analysis</span></button>
+            <button class="chapter-btn" onclick="setView('papers')" data-view="papers"><span>📅 Year-wise Papers</span></button>
+            <button class="chapter-btn" onclick="setView('practice')" data-view="practice"><span>🎯 Practice Mode</span></button>
+            <button class="chapter-btn" onclick="setView('bookmarked')" data-view="bookmarked"><span>🔖 Bookmarked Questions</span><span class="count-badge" id="bookmarkCount">0</span></button>
             <div class="pyq-section-title" style="margin-top: 14px;">Subjects</div>
             <div id="subjectList"></div>
         </div>
     </div>
-
     <button class="toggle-sidebar-btn" onclick="toggleSidebar()" title="Toggle sidebar">◀</button>
-
-    <!-- Content area -->
     <div class="app-content">
         <div class="app-content-scroll" id="contentArea">
             <div id="mainContent">
-                <div class="loading-screen">
-                    <div class="spinner"></div>
-                    <p>Loading 2,736 questions…</p>
-                </div>
+                <div class="loading-screen"><div class="spinner"></div><p>Loading 2,736 questions…</p></div>
             </div>
         </div>
     </div>
@@ -95,28 +77,17 @@
 
 <script src="./chatbot.js"></script>
 <script>
-// =================== State ===================
 let data = null;
 const state = {
-    view: 'home',          // 'home' | 'subject' | 'chapter' | 'search' | 'weightage' | 'papers' | 'practice'
-    subject: null,
-    chapter: null,
-    search: '',
-    yearFilter: null,
-    typeFilter: null,
-    marksFilter: null,
-    bonusFilter: null,
-    page: 1,
-    pageSize: 20,
-    expandedExplanations: new Set(),
-    expandedSubjects: new Set(),
-    practiceMode: false,
-    practiceAnswers: {},   // { questionId: selectedOptions[] | numericString }
-    selectedPaperYear: null,
+    view: 'home', subject: null, chapter: null, search: '',
+    yearFilter: null, typeFilter: null, marksFilter: null, bonusFilter: null,
+    page: 1, pageSize: 20,
+    expandedExplanations: new Set(), expandedSubjects: new Set(),
+    practiceMode: false, practiceAnswers: {}, selectedPaperYear: null,
 };
 let sidebarCollapsed = false;
+const Q_BOOKMARKS_KEY = 'sohcse_question_bookmarks';
 
-// =================== Init ===================
 async function init() {
     try {
         if (typeof window.GATE_DATA !== 'undefined' && window.GATE_DATA) {
@@ -128,8 +99,7 @@ async function init() {
         }
         renderStats();
         renderSidebar();
-
-        // Check URL params
+        updateBookmarkCount();
         const params = new URLSearchParams(location.search);
         const view = params.get('view');
         const subject = params.get('subject');
@@ -141,26 +111,15 @@ async function init() {
         else if (subject) selectSubject(subject);
         else renderHome();
     } catch (e) {
-        document.getElementById('mainContent').innerHTML = `
-            <div class="empty-state">
-                <div class="empty-icon">⚠️</div>
-                <h3>Failed to load PYQ data</h3>
-                <p>${escapeHtml(e.message)}</p>
-                <p style="margin-top:16px;font-size:0.85rem;">Make sure <code>gate_cse_data.js</code> is in the same directory.</p>
-            </div>
-        `;
+        document.getElementById('mainContent').innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><h3>Failed to load PYQ data</h3><p>${escapeHtml(e.message)}</p><p style="margin-top:16px;font-size:0.85rem;">Make sure <code>gate_cse_data.js</code> is in the same directory.</p></div>`;
     }
 }
 
 function renderStats() {
     const s = data.stats;
-    document.getElementById('sidebarStats').innerHTML =
-        `<strong>${s.total_questions.toLocaleString()}</strong> Questions<br>
-         <strong>${data.total_subjects}</strong> Subjects • <strong>${data.total_chapters}</strong> Chapters<br>
-         <strong>${s.year_range.min}–${s.year_range.max}</strong> • ${s.answer_coverage_pct}% answered`;
+    document.getElementById('sidebarStats').innerHTML = `<strong>${s.total_questions.toLocaleString()}</strong> Questions<br><strong>${data.total_subjects}</strong> Subjects • <strong>${data.total_chapters}</strong> Chapters<br><strong>${s.year_range.min}–${s.year_range.max}</strong> • ${s.answer_coverage_pct}% answered`;
 }
 
-// =================== Sidebar ===================
 function renderSidebar() {
     const list = document.getElementById('subjectList');
     list.innerHTML = data.subjects.map(s => `
@@ -171,24 +130,12 @@ function renderSidebar() {
                 <span class="count-badge">${s.total_questions}</span>
             </button>
             <div class="chapter-list">
-                <button class="chapter-btn" onclick="selectSubject('${s.subject}')">
-                    <span>📋 Overview</span>
-                    <span class="count-badge">${s.total_questions}</span>
-                </button>
-                ${s.chapters.map(c => `
-                    <button class="chapter-btn ${state.subject === s.subject && state.chapter === c.chapter ? 'active' : ''}"
-                            onclick="selectChapter('${s.subject}', '${c.chapter}')">
-                        <span>${c.chapter_label}</span>
-                        <span class="count-badge">${c.question_count}</span>
-                    </button>
-                `).join('')}
+                <button class="chapter-btn" onclick="selectSubject('${s.subject}')"><span>📋 Overview</span><span class="count-badge">${s.total_questions}</span></button>
+                ${s.chapters.map(c => `<button class="chapter-btn ${state.subject === s.subject && state.chapter === c.chapter ? 'active' : ''}" onclick="selectChapter('${s.subject}', '${c.chapter}')"><span>${c.chapter_label}</span><span class="count-badge">${c.question_count}</span></button>`).join('')}
             </div>
         </div>
     `).join('');
-    // Highlight active quick view
-    document.querySelectorAll('[data-view]').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.view === state.view);
-    });
+    document.querySelectorAll('[data-view]').forEach(btn => btn.classList.toggle('active', btn.dataset.view === state.view));
 }
 
 function toggleSubject(slug) {
@@ -198,36 +145,20 @@ function toggleSubject(slug) {
     if (item) item.classList.toggle('expanded');
 }
 
-function toggleSidebar() {
-    sidebarCollapsed = !sidebarCollapsed;
-    document.getElementById('sidebar').classList.toggle('collapsed', sidebarCollapsed);
-}
+function toggleSidebar() { sidebarCollapsed = !sidebarCollapsed; document.getElementById('sidebar').classList.toggle('collapsed', sidebarCollapsed); }
 
-// =================== Navigation ===================
 function goHome() {
-    state.view = 'home';
-    state.subject = null;
-    state.chapter = null;
-    state.search = '';
-    state.yearFilter = null;
-    state.typeFilter = null;
-    state.page = 1;
+    state.view = 'home'; state.subject = null; state.chapter = null; state.search = '';
+    state.yearFilter = null; state.typeFilter = null; state.page = 1;
     state.expandedExplanations.clear();
     document.getElementById('searchBox').value = '';
     history.replaceState(null, '', './pyq.html');
-    updateBreadcrumb();
-    renderHome();
-    renderSidebar();
+    updateBreadcrumb(); renderHome(); renderSidebar();
 }
 
 function setView(view) {
-    state.view = view;
-    state.subject = null;
-    state.chapter = null;
-    state.search = '';
-    state.page = 1;
-    state.yearFilter = null;
-    state.typeFilter = null;
+    state.view = view; state.subject = null; state.chapter = null; state.search = '';
+    state.page = 1; state.yearFilter = null; state.typeFilter = null;
     state.expandedExplanations.clear();
     document.getElementById('searchBox').value = '';
     if (view === 'practice') state.practiceMode = true;
@@ -236,169 +167,89 @@ function setView(view) {
     else if (view === 'weightage') renderWeightage();
     else if (view === 'papers') renderPapers();
     else if (view === 'practice') renderPracticeHome();
-    renderSidebar();
+    else if (view === 'bookmarked') renderBookmarkedQuestions();
+    renderSidebar(); updateBookmarkCount();
     document.getElementById('contentArea').scrollTop = 0;
 }
 
 function selectSubject(slug) {
-    state.view = 'subject';
-    state.subject = slug;
-    state.chapter = null;
-    state.page = 1;
-    state.expandedExplanations.clear();
-    state.expandedSubjects.add(slug);
-    state.yearFilter = null;
-    state.typeFilter = null;
+    state.view = 'subject'; state.subject = slug; state.chapter = null;
+    state.page = 1; state.expandedExplanations.clear();
+    state.expandedSubjects.add(slug); state.yearFilter = null; state.typeFilter = null;
     history.replaceState(null, '', `./pyq.html?subject=${slug}`);
-    renderSidebar();
-    updateBreadcrumb();
-    renderSubjectView();
+    renderSidebar(); updateBreadcrumb(); renderSubjectView();
 }
 
 function selectChapter(subjectSlug, chapterSlug) {
-    state.view = 'chapter';
-    state.subject = subjectSlug;
-    state.chapter = chapterSlug;
-    state.page = 1;
-    state.expandedExplanations.clear();
-    state.expandedSubjects.add(subjectSlug);
-    state.yearFilter = null;
-    state.typeFilter = null;
-    state.search = '';
-    document.getElementById('searchBox').value = '';
+    state.view = 'chapter'; state.subject = subjectSlug; state.chapter = chapterSlug;
+    state.page = 1; state.expandedExplanations.clear();
+    state.expandedSubjects.add(subjectSlug); state.yearFilter = null; state.typeFilter = null;
+    state.search = ''; document.getElementById('searchBox').value = '';
     history.replaceState(null, '', `./pyq.html?subject=${subjectSlug}&chapter=${chapterSlug}`);
-    renderSidebar();
-    updateBreadcrumb();
-    renderChapterView();
+    renderSidebar(); updateBreadcrumb(); renderChapterView();
     document.getElementById('contentArea').scrollTop = 0;
 }
 
 function updateBreadcrumb() {
     const bc = document.getElementById('breadcrumb');
     let html = '<span class="breadcrumb-item" onclick="goHome()">🏠 Home</span>';
-    if (state.view === 'weightage') {
-        html += '<span class="breadcrumb-separator">›</span><span class="breadcrumb-current">📊 Weightage Analysis</span>';
-    } else if (state.view === 'papers') {
-        html += '<span class="breadcrumb-separator">›</span><span class="breadcrumb-current">📅 Year-wise Papers</span>';
-    } else if (state.view === 'practice' && !state.chapter) {
-        html += '<span class="breadcrumb-separator">›</span><span class="breadcrumb-current">🎯 Practice Mode</span>';
-    } else if (state.subject) {
+    if (state.view === 'weightage') html += '<span class="breadcrumb-separator">›</span><span class="breadcrumb-current">📊 Weightage Analysis</span>';
+    else if (state.view === 'papers') html += '<span class="breadcrumb-separator">›</span><span class="breadcrumb-current">📅 Year-wise Papers</span>';
+    else if (state.view === 'practice' && !state.chapter) html += '<span class="breadcrumb-separator">›</span><span class="breadcrumb-current">🎯 Practice Mode</span>';
+    else if (state.view === 'bookmarked') html += '<span class="breadcrumb-separator">›</span><span class="breadcrumb-current">🔖 Bookmarked Questions</span>';
+    else if (state.subject) {
         const subj = data.subjects.find(s => s.subject === state.subject);
         html += '<span class="breadcrumb-separator">›</span>';
         if (state.chapter) {
             html += `<span class="breadcrumb-item" onclick="selectSubject('${state.subject}')">${subj.subject_label}</span>`;
             const chap = subj.chapters.find(c => c.chapter === state.chapter);
             html += `<span class="breadcrumb-separator">›</span><span class="breadcrumb-current">${chap.chapter_label}</span>`;
-        } else {
-            html += `<span class="breadcrumb-current">${subj.subject_label}</span>`;
-        }
-    } else if (state.view === 'search') {
-        html += `<span class="breadcrumb-separator">›</span><span class="breadcrumb-current">Search: "${escapeHtml(state.search)}"</span>`;
-    }
+        } else html += `<span class="breadcrumb-current">${subj.subject_label}</span>`;
+    } else if (state.view === 'search') html += `<span class="breadcrumb-separator">›</span><span class="breadcrumb-current">Search: "${escapeHtml(state.search)}"</span>`;
     bc.innerHTML = html;
 }
 
-// =================== Home View ===================
+function getSubjectIcon(slug) {
+    const icons = { 'algorithms':'⚡','data-structures':'🌳','discrete-mathematics':'∑','operating-systems':'⚙️','database-management-system':'🗄️','computer-networks':'🌐','theory-of-computation':'🔤','compiler-design':'🔧','digital-logic':'🔌','computer-organization':'💻','programming-languages':'👨‍💻','general-aptitude':'🧮','software-engineering':'📐','web-technologies':'🌍' };
+    return icons[slug] || '📖';
+}
+
 function renderHome() {
     const s = data.stats;
     document.getElementById('mainContent').innerHTML = `
         <div style="max-width:1100px;margin:0 auto;">
             <div style="text-align:center;margin-bottom:30px;">
                 <div style="font-size:3rem;margin-bottom:10px;">📚</div>
-                <h1 style="font-size:2rem;font-weight:800;color:var(--text);margin-bottom:6px;">
-                    GATE CSE Previous Year Questions
-                </h1>
-                <p style="color:var(--text-muted);font-size:0.95rem;">
-                    ${s.total_questions.toLocaleString()} questions • ${data.total_subjects} subjects • ${data.total_chapters} chapters • ${s.year_range.min}–${s.year_range.max}
-                </p>
+                <h1 style="font-size:2rem;font-weight:800;color:var(--text);margin-bottom:6px;">GATE CSE Previous Year Questions</h1>
+                <p style="color:var(--text-muted);font-size:0.95rem;">${s.total_questions.toLocaleString()} questions • ${data.total_subjects} subjects • ${data.total_chapters} chapters • ${s.year_range.min}–${s.year_range.max}</p>
             </div>
-
             <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-value">${s.total_questions.toLocaleString()}</div>
-                    <div class="stat-label">Total Questions</div>
-                </div>
-                <div class="stat-card" style="--card-grad: var(--grad-blue);">
-                    <div class="stat-value">${s.with_answer.toLocaleString()}</div>
-                    <div class="stat-label">With Answers (${s.answer_coverage_pct}%)</div>
-                </div>
-                <div class="stat-card" style="--card-grad: var(--grad-orange);">
-                    <div class="stat-value">${s.with_explanation.toLocaleString()}</div>
-                    <div class="stat-label">With Explanations</div>
-                </div>
-                <div class="stat-card" style="--card-grad: var(--grad-red);">
-                    <div class="stat-value">${s.year_range.max - s.year_range.min + 1}</div>
-                    <div class="stat-label">Years (${s.year_range.min}–${s.year_range.max})</div>
-                </div>
+                <div class="stat-card"><div class="stat-value">${s.total_questions.toLocaleString()}</div><div class="stat-label">Total Questions</div></div>
+                <div class="stat-card" style="--card-grad: var(--grad-blue);"><div class="stat-value">${s.with_answer.toLocaleString()}</div><div class="stat-label">With Answers (${s.answer_coverage_pct}%)</div></div>
+                <div class="stat-card" style="--card-grad: var(--grad-orange);"><div class="stat-value">${s.with_explanation.toLocaleString()}</div><div class="stat-label">With Explanations</div></div>
+                <div class="stat-card" style="--card-grad: var(--grad-red);"><div class="stat-value">${s.year_range.max - s.year_range.min + 1}</div><div class="stat-label">Years (${s.year_range.min}–${s.year_range.max})</div></div>
             </div>
-
             <div class="section-eyebrow" style="margin-top: 30px;">Quick Actions</div>
             <div class="features-grid" style="margin-bottom: 30px;">
-                <div class="feature-card" style="--card-grad: var(--grad-purple);" onclick="setView('practice')">
-                    <div class="feature-icon">🎯</div>
-                    <div class="feature-title">Practice Mode</div>
-                    <div class="feature-desc">Hide answers, attempt questions, and reveal solutions only when ready. Track your score in real time.</div>
-                    <div class="feature-arrow">Start practicing →</div>
-                </div>
-                <div class="feature-card" style="--card-grad: var(--grad-red);" onclick="setView('weightage')">
-                    <div class="feature-icon">📊</div>
-                    <div class="feature-title">Weightage Analysis</div>
-                    <div class="feature-desc">See which subjects and chapters carry the most weight in GATE. Plan your revision around actual trends.</div>
-                    <div class="feature-arrow">View analytics →</div>
-                </div>
-                <div class="feature-card" style="--card-grad: var(--grad-cyan);" onclick="setView('papers')">
-                    <div class="feature-icon">📅</div>
-                    <div class="feature-title">Year-wise Papers</div>
-                    <div class="feature-desc">Practice full GATE CSE papers from 2026 back to 1987, organized by year and set.</div>
-                    <div class="feature-arrow">Browse papers →</div>
-                </div>
+                <div class="feature-card" style="--card-grad: var(--grad-purple);" onclick="setView('practice')"><div class="feature-icon">🎯</div><div class="feature-title">Practice Mode</div><div class="feature-desc">Hide answers, attempt questions, and reveal solutions only when ready. Track your score in real time.</div><div class="feature-arrow">Start practicing →</div></div>
+                <div class="feature-card" style="--card-grad: var(--grad-red);" onclick="setView('weightage')"><div class="feature-icon">📊</div><div class="feature-title">Weightage Analysis</div><div class="feature-desc">See which subjects and chapters carry the most weight in GATE. Plan your revision around actual trends.</div><div class="feature-arrow">View analytics →</div></div>
+                <div class="feature-card" style="--card-grad: var(--grad-cyan);" onclick="setView('papers')"><div class="feature-icon">📅</div><div class="feature-title">Year-wise Papers</div><div class="feature-desc">Practice full GATE CSE papers from 2026 back to 1987, organized by year and set.</div><div class="feature-arrow">Browse papers →</div></div>
             </div>
-
             <div class="section-eyebrow">Browse by Subject</div>
             <div class="subjects-grid">
-                ${data.subjects.map(s => `
-                    <div class="subject-card" onclick="selectSubject('${s.subject}')">
-                        <div class="card-top">
-                            <div class="card-icon">${getSubjectIcon(s.subject)}</div>
-                            <div class="count-badge">${s.total_questions}</div>
-                        </div>
-                        <div class="card-title">${s.subject_label}</div>
-                        <div class="card-meta">${s.chapters.length} chapters</div>
-                    </div>
-                `).join('')}
+                ${data.subjects.map(s => `<div class="subject-card" onclick="selectSubject('${s.subject}')"><div class="card-top"><div class="card-icon">${getSubjectIcon(s.subject)}</div><div class="count-badge">${s.total_questions}</div></div><div class="card-title">${s.subject_label}</div><div class="card-meta">${s.chapters.length} chapters</div></div>`).join('')}
             </div>
         </div>
     `;
 }
 
-function getSubjectIcon(slug) {
-    const icons = {
-        'algorithms': '⚡', 'data-structures': '🌳', 'discrete-mathematics': '∑',
-        'operating-systems': '⚙️', 'database-management-system': '🗄️',
-        'computer-networks': '🌐', 'theory-of-computation': '🔤',
-        'compiler-design': '🔧', 'digital-logic': '🔌',
-        'computer-organization': '💻', 'programming-languages': '👨‍💻',
-        'general-aptitude': '🧮', 'software-engineering': '📐',
-        'web-technologies': '🌍',
-    };
-    return icons[slug] || '📖';
-}
-
-// =================== Subject View ===================
 function renderSubjectView() {
     const subj = data.subjects.find(s => s.subject === state.subject);
     if (!subj) return;
-
-    // Compute year distribution for this subject
     const yearDist = {};
-    for (const c of subj.chapters) {
-        for (const q of c.questions) {
-            yearDist[q.year] = (yearDist[q.year] || 0) + 1;
-        }
-    }
+    for (const c of subj.chapters) for (const q of c.questions) yearDist[q.year] = (yearDist[q.year] || 0) + 1;
     const sortedYears = Object.entries(yearDist).sort((a, b) => b[0] - a[0]);
     const maxCount = Math.max(...Object.values(yearDist));
-
     document.getElementById('mainContent').innerHTML = `
         <div style="max-width:1100px;margin:0 auto;">
             <div style="text-align:center;margin-bottom:24px;">
@@ -406,70 +257,42 @@ function renderSubjectView() {
                 <h1 style="font-size:1.8rem;font-weight:800;color:var(--text);margin-bottom:4px;">${subj.subject_label}</h1>
                 <p style="color:var(--text-muted);">${subj.chapters.length} chapters • ${subj.total_questions} questions</p>
             </div>
-
             <div class="section-eyebrow">Year-wise Distribution</div>
             <div style="background:white;border:1px solid var(--border);border-radius:var(--r-lg);padding:14px;margin-bottom:24px;">
-                ${sortedYears.slice(0, 12).map(([year, count]) => `
-                    <div class="weightage-row">
-                        <div class="year-label">${year}</div>
-                        <div class="weight-bar">
-                            <div class="fill" style="width: ${(count / maxCount * 100)}%;">${count}</div>
-                        </div>
-                    </div>
-                `).join('')}
+                ${sortedYears.slice(0, 12).map(([year, count]) => `<div class="weightage-row"><div class="year-label">${year}</div><div class="weight-bar"><div class="fill" style="width: ${(count / maxCount * 100)}%;">${count}</div></div></div>`).join('')}
                 ${sortedYears.length > 12 ? `<p style="text-align:center;color:var(--text-muted);font-size:0.8rem;margin-top:10px;">+ ${sortedYears.length - 12} more years</p>` : ''}
             </div>
-
             <div class="section-eyebrow">Chapters</div>
             <div class="chapters-grid">
                 ${subj.chapters.map(c => {
                     const years = c.questions.map(q => q.year);
                     const minY = years.length ? Math.min(...years) : '—';
                     const maxY = years.length ? Math.max(...years) : '—';
-                    return `
-                        <div class="chapter-card" onclick="selectChapter('${subj.subject}', '${c.chapter}')">
-                            <div class="card-top">
-                                <div class="card-title">${c.chapter_label}</div>
-                                <div class="count-badge">${c.question_count}</div>
-                            </div>
-                            <div class="card-meta">Years ${minY}–${maxY}</div>
-                        </div>
-                    `;
+                    return `<div class="chapter-card" onclick="selectChapter('${subj.subject}', '${c.chapter}')"><div class="card-top"><div class="card-title">${c.chapter_label}</div><div class="count-badge">${c.question_count}</div></div><div class="card-meta">Years ${minY}–${maxY}</div></div>`;
                 }).join('')}
             </div>
         </div>
     `;
 }
 
-// =================== Chapter View (Questions) ===================
 function renderChapterView() {
     const subj = data.subjects.find(s => s.subject === state.subject);
     const chap = subj?.chapters.find(c => c.chapter === state.chapter);
     if (!chap) return;
-
     const years = [...new Set(chap.questions.map(q => q.year))].sort((a, b) => b - a);
     const types = [...new Set(chap.questions.map(q => q.normalized_type))];
     const marksSet = [...new Set(chap.questions.map(q => q.marks))].sort();
-
     let filtered = chap.questions;
     if (state.yearFilter !== null) filtered = filtered.filter(q => q.year === state.yearFilter);
     if (state.typeFilter !== null) filtered = filtered.filter(q => q.normalized_type === state.typeFilter);
     if (state.marksFilter !== null) filtered = filtered.filter(q => q.marks === state.marksFilter);
     if (state.bonusFilter === 'bonus') filtered = filtered.filter(q => q.is_bonus);
     if (state.bonusFilter === 'oos') filtered = filtered.filter(q => q.is_out_of_syllabus);
-    if (state.search) {
-        const s = state.search.toLowerCase();
-        filtered = filtered.filter(q =>
-            (q.question_text || '').toLowerCase().includes(s) ||
-            q.options.some(o => (o.content || '').toLowerCase().includes(s))
-        );
-    }
-
+    if (state.search) { const s = state.search.toLowerCase(); filtered = filtered.filter(q => (q.question_text || '').toLowerCase().includes(s) || q.options.some(o => (o.content || '').toLowerCase().includes(s))); }
     const totalPages = Math.max(1, Math.ceil(filtered.length / state.pageSize));
     if (state.page > totalPages) state.page = 1;
     const start = (state.page - 1) * state.pageSize;
     const pageItems = filtered.slice(start, start + state.pageSize);
-
     const practiceBar = state.practiceMode ? `
         <div class="practice-bar">
             <div class="stat">📊 Score: <span class="stat-value" id="practiceScore">0 / 0</span></div>
@@ -485,63 +308,29 @@ function renderChapterView() {
         <div class="practice-bar" style="background: var(--grad-blue);">
             <div class="stat">📖 Study Mode</div>
             <div class="stat" style="opacity:0.9;">Answers visible</div>
-            <div class="practice-actions">
-                <button class="primary" onclick="togglePracticeMode()">🎯 Start Practice</button>
-            </div>
+            <div class="practice-actions"><button class="primary" onclick="togglePracticeMode()">🎯 Start Practice</button></div>
         </div>
     `;
-
     document.getElementById('mainContent').innerHTML = `
         ${practiceBar}
         <div class="chapter-header">
             <h2>${chap.chapter_label}</h2>
             <div class="meta">${subj.subject_label} • ${filtered.length} of ${chap.question_count} questions</div>
         </div>
-
-        ${years.length > 1 ? `
-            <div class="pyq-filters">
-                <span class="filter-label">Year:</span>
-                <button class="filter-chip ${state.yearFilter === null ? 'active' : ''}" onclick="setYearFilter(null)">All</button>
-                ${years.map(y => `<button class="filter-chip ${state.yearFilter === y ? 'active' : ''}" onclick="setYearFilter(${y})">${y}</button>`).join('')}
-            </div>
-        ` : ''}
-
-        ${types.length > 1 ? `
-            <div class="pyq-filters">
-                <span class="filter-label">Type:</span>
-                <button class="filter-chip ${state.typeFilter === null ? 'active' : ''}" onclick="setTypeFilter(null)">All</button>
-                ${types.map(t => `<button class="filter-chip ${state.typeFilter === t ? 'active' : ''}" onclick="setTypeFilter('${t}')">${typeLabel(t)}</button>`).join('')}
-            </div>
-        ` : ''}
-
-        ${marksSet.length > 1 ? `
-            <div class="pyq-filters">
-                <span class="filter-label">Marks:</span>
-                <button class="filter-chip ${state.marksFilter === null ? 'active' : ''}" onclick="setMarksFilter(null)">All</button>
-                ${marksSet.map(m => `<button class="filter-chip ${state.marksFilter === m ? 'active' : ''}" onclick="setMarksFilter(${m})">+${m}</button>`).join('')}
-            </div>
-        ` : ''}
-
+        ${years.length > 1 ? `<div class="pyq-filters"><span class="filter-label">Year:</span><button class="filter-chip ${state.yearFilter === null ? 'active' : ''}" onclick="setYearFilter(null)">All</button>${years.map(y => `<button class="filter-chip ${state.yearFilter === y ? 'active' : ''}" onclick="setYearFilter(${y})">${y}</button>`).join('')}</div>` : ''}
+        ${types.length > 1 ? `<div class="pyq-filters"><span class="filter-label">Type:</span><button class="filter-chip ${state.typeFilter === null ? 'active' : ''}" onclick="setTypeFilter(null)">All</button>${types.map(t => `<button class="filter-chip ${state.typeFilter === t ? 'active' : ''}" onclick="setTypeFilter('${t}')">${typeLabel(t)}</button>`).join('')}</div>` : ''}
+        ${marksSet.length > 1 ? `<div class="pyq-filters"><span class="filter-label">Marks:</span><button class="filter-chip ${state.marksFilter === null ? 'active' : ''}" onclick="setMarksFilter(null)">All</button>${marksSet.map(m => `<button class="filter-chip ${state.marksFilter === m ? 'active' : ''}" onclick="setMarksFilter(${m})">+${m}</button>`).join('')}</div>` : ''}
         <div class="pyq-filters">
             <span class="filter-label">Special:</span>
             <button class="filter-chip ${state.bonusFilter === null ? 'active' : ''}" onclick="setBonusFilter(null)">All</button>
             <button class="filter-chip ${state.bonusFilter === 'bonus' ? 'active' : ''}" onclick="setBonusFilter('bonus')">🎁 Bonus</button>
             <button class="filter-chip ${state.bonusFilter === 'oos' ? 'active' : ''}" onclick="setBonusFilter('oos')">🚫 Out of Syllabus</button>
         </div>
-
         <div id="questionsList">
-            ${pageItems.length === 0 ? `
-                <div class="empty-state">
-                    <div class="empty-icon">🔍</div>
-                    <h3>No questions match your filters</h3>
-                    <button class="btn btn-ghost btn-sm" style="margin-top:16px;" onclick="clearFilters()">Clear Filters</button>
-                </div>
-            ` : pageItems.map((q, i) => renderQuestionCard(q, start + i + 1)).join('')}
+            ${pageItems.length === 0 ? `<div class="empty-state"><div class="empty-icon">🔍</div><h3>No questions match your filters</h3><button class="btn btn-ghost btn-sm" style="margin-top:16px;" onclick="clearFilters()">Clear Filters</button></div>` : pageItems.map((q, i) => renderQuestionCard(q, start + i + 1)).join('')}
         </div>
-
         ${totalPages > 1 ? renderPagination(totalPages) : ''}
     `;
-
     document.querySelectorAll('.q-content').forEach(renderMathIn);
     if (state.practiceMode) updatePracticeScore();
 }
@@ -553,14 +342,7 @@ function renderQuestionCard(q, idx) {
     const showAnswerField = q.answer && !isMCQType;
     const userAns = state.practiceAnswers[q.question_id];
     const hideAnswer = state.practiceMode && !userAns;
-
-    let optionClass = '';
-    let optionExtra = '';
-    if (state.practiceMode && userAns) {
-        const userSet = new Set(Array.isArray(userAns) ? userAns : []);
-        // Determine per-option state
-    }
-
+    const qJson = JSON.stringify(q).replace(/'/g, "&#39;");
     return `
         <div class="question-card">
             <div class="q-header">
@@ -570,11 +352,11 @@ function renderQuestionCard(q, idx) {
                 <span class="q-marks">+${q.marks}${q.negative_marks ? ` / -${q.negative_marks}` : ''}</span>
                 ${q.is_bonus ? '<span class="q-bonus">BONUS</span>' : ''}
                 ${q.is_out_of_syllabus ? '<span class="q-oos">OUT OF SYLLABUS</span>' : ''}
+                <button class="q-action-btn ${isQuestionBookmarked(q.question_id) ? 'bookmarked' : ''}" onclick="toggleQuestionBookmark('${q.question_id}')" title="Bookmark this question">${isQuestionBookmarked(q.question_id) ? '🔖' : '📑'}</button>
+                <button class="q-action-btn" onclick='askAIAboutQuestion(${qJson})' title="Ask AI to solve this question">🤖 Ask AI</button>
                 <a class="q-source" href="${q.url}" target="_blank" rel="noopener" title="Open on ExamSIDE">Source ↗</a>
             </div>
-
             <div class="q-content">${sanitize(q.question_text)}</div>
-
             ${q.options.length > 0 ? `
                 <div class="options-list">
                     ${q.options.map(opt => {
@@ -590,52 +372,23 @@ function renderQuestionCard(q, idx) {
                             icon = '<svg class="option-check" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>';
                         }
                         const clickable = state.practiceMode && isMCQType && !userAns ? `onclick="selectPracticeOption('${q.question_id}', '${opt.identifier}', ${q.normalized_type === 'msq'})"` : '';
-                        return `
-                            <div class="option-row ${cls}" ${clickable}>
-                                <div class="option-identifier">${opt.identifier}</div>
-                                <div class="option-content q-content">${sanitize(opt.content)}</div>
-                                ${icon}
-                            </div>
-                        `;
+                        return `<div class="option-row ${cls}" ${clickable}><div class="option-identifier">${opt.identifier}</div><div class="option-content q-content">${sanitize(opt.content)}</div>${icon}</div>`;
                     }).join('')}
                 </div>
             ` : ''}
-
-            ${(showAnswerField && !hideAnswer) ? `
-                <div class="answer-box">
-                    <span class="answer-label">Answer:</span>
-                    <span class="answer-value q-content" style="display:inline">${sanitize(q.answer)}</span>
-                </div>
-            ` : ''}
-
+            ${(showAnswerField && !hideAnswer) ? `<div class="answer-box"><span class="answer-label">Answer:</span><span class="answer-value q-content" style="display:inline">${sanitize(q.answer)}</span></div>` : ''}
             ${(state.practiceMode && q.normalized_type === 'nat' && !userAns && q.has_answer) ? `
                 <div style="margin-top:12px;display:flex;gap:8px;align-items:center;">
-                    <input type="text" placeholder="Type your answer..." id="nat-input-${q.question_id}"
-                           style="padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:0.9rem;flex:1;max-width:240px;font-family:inherit;"
-                           onkeydown="if(event.key==='Enter') submitNATAnswer('${q.question_id}', '${q.answer || ''}')">
+                    <input type="text" placeholder="Type your answer..." id="nat-input-${q.question_id}" style="padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:0.9rem;flex:1;max-width:240px;font-family:inherit;" onkeydown="if(event.key==='Enter') submitNATAnswer('${q.question_id}', '${(q.answer || '').replace(/'/g, "\\'")}')">
                     <button class="btn btn-ghost btn-sm" onclick="submitNATAnswer('${q.question_id}', '${(q.answer || '').replace(/'/g, "\\'")}')">Submit</button>
                 </div>
             ` : ''}
-
-            ${(!q.has_answer && !hideAnswer) ? `
-                <div class="no-answer-box">⚠ Official answer not exposed by the source. See explanation below if available.</div>
-            ` : ''}
-
+            ${(!q.has_answer && !hideAnswer) ? `<div class="no-answer-box">⚠ Official answer not exposed by the source. See explanation below if available.</div>` : ''}
             ${(q.has_explanation && (!hideAnswer || userAns)) ? `
-                <button class="explanation-toggle ${explExpanded ? 'expanded' : ''}" onclick="toggleExplanation('${q.question_id}', this)">
-                    <span class="chevron">▶</span>
-                    ${explExpanded ? 'Hide' : 'Show'} Explanation
-                </button>
-                <div class="explanation-body q-content ${explExpanded ? '' : 'hidden'}" id="expl-${q.question_id}">
-                    ${sanitize(q.explanation)}
-                </div>
+                <button class="explanation-toggle ${explExpanded ? 'expanded' : ''}" onclick="toggleExplanation('${q.question_id}', this)"><span class="chevron">▶</span>${explExpanded ? 'Hide' : 'Show'} Explanation</button>
+                <div class="explanation-body q-content ${explExpanded ? '' : 'hidden'}" id="expl-${q.question_id}">${sanitize(q.explanation)}</div>
             ` : ''}
-
-            ${(state.practiceMode && hideAnswer) ? `
-                <div class="no-answer-box" style="background: var(--info-bg);border-color: var(--info);color: #1e40af;">
-                    🎯 Practice mode — answer the question to reveal the solution.
-                </div>
-            ` : ''}
+            ${(state.practiceMode && hideAnswer) ? `<div class="no-answer-box" style="background: var(--info-bg);border-color: var(--info);color: #1e40af;">🎯 Practice mode — answer the question to reveal the solution.</div>` : ''}
         </div>
     `;
 }
@@ -647,7 +400,6 @@ function renderPagination(totalPages) {
     start = Math.max(1, end - 4);
     const pages = [];
     for (let i = start; i <= end; i++) pages.push(i);
-
     return `
         <div class="pagination">
             <button class="page-btn" onclick="changePage(${cur - 1})" ${cur === 1 ? 'disabled' : ''}>‹ Prev</button>
@@ -660,26 +412,12 @@ function renderPagination(totalPages) {
     `;
 }
 
-// =================== Practice Mode ===================
-function togglePracticeMode() {
-    state.practiceMode = !state.practiceMode;
-    state.practiceAnswers = {};
-    state.expandedExplanations.clear();
-    renderChapterView();
-}
-
+function togglePracticeMode() { state.practiceMode = !state.practiceMode; state.practiceAnswers = {}; state.expandedExplanations.clear(); renderChapterView(); }
 function selectPracticeOption(qid, identifier, isMSQ) {
-    if (isMSQ) {
-        if (!state.practiceAnswers[qid]) state.practiceAnswers[qid] = [];
-        const arr = state.practiceAnswers[qid];
-        if (arr.includes(identifier)) arr.splice(arr.indexOf(identifier), 1);
-        else arr.push(identifier);
-    } else {
-        state.practiceAnswers[qid] = [identifier];
-    }
+    if (isMSQ) { if (!state.practiceAnswers[qid]) state.practiceAnswers[qid] = []; const arr = state.practiceAnswers[qid]; if (arr.includes(identifier)) arr.splice(arr.indexOf(identifier), 1); else arr.push(identifier); }
+    else state.practiceAnswers[qid] = [identifier];
     renderChapterView();
 }
-
 function submitNATAnswer(qid, correctAnswer) {
     const input = document.getElementById('nat-input-' + qid);
     if (!input) return;
@@ -688,57 +426,31 @@ function submitNATAnswer(qid, correctAnswer) {
     state.practiceAnswers[qid] = val;
     renderChapterView();
 }
-
 function updatePracticeScore() {
     let correct = 0, wrong = 0, total = 0;
     const subj = data.subjects.find(s => s.subject === state.subject);
     const chap = subj?.chapters.find(c => c.chapter === state.chapter);
     if (!chap) return;
-
-    // Get current page questions only
     const filtered = applyFilters(chap.questions);
     const start = (state.page - 1) * state.pageSize;
     const pageItems = filtered.slice(start, start + state.pageSize);
-
-    for (const q of pageItems) {
-        const userAns = state.practiceAnswers[q.question_id];
-        if (!userAns) continue;
-        total++;
-        const isCorrect = checkAnswer(q, userAns);
-        if (isCorrect) correct++;
-        else wrong++;
-    }
-    const scoreEl = document.getElementById('practiceScore');
-    if (scoreEl) scoreEl.textContent = `${correct} / ${total}`;
-    const correctEl = document.getElementById('practiceCorrect');
-    if (correctEl) correctEl.textContent = correct;
-    const wrongEl = document.getElementById('practiceWrong');
-    if (wrongEl) wrongEl.textContent = wrong;
+    for (const q of pageItems) { const userAns = state.practiceAnswers[q.question_id]; if (!userAns) continue; total++; const isCorrect = checkAnswer(q, userAns); if (isCorrect) correct++; else wrong++; }
+    const scoreEl = document.getElementById('practiceScore'); if (scoreEl) scoreEl.textContent = `${correct} / ${total}`;
+    const correctEl = document.getElementById('practiceCorrect'); if (correctEl) correctEl.textContent = correct;
+    const wrongEl = document.getElementById('practiceWrong'); if (wrongEl) wrongEl.textContent = wrong;
 }
-
 function checkAnswer(q, userAns) {
     if (q.normalized_type === 'nat') {
         if (!q.answer) return false;
-        const expected = q.answer;
-        // Range check
-        const rangeMatch = expected.match(/^(-?\d+(?:\.\d+)?)\s*to\s*(-?\d+(?:\.\d+)?)$/);
-        if (rangeMatch) {
-            const v = parseFloat(userAns);
-            return v >= parseFloat(rangeMatch[1]) - 0.01 && v <= parseFloat(rangeMatch[2]) + 0.01;
-        }
-        const e = parseFloat(expected);
-        const a = parseFloat(userAns);
+        const rangeMatch = q.answer.match(/^(-?\d+(?:\.\d+)?)\s*to\s*(-?\d+(?:\.\d+)?)$/);
+        if (rangeMatch) { const v = parseFloat(userAns); return v >= parseFloat(rangeMatch[1]) - 0.01 && v <= parseFloat(rangeMatch[2]) + 0.01; }
+        const e = parseFloat(q.answer); const a = parseFloat(userAns);
         if (isNaN(e) || isNaN(a)) return false;
         return Math.abs(e - a) < 0.01;
     }
-    if (Array.isArray(userAns)) {
-        const a = new Set(userAns);
-        const b = new Set(q.correct_options);
-        return a.size === b.size && [...a].every(x => b.has(x));
-    }
+    if (Array.isArray(userAns)) { const a = new Set(userAns); const b = new Set(q.correct_options); return a.size === b.size && [...a].every(x => b.has(x)); }
     return false;
 }
-
 function revealAll() {
     if (!confirm('Reveal all answers? This will end your practice session for this page.')) return;
     const subj = data.subjects.find(s => s.subject === state.subject);
@@ -747,21 +459,10 @@ function revealAll() {
     const filtered = applyFilters(chap.questions);
     const start = (state.page - 1) * state.pageSize;
     const pageItems = filtered.slice(start, start + state.pageSize);
-    for (const q of pageItems) {
-        if (!state.practiceAnswers[q.question_id]) {
-            // Mark as "revealed" so answers show
-            state.practiceAnswers[q.question_id] = '__revealed__';
-        }
-    }
+    for (const q of pageItems) { if (!state.practiceAnswers[q.question_id]) state.practiceAnswers[q.question_id] = '__revealed__'; }
     renderChapterView();
 }
-
-function resetPractice() {
-    if (!confirm('Reset all your answers on this page?')) return;
-    state.practiceAnswers = {};
-    renderChapterView();
-}
-
+function resetPractice() { if (!confirm('Reset all your answers on this page?')) return; state.practiceAnswers = {}; renderChapterView(); }
 function applyFilters(questions) {
     let filtered = questions;
     if (state.yearFilter !== null) filtered = filtered.filter(q => q.year === state.yearFilter);
@@ -769,180 +470,75 @@ function applyFilters(questions) {
     if (state.marksFilter !== null) filtered = filtered.filter(q => q.marks === state.marksFilter);
     if (state.bonusFilter === 'bonus') filtered = filtered.filter(q => q.is_bonus);
     if (state.bonusFilter === 'oos') filtered = filtered.filter(q => q.is_out_of_syllabus);
-    if (state.search) {
-        const s = state.search.toLowerCase();
-        filtered = filtered.filter(q =>
-            (q.question_text || '').toLowerCase().includes(s) ||
-            q.options.some(o => (o.content || '').toLowerCase().includes(s))
-        );
-    }
+    if (state.search) { const s = state.search.toLowerCase(); filtered = filtered.filter(q => (q.question_text || '').toLowerCase().includes(s) || q.options.some(o => (o.content || '').toLowerCase().includes(s))); }
     return filtered;
 }
 
-// =================== Weightage View ===================
 function renderWeightage() {
-    // Compute subject-wise question counts and recent-year (last 5 years) weightage
     const currentMaxYear = data.stats.year_range.max;
     const recentYears = [currentMaxYear, currentMaxYear - 1, currentMaxYear - 2, currentMaxYear - 3, currentMaxYear - 4];
-
     const subjectStats = data.subjects.map(s => {
-        let total = 0;
-        let recent = 0;
-        const yearCounts = {};
-        for (const c of s.chapters) {
-            for (const q of c.questions) {
-                total++;
-                yearCounts[q.year] = (yearCounts[q.year] || 0) + 1;
-                if (recentYears.includes(q.year)) recent++;
-            }
-        }
+        let total = 0, recent = 0;
+        for (const c of s.chapters) for (const q of c.questions) { total++; if (recentYears.includes(q.year)) recent++; }
         return { subject: s.subject, label: s.subject_label, total, recent, chapters: s.chapters.length };
     }).sort((a, b) => b.recent - a.recent);
-
     const maxRecent = Math.max(...subjectStats.map(s => s.recent));
-
-    // Top chapters by question count
     const chapterStats = [];
-    for (const s of data.subjects) {
-        for (const c of s.chapters) {
-            let recent = 0;
-            for (const q of c.questions) {
-                if (recentYears.includes(q.year)) recent++;
-            }
-            chapterStats.push({ subject: s.subject, subjectLabel: s.subject_label, chapter: c.chapter, label: c.chapter_label, total: c.question_count, recent });
-        }
-    }
+    for (const s of data.subjects) for (const c of s.chapters) { let recent = 0; for (const q of c.questions) if (recentYears.includes(q.year)) recent++; chapterStats.push({ subject: s.subject, subjectLabel: s.subject_label, chapter: c.chapter, label: c.chapter_label, total: c.question_count, recent }); }
     const topChapters = [...chapterStats].sort((a, b) => b.recent - a.recent).slice(0, 15);
     const maxChapterRecent = topChapters[0]?.recent || 1;
-
-    // Type distribution
     const typeStats = data.stats.by_type;
-
     document.getElementById('mainContent').innerHTML = `
         <div style="max-width:1100px;margin:0 auto;">
             <div style="text-align:center;margin-bottom:24px;">
                 <div style="font-size:3rem;margin-bottom:8px;">📊</div>
                 <h1 style="font-size:1.8rem;font-weight:800;color:var(--text);margin-bottom:4px;">Weightage Analysis</h1>
-                <p style="color:var(--text-muted);font-size:0.92rem;">
-                    Based on ${data.total_questions} questions from ${data.stats.year_range.min}–${data.stats.year_range.max}.<br>
-                    "Recent" = last 5 years (${recentYears[4]}–${recentYears[0]}).
-                </p>
+                <p style="color:var(--text-muted);font-size:0.92rem;">Based on ${data.total_questions} questions from ${data.stats.year_range.min}–${data.stats.year_range.max}.<br>"Recent" = last 5 years (${recentYears[4]}–${recentYears[0]}).</p>
             </div>
-
             <div class="section-eyebrow">📚 Subject-wise Weightage (sorted by recent activity)</div>
             <div style="background:white;border:1px solid var(--border);border-radius:var(--r-lg);padding:16px;margin-bottom:24px;">
-                ${subjectStats.map(s => `
-                    <div class="weightage-row" style="cursor:pointer;" onclick="selectSubject('${s.subject}')">
-                        <div class="year-label" style="min-width:180px;">${getSubjectIcon(s.subject)} ${s.label}</div>
-                        <div class="weight-bar">
-                            <div class="fill" style="width: ${(s.recent / maxRecent * 100)}%;">${s.recent} recent</div>
-                        </div>
-                        <div style="min-width:80px;text-align:right;font-size:0.78rem;color:var(--text-muted);font-weight:600;">${s.total} total</div>
-                    </div>
-                `).join('')}
+                ${subjectStats.map(s => `<div class="weightage-row" style="cursor:pointer;" onclick="selectSubject('${s.subject}')"><div class="year-label" style="min-width:180px;">${getSubjectIcon(s.subject)} ${s.label}</div><div class="weight-bar"><div class="fill" style="width: ${(s.recent / maxRecent * 100)}%;">${s.recent} recent</div></div><div style="min-width:80px;text-align:right;font-size:0.78rem;color:var(--text-muted);font-weight:600;">${s.total} total</div></div>`).join('')}
             </div>
-
             <div class="section-eyebrow">🔥 Top 15 High-Weight Chapters (recent 5 years)</div>
             <div style="background:white;border:1px solid var(--border);border-radius:var(--r-lg);padding:16px;margin-bottom:24px;">
-                ${topChapters.map(c => `
-                    <div class="weightage-row" style="cursor:pointer;" onclick="selectChapter('${c.subject}', '${c.chapter}')">
-                        <div class="year-label" style="min-width:240px;font-size:0.82rem;">${c.subjectLabel} › ${c.label}</div>
-                        <div class="weight-bar">
-                            <div class="fill" style="width: ${(c.recent / maxChapterRecent * 100)}%;">${c.recent}</div>
-                        </div>
-                        <div style="min-width:80px;text-align:right;font-size:0.78rem;color:var(--text-muted);font-weight:600;">${c.total} total</div>
-                    </div>
-                `).join('')}
+                ${topChapters.map(c => `<div class="weightage-row" style="cursor:pointer;" onclick="selectChapter('${c.subject}', '${c.chapter}')"><div class="year-label" style="min-width:240px;font-size:0.82rem;">${c.subjectLabel} › ${c.label}</div><div class="weight-bar"><div class="fill" style="width: ${(c.recent / maxChapterRecent * 100)}%;">${c.recent}</div></div><div style="min-width:80px;text-align:right;font-size:0.78rem;color:var(--text-muted);font-weight:600;">${c.total} total</div></div>`).join('')}
             </div>
-
             <div class="section-eyebrow">📝 Question Type Distribution</div>
             <div class="stats-grid" style="margin-bottom: 24px;">
-                ${Object.entries(typeStats).sort((a,b) => b[1] - a[1]).map(([type, count]) => `
-                    <div class="stat-card">
-                        <div class="stat-value">${count}</div>
-                        <div class="stat-label">${typeLabel(type)} (${((count / data.total_questions) * 100).toFixed(1)}%)</div>
-                    </div>
-                `).join('')}
+                ${Object.entries(typeStats).sort((a,b) => b[1] - a[1]).map(([type, count]) => `<div class="stat-card"><div class="stat-value">${count}</div><div class="stat-label">${typeLabel(type)} (${((count / data.total_questions) * 100).toFixed(1)}%)</div></div>`).join('')}
             </div>
-
             <div class="section-eyebrow">📅 Year-wise Question Count</div>
             <div style="background:white;border:1px solid var(--border);border-radius:var(--r-lg);padding:16px;">
-                ${(() => {
-                    const years = Object.entries(data.stats.by_year).sort((a, b) => b[0] - a[0]);
-                    const maxY = Math.max(...years.map(y => y[1]));
-                    return years.map(([year, count]) => `
-                        <div class="weightage-row" style="cursor:pointer;" onclick="setView('papers'); selectPaperYear(${year})">
-                            <div class="year-label">${year}</div>
-                            <div class="weight-bar">
-                                <div class="fill" style="width: ${(count / maxY * 100)}%;">${count}</div>
-                            </div>
-                        </div>
-                    `).join('');
-                })()}
+                ${(() => { const years = Object.entries(data.stats.by_year).sort((a, b) => b[0] - a[0]); const maxY = Math.max(...years.map(y => y[1])); return years.map(([year, count]) => `<div class="weightage-row" style="cursor:pointer;" onclick="setView('papers'); selectPaperYear(${year})"><div class="year-label">${year}</div><div class="weight-bar"><div class="fill" style="width: ${(count / maxY * 100)}%;">${count}</div></div></div>`).join(''); })()}
             </div>
         </div>
     `;
 }
 
-// =================== Papers View ===================
-function selectPaperYear(year) {
-    state.selectedPaperYear = year;
-    renderPapers();
-    document.getElementById('contentArea').scrollTop = 0;
-}
+function selectPaperYear(year) { state.selectedPaperYear = year; renderPapers(); document.getElementById('contentArea').scrollTop = 0; }
 
 function renderPapers() {
-    // Group all questions by paper_id
     const papers = {};
-    for (const s of data.subjects) {
-        for (const c of s.chapters) {
-            for (const q of c.questions) {
-                if (!papers[q.paper_id]) {
-                    papers[q.paper_id] = { id: q.paper_id, title: q.paper_title, year: q.year, questions: [] };
-                }
-                papers[q.paper_id].questions.push(q);
-            }
-        }
-    }
-
+    for (const s of data.subjects) for (const c of s.chapters) for (const q of c.questions) { if (!papers[q.paper_id]) papers[q.paper_id] = { id: q.paper_id, title: q.paper_title, year: q.year, questions: [] }; papers[q.paper_id].questions.push(q); }
     const sortedPapers = Object.values(papers).sort((a, b) => b.year - a.year || b.id.localeCompare(a.id));
-
-    // Group by year
     const byYear = {};
-    for (const p of sortedPapers) {
-        if (!byYear[p.year]) byYear[p.year] = [];
-        byYear[p.year].push(p);
-    }
+    for (const p of sortedPapers) { if (!byYear[p.year]) byYear[p.year] = []; byYear[p.year].push(p); }
     const years = Object.keys(byYear).map(Number).sort((a, b) => b - a);
-
     document.getElementById('mainContent').innerHTML = `
         <div style="max-width:1100px;margin:0 auto;">
             <div style="text-align:center;margin-bottom:24px;">
                 <div style="font-size:3rem;margin-bottom:8px;">📅</div>
                 <h1 style="font-size:1.8rem;font-weight:800;color:var(--text);margin-bottom:4px;">Year-wise Papers</h1>
-                <p style="color:var(--text-muted);font-size:0.92rem;">
-                    Click any year to see all sets and questions from that paper.
-                </p>
+                <p style="color:var(--text-muted);font-size:0.92rem;">Click any year to see all sets and questions from that paper.</p>
             </div>
-
             ${state.selectedPaperYear ? renderPaperYearDetail(byYear[state.selectedPaperYear]) : `
                 <div class="section-eyebrow">All Papers (${sortedPapers.length} total)</div>
                 <div class="chapters-grid">
-                    ${years.map(y => `
-                        <div class="chapter-card" onclick="selectPaperYear(${y})">
-                            <div class="card-top">
-                                <div class="card-title" style="font-size:1.4rem;">${y}</div>
-                                <div class="count-badge">${byYear[y].reduce((n, p) => n + p.questions.length, 0)} Qs</div>
-                            </div>
-                            <div class="card-meta">${byYear[y].length} set(s) • ${byYear[y].map(p => p.title.replace(`GATE CSE ${y}`, '').trim() || 'Single').join(', ')}</div>
-                        </div>
-                    `).join('')}
+                    ${years.map(y => `<div class="chapter-card" onclick="selectPaperYear(${y})"><div class="card-top"><div class="card-title" style="font-size:1.4rem;">${y}</div><div class="count-badge">${byYear[y].reduce((n, p) => n + p.questions.length, 0)} Qs</div></div><div class="card-meta">${byYear[y].length} set(s) • ${byYear[y].map(p => p.title.replace(`GATE CSE ${y}`, '').trim() || 'Single').join(', ')}</div></div>`).join('')}
                 </div>
             `}
         </div>
     `;
-
-    // Render math in any question cards that were injected (year detail view)
     document.querySelectorAll('.q-content').forEach(renderMathIn);
 }
 
@@ -950,181 +546,115 @@ function renderPaperYearDetail(papers) {
     return `
         <button class="btn btn-ghost btn-sm" style="margin-bottom:16px;" onclick="state.selectedPaperYear=null; renderPapers();">← Back to all years</button>
         <div class="section-eyebrow">${state.selectedPaperYear} — ${papers.length} set(s)</div>
-        ${papers.map(p => `
-            <div class="chapter-header" style="margin-bottom: 14px;">
-                <h2>${p.title}</h2>
-                <div class="meta">${p.questions.length} questions</div>
-            </div>
-            <div id="questionsList">
-                ${p.questions.slice(0, 50).map((q, i) => renderQuestionCard(q, i + 1)).join('')}
-            </div>
-            ${p.questions.length > 50 ? `<p style="text-align:center;color:var(--text-muted);padding:14px;">Showing first 50 of ${p.questions.length} questions. <a href="${p.questions[0].url.replace(/question\/.*$/, '')}" target="_blank" style="color:var(--primary);">View full paper →</a></p>` : ''}
-        `).join('')}
+        ${papers.map(p => `<div class="chapter-header" style="margin-bottom: 14px;"><h2>${p.title}</h2><div class="meta">${p.questions.length} questions</div></div><div id="questionsList">${p.questions.slice(0, 50).map((q, i) => renderQuestionCard(q, i + 1)).join('')}</div>${p.questions.length > 50 ? `<p style="text-align:center;color:var(--text-muted);padding:14px;">Showing first 50 of ${p.questions.length} questions. <a href="${p.questions[0].url.replace(/question\/.*$/, '')}" target="_blank" style="color:var(--primary);">View full paper →</a></p>` : ''}`).join('')}
     `;
 }
 
-// =================== Practice Home ===================
 function renderPracticeHome() {
     document.getElementById('mainContent').innerHTML = `
         <div style="max-width:800px;margin:0 auto;text-align:center;">
             <div style="font-size:4rem;margin-bottom:14px;animation: floatY 4s ease-in-out infinite;">🎯</div>
             <h1 style="font-size:2rem;font-weight:800;color:var(--text);margin-bottom:10px;">Practice Mode</h1>
-            <p style="color:var(--text-muted);font-size:1rem;margin-bottom:30px;max-width:560px;margin-left:auto;margin-right:auto;">
-                Pick a subject or chapter to start practicing. Answers are hidden until you attempt each question.
-                Track correct/wrong in real-time and reveal explanations when you're ready.
-            </p>
+            <p style="color:var(--text-muted);font-size:1rem;margin-bottom:30px;max-width:560px;margin-left:auto;margin-right:auto;">Pick a subject or chapter to start practicing. Answers are hidden until you attempt each question. Track correct/wrong in real-time and reveal explanations when you're ready.</p>
             <div class="section-eyebrow" style="text-align:left;">Pick a subject to start</div>
             <div class="subjects-grid" style="text-align:left;">
-                ${data.subjects.map(s => `
-                    <div class="subject-card" onclick="state.practiceMode=true; selectChapter('${s.subject}', '${s.chapters[0].chapter}');">
-                        <div class="card-top">
-                            <div class="card-icon">${getSubjectIcon(s.subject)}</div>
-                            <div class="count-badge">${s.total_questions}</div>
-                        </div>
-                        <div class="card-title">${s.subject_label}</div>
-                        <div class="card-meta">Start with ${s.chapters[0].chapter_label} →</div>
-                    </div>
-                `).join('')}
+                ${data.subjects.map(s => `<div class="subject-card" onclick="state.practiceMode=true; selectChapter('${s.subject}', '${s.chapters[0].chapter}');"><div class="card-top"><div class="card-icon">${getSubjectIcon(s.subject)}</div><div class="count-badge">${s.total_questions}</div></div><div class="card-title">${s.subject_label}</div><div class="card-meta">Start with ${s.chapters[0].chapter_label} →</div></div>`).join('')}
             </div>
         </div>
     `;
 }
 
-// =================== Search ===================
+function getQuestionBookmarks() { try { return JSON.parse(localStorage.getItem(Q_BOOKMARKS_KEY) || '[]'); } catch { return []; } }
+function isQuestionBookmarked(qid) { return getQuestionBookmarks().some(b => b.question_id === qid); }
+function toggleQuestionBookmark(qid) {
+    let q = null;
+    for (const s of data.subjects) { for (const c of s.chapters) { const found = c.questions.find(x => x.question_id === qid); if (found) { q = found; break; } } if (q) break; }
+    if (!q) return;
+    const bm = getQuestionBookmarks();
+    const idx = bm.findIndex(b => b.question_id === qid);
+    if (idx >= 0) bm.splice(idx, 1);
+    else bm.push({ question_id: q.question_id, year: q.year, paper_title: q.paper_title, type: q.type, subject: q.subject, chapter: q.chapter, subject_label: q.subject_label, chapter_label: q.chapter_label, question_preview: stripHtmlSimple(q.question_text).slice(0, 120), url: q.url, addedAt: Date.now() });
+    localStorage.setItem(Q_BOOKMARKS_KEY, JSON.stringify(bm));
+    if (state.view === 'chapter') renderChapterView();
+    else if (state.view === 'papers' && state.selectedPaperYear) renderPapers();
+    else if (state.view === 'search') renderSearchResults();
+    updateBookmarkCount();
+}
+function stripHtmlSimple(html) { if (!html) return ''; const tmp = document.createElement('div'); tmp.innerHTML = html; return (tmp.textContent || tmp.innerText || '').replace(/\s+/g, ' ').trim(); }
+function updateBookmarkCount() { const el = document.getElementById('bookmarkCount'); if (el) el.textContent = getQuestionBookmarks().length; }
+
+function renderBookmarkedQuestions() {
+    const bookmarks = getQuestionBookmarks();
+    if (bookmarks.length === 0) {
+        document.getElementById('mainContent').innerHTML = `<div class="empty-state"><div class="empty-icon">🔖</div><h3>No bookmarked questions yet</h3><p>Click the 📑 icon on any question to save it here for later review.</p></div>`;
+        return;
+    }
+    bookmarks.sort((a, b) => b.addedAt - a.addedAt);
+    document.getElementById('mainContent').innerHTML = `
+        <div class="chapter-header"><h2>🔖 Bookmarked Questions</h2><div class="meta">${bookmarks.length} questions saved</div></div>
+        <div id="questionsList">
+            ${bookmarks.map((b, i) => `<div class="question-card"><div class="q-header"><span class="q-number">#${i + 1}</span><span class="q-badge badge-${b.type === 'mcq' ? 'mcq' : (b.type === 'mcqm' || b.type === 'msq' ? 'msq' : (b.type === 'integer' || b.type === 'nat' ? 'nat' : 'subjective'))}">${b.type}</span><span class="q-paper">${b.paper_title}</span><button class="q-action-btn bookmarked" onclick="toggleQuestionBookmark('${b.question_id}'); renderBookmarkedQuestions();" title="Remove bookmark">🔖 Remove</button><a class="q-source" href="${b.url}" target="_blank" rel="noopener" title="Open on ExamSIDE">Source ↗</a></div><div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:8px;">📚 ${b.subject_label || b.subject} › ${b.chapter_label || b.chapter} • ${b.year}</div><div class="q-content">${escapeHtml(b.question_preview)}…</div><div style="margin-top:10px;"><button class="btn btn-ghost btn-sm" onclick="selectChapter('${b.subject}', '${b.chapter}')">📖 Open chapter →</button></div></div>`).join('')}
+        </div>
+    `;
+}
+
+function askAIAboutQuestion(questionObj) {
+    if (typeof window.askAIToSolveQuestion === 'function') window.askAIToSolveQuestion(questionObj);
+    else if (window.SOH_AI && window.SOH_AI.solveQuestion) window.SOH_AI.solveQuestion(questionObj);
+    else alert('AI chatbot is still loading. Please try again in a moment.');
+}
+
 let searchTimeout;
 function onSearchInput() {
     clearTimeout(searchTimeout);
     const val = document.getElementById('searchBox').value.trim();
     searchTimeout = setTimeout(() => {
-        state.search = val;
-        state.page = 1;
-        if (val) {
-            state.view = 'search';
-            state.subject = null;
-            state.chapter = null;
-            updateBreadcrumb();
-            renderSearchResults();
-        } else if (state.view === 'search') {
-            goHome();
-        } else if (state.view === 'chapter') {
-            renderChapterView();
-        }
+        state.search = val; state.page = 1;
+        if (val) { state.view = 'search'; state.subject = null; state.chapter = null; updateBreadcrumb(); renderSearchResults(); }
+        else if (state.view === 'search') goHome();
+        else if (state.view === 'chapter') renderChapterView();
     }, 250);
 }
 
 function renderSearchResults() {
     const s = state.search.toLowerCase();
     const matches = [];
-    for (const subj of data.subjects) {
-        for (const chap of subj.chapters) {
-            for (const q of chap.questions) {
-                if ((q.question_text || '').toLowerCase().includes(s) ||
-                    q.options.some(o => (o.content || '').toLowerCase().includes(s))) {
-                    matches.push({ q, subj, chap });
-                }
-            }
-        }
-    }
-
+    for (const subj of data.subjects) for (const chap of subj.chapters) for (const q of chap.questions) { if ((q.question_text || '').toLowerCase().includes(s) || q.options.some(o => (o.content || '').toLowerCase().includes(s))) matches.push({ q, subj, chap }); }
     const totalPages = Math.max(1, Math.ceil(matches.length / state.pageSize));
     if (state.page > totalPages) state.page = 1;
     const start = (state.page - 1) * state.pageSize;
     const pageItems = matches.slice(start, start + state.pageSize);
-
     document.getElementById('mainContent').innerHTML = `
-        <div class="chapter-header">
-            <h2>🔍 Search Results</h2>
-            <div class="meta">${matches.length} questions found for "${escapeHtml(state.search)}"</div>
-        </div>
-
+        <div class="chapter-header"><h2>🔍 Search Results</h2><div class="meta">${matches.length} questions found for "${escapeHtml(state.search)}"</div></div>
         <div id="questionsList">
-            ${pageItems.length === 0 ? `
-                <div class="empty-state">
-                    <div class="empty-icon">🔍</div>
-                    <h3>No questions found</h3>
-                    <p>Try different keywords.</p>
-                </div>
-            ` : pageItems.map(({ q, subj, chap }, i) => `
-                <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:6px;">
-                    <span class="breadcrumb-item" onclick="selectSubject('${subj.subject}')">${subj.subject_label}</span>
-                    <span class="breadcrumb-separator">›</span>
-                    <span class="breadcrumb-item" onclick="selectChapter('${subj.subject}', '${chap.chapter}')">${chap.chapter_label}</span>
-                </div>
-                ${renderQuestionCard(q, start + i + 1)}
-            `).join('')}
+            ${pageItems.length === 0 ? `<div class="empty-state"><div class="empty-icon">🔍</div><h3>No questions found</h3><p>Try different keywords.</p></div>` : pageItems.map(({ q, subj, chap }, i) => `<div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:6px;"><span class="breadcrumb-item" onclick="selectSubject('${subj.subject}')">${subj.subject_label}</span><span class="breadcrumb-separator">›</span><span class="breadcrumb-item" onclick="selectChapter('${subj.subject}', '${chap.chapter}')">${chap.chapter_label}</span></div>${renderQuestionCard(q, start + i + 1)}`).join('')}
         </div>
-
         ${totalPages > 1 ? renderPagination(totalPages) : ''}
     `;
     document.querySelectorAll('.q-content').forEach(renderMathIn);
 }
 
-// =================== Event Handlers ===================
 function setYearFilter(y) { state.yearFilter = y; state.page = 1; renderChapterView(); scrollTop(); }
 function setTypeFilter(t) { state.typeFilter = t; state.page = 1; renderChapterView(); scrollTop(); }
 function setMarksFilter(m) { state.marksFilter = m; state.page = 1; renderChapterView(); scrollTop(); }
 function setBonusFilter(b) { state.bonusFilter = b; state.page = 1; renderChapterView(); scrollTop(); }
-function clearFilters() {
-    state.yearFilter = null; state.typeFilter = null; state.marksFilter = null; state.bonusFilter = null;
-    state.search = ''; document.getElementById('searchBox').value = '';
-    state.page = 1;
-    renderChapterView();
-}
-function changePage(p) {
-    state.page = p;
-    if (state.view === 'search') renderSearchResults();
-    else if (state.view === 'chapter') renderChapterView();
-    scrollTop();
-}
+function clearFilters() { state.yearFilter = null; state.typeFilter = null; state.marksFilter = null; state.bonusFilter = null; state.search = ''; document.getElementById('searchBox').value = ''; state.page = 1; renderChapterView(); }
+function changePage(p) { state.page = p; if (state.view === 'search') renderSearchResults(); else if (state.view === 'chapter') renderChapterView(); scrollTop(); }
 function scrollTop() { document.getElementById('contentArea').scrollTop = 0; }
 
 function toggleExplanation(qid, btn) {
     const el = document.getElementById(`expl-${qid}`);
-    if (state.expandedExplanations.has(qid)) {
-        state.expandedExplanations.delete(qid);
-        el.classList.add('hidden');
-        btn.classList.remove('expanded');
-        btn.innerHTML = `<span class="chevron">▶</span> Show Explanation`;
-    } else {
-        state.expandedExplanations.add(qid);
-        el.classList.remove('hidden');
-        btn.classList.add('expanded');
-        btn.innerHTML = `<span class="chevron">▶</span> Hide Explanation`;
-        renderMathIn(el);
-    }
+    if (state.expandedExplanations.has(qid)) { state.expandedExplanations.delete(qid); el.classList.add('hidden'); btn.classList.remove('expanded'); btn.innerHTML = `<span class="chevron">▶</span> Show Explanation`; }
+    else { state.expandedExplanations.add(qid); el.classList.remove('hidden'); btn.classList.add('expanded'); btn.innerHTML = `<span class="chevron">▶</span> Hide Explanation`; renderMathIn(el); }
 }
 
-// =================== Utilities ===================
-function sanitize(html) {
-    if (!html) return '';
-    return DOMPurify.sanitize(html, { ADD_TAGS: ['sup', 'sub', 'u', 's'], ADD_ATTR: ['target'] });
-}
+function sanitize(html) { if (!html) return ''; return DOMPurify.sanitize(html, { ADD_TAGS: ['sup', 'sub', 'u', 's'], ADD_ATTR: ['target'] }); }
+function renderMathIn(el) { if (typeof renderMathInElement !== 'function') return; renderMathInElement(el, { delimiters: [{ left: '$$', right: '$$', display: true }, { left: '$', right: '$', display: false }, { left: '\\(', right: '\\)', display: false }, { left: '\\[', right: '\\]', display: true }], throwOnError: false, ignoredTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'] }); }
+function escapeHtml(s) { if (!s) return ''; return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+function typeLabel(t) { return { mcq: 'MCQ', msq: 'MSQ', nat: 'NAT', subjective: 'Subjective', fill_blanks: 'Fill', true_false: 'T/F' }[t] || t; }
 
-function renderMathIn(el) {
-    if (typeof renderMathInElement !== 'function') return;
-    renderMathInElement(el, {
-        delimiters: [
-            { left: '$$', right: '$$', display: true },
-            { left: '$', right: '$', display: false },
-            { left: '\\(', right: '\\)', display: false },
-            { left: '\\[', right: '\\]', display: true },
-        ],
-        throwOnError: false,
-        ignoredTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
-    });
-}
-
-function escapeHtml(s) {
-    if (!s) return '';
-    return s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-}
-
-function typeLabel(t) {
-    return { mcq: 'MCQ', msq: 'MSQ', nat: 'NAT', subjective: 'Subjective', fill_blanks: 'Fill', true_false: 'T/F' }[t] || t;
-}
-
-// Start
 init();
 </script>
+<script src="./theme.js"></script>
 </body>
 </html>

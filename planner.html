@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Study Planner — Smart Scheduling | SOH CSE</title>
+<meta name="description" content="Plan your GATE CSE preparation with daily goals, calendar view, task tracking, and AI-generated study plans.">
+<link rel="stylesheet" href="./style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23667eea'/%3E%3Ctext x='50' y='70' font-size='60' font-weight='bold' fill='white' text-anchor='middle' font-family='Arial'%3EG%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+
+<nav class="topnav">
+    <div class="topnav-inner">
+        <a href="./index.html" class="topnav-brand">
+            <div class="brand-mark">G</div>
+            <div class="brand-text">SOH CSE <small>GATE Preparation Hub</small></div>
+        </a>
+        <button class="topnav-menu-btn" onclick="document.querySelector('.topnav-links').classList.toggle('open')" aria-label="Toggle menu">
+            <span></span><span></span><span></span>
+        </button>
+        <div class="topnav-links">
+            <a href="./index.html" class="topnav-link">🏠 Home</a>
+            <a href="./learn.html" class="topnav-link">📖 Learn</a>
+            <a href="./syllabus.html" class="topnav-link">📋 Syllabus</a>
+            <a href="./materials.html" class="topnav-link">📚 Materials</a>
+            <a href="./pyq.html" class="topnav-link">📝 PYQs</a>
+            <a href="./flashcards.html" class="topnav-link">🎴 Flashcards</a>
+            <a href="./quiz.html" class="topnav-link">🎯 Quiz</a>
+            <a href="./progress.html" class="topnav-link">📊 Progress</a>
+            <a href="./planner.html" class="topnav-link active">📅 Planner</a>
+            <a href="./resources.html" class="topnav-link">🚀 Resources</a>
+        </div>
+    </div>
+</nav>
+
+<div class="app-content">
+    <div class="app-content-scroll" id="contentArea">
+        <div id="mainContent" style="max-width: 1200px; margin: 0 auto;">
+            <div style="text-align:center;margin-bottom:24px;">
+                <div style="font-size:3rem;margin-bottom:8px;">📅</div>
+                <h1 style="font-size:1.8rem;font-weight:800;color:var(--text);margin-bottom:4px;">Smart Study Planner</h1>
+                <p style="color:var(--text-muted);font-size:0.92rem;">Plan daily, track tasks, and let AI create a personalized study schedule.</p>
+            </div>
+
+            <div id="plannerContent"></div>
+        </div>
+    </div>
+</div>
+
+<script src="./chatbot.js"></script>
+<script>
+const TASKS_KEY = 'sohcse_planner_tasks_v1';
+
+function getTasks() {
+    try { return JSON.parse(localStorage.getItem(TASKS_KEY) || '[]'); } catch { return []; }
+}
+function saveTasks(tasks) {
+    try { localStorage.setItem(TASKS_KEY, JSON.stringify(tasks)); } catch {}
+}
+
+let state = {
+    currentDate: new Date(),
+    selectedDate: new Date().toISOString().slice(0, 10)
+};
+
+function init() {
+    // Seed with sample tasks on first visit
+    if (getTasks().length === 0) {
+        const today = new Date().toISOString().slice(0, 10);
+        const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+        const dayAfter = new Date(Date.now() + 2 * 86400000).toISOString().slice(0, 10);
+        const sample = [
+            { id: 1, date: today, title: 'Study: Time Complexity Analysis', subject: 'algorithms', priority: 'high', duration: 90, completed: false },
+            { id: 2, date: today, title: 'Solve 10 PYQs on Linked Lists', subject: 'data-structures', priority: 'high', duration: 60, completed: false },
+            { id: 3, date: today, title: 'Watch: Banker\'s Algorithm video', subject: 'operating-systems', priority: 'medium', duration: 45, completed: true },
+            { id: 4, date: tomorrow, title: 'Study: ER Diagrams and Normalization', subject: 'database-management-system', priority: 'high', duration: 90, completed: false },
+            { id: 5, date: tomorrow, title: 'Practice: 15 Aptitude questions', subject: 'general-aptitude', priority: 'medium', duration: 30, completed: false },
+            { id: 6, date: dayAfter, title: 'Take full mock test', subject: 'all', priority: 'high', duration: 180, completed: false }
+        ];
+        saveTasks(sample);
+    }
+    renderPlanner();
+}
+
+function renderPlanner() {
+    const tasks = getTasks();
+    const today = new Date().toISOString().slice(0, 10);
+    const todaysTasks = tasks.filter(t => t.date === state.selectedDate);
+    const completedToday = todaysTasks.filter(t => t.completed).length;
+    const totalToday = todaysTasks.length;
+    const studyMinutesToday = todaysTasks.filter(t => t.completed).reduce((s, t) => s + (t.duration || 0), 0);
+
+    // Next 7 days overview
+    const next7 = [];
+    for (let i = 0; i < 7; i++) {
+        const d = new Date();
+        d.setDate(d.getDate() + i);
+        const dateStr = d.toISOString().slice(0, 10);
+        const dayTasks = tasks.filter(t => t.date === dateStr);
+        next7.push({
+            date: dateStr,
+            dayName: d.toLocaleDateString('en-US', { weekday: 'short' }),
+            dateNum: d.getDate(),
+            taskCount: dayTasks.length,
+            completed: dayTasks.filter(t => t.completed).length,
+            minutes: dayTasks.reduce((s, t) => s + (t.duration || 0), 0)
+        });
+    }
+
+    // Calendar (current month)
+    const calHTML = renderCalendar();
+
+    document.getElementById('plannerContent').innerHTML = `
+        <div class="planner-grid">
+            <!-- Sidebar -->
+            <div class="planner-sidebar">
+                <h3>📊 Today's Progress</h3>
+                <div class="planner-stat">
+                    <span>Tasks done</span>
+                    <span class="v">${completedToday} / ${totalToday}</span>
+                </div>
+                <div class="planner-stat">
+                    <span>Study time</span>
+                    <span class="v">${Math.floor(studyMinutesToday / 60)}h ${studyMinutesToday % 60}m</span>
+                </div>
+                <div class="planner-stat">
+                    <span>Completion</span>
+                    <span class="v">${totalToday > 0 ? Math.round(completedToday / totalToday * 100) : 0}%</span>
+                </div>
+
+                <h3 style="margin-top:18px;">📅 Next 7 Days</h3>
+                ${next7.map(d => `
+                    <div class="planner-stat" style="cursor:pointer;" onclick="selectDate('${d.date}')">
+                        <span>${d.dayName} ${d.dateNum}${d.date === today ? ' (today)' : ''}</span>
+                        <span class="v">${d.completed}/${d.taskCount}</span>
+                    </div>
+                `).join('')}
+
+                <h3 style="margin-top:18px;">🤖 AI Study Plan</h3>
+                <p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:8px;">Let AI generate a personalized plan based on your goals.</p>
+                <button class="btn btn-primary btn-sm" style="width:100%;" onclick="generateAIPlan()">✨ Generate AI Plan</button>
+            </div>
+
+            <!-- Main -->
+            <div>
+                <!-- Calendar -->
+                <div class="task-list" style="margin-bottom:18px;">
+                    <h3 style="font-size:1rem;margin-bottom:10px;">📅 ${state.currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</h3>
+                    <div class="calendar-grid">
+                        <div class="calendar-day-header">Sun</div>
+                        <div class="calendar-day-header">Mon</div>
+                        <div class="calendar-day-header">Tue</div>
+                        <div class="calendar-day-header">Wed</div>
+                        <div class="calendar-day-header">Thu</div>
+                        <div class="calendar-day-header">Fri</div>
+                        <div class="calendar-day-header">Sat</div>
+                        ${calHTML}
+                    </div>
+                </div>
+
+                <!-- Tasks for selected day -->
+                <div class="task-list">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+                        <h3 style="font-size:1rem;">✅ Tasks for ${new Date(state.selectedDate).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}</h3>
+                        <div style="display:flex;gap:6px;">
+                            <button class="btn btn-ghost btn-sm" onclick="changeDay(-1)">←</button>
+                            <button class="btn btn-ghost btn-sm" onclick="changeDay(1)">→</button>
+                        </div>
+                    </div>
+
+                    ${todaysTasks.length === 0 ? `
+                        <div class="empty-state" style="padding:30px 10px;">
+                            <div class="empty-icon">📝</div>
+                            <h3>No tasks for this day</h3>
+                            <p>Add a task below to start planning.</p>
+                        </div>
+                    ` : `
+                        ${todaysTasks.map(t => renderTaskItem(t)).join('')}
+                    `}
+
+                    <!-- Add task form -->
+                    <div class="add-task-form">
+                        <input type="text" id="newTaskTitle" placeholder="New task title..." />
+                        <select id="newTaskSubject">
+                            <option value="algorithms">⚡ Algorithms</option>
+                            <option value="data-structures">🌳 DS</option>
+                            <option value="discrete-mathematics">∑ Math</option>
+                            <option value="operating-systems">⚙️ OS</option>
+                            <option value="database-management-system">🗄️ DBMS</option>
+                            <option value="computer-networks">🌐 CN</option>
+                            <option value="theory-of-computation">🔤 TOC</option>
+                            <option value="compiler-design">🔧 CD</option>
+                            <option value="digital-logic">🔌 DL</option>
+                            <option value="computer-organization">💻 CO</option>
+                            <option value="general-aptitude">🧮 Aptitude</option>
+                            <option value="all">📚 All / Mock</option>
+                        </select>
+                        <select id="newTaskPriority">
+                            <option value="high">🔴 High</option>
+                            <option value="medium">🟡 Medium</option>
+                            <option value="low">🟢 Low</option>
+                        </select>
+                        <input type="number" id="newTaskDuration" placeholder="Min" style="width:60px;" value="60" />
+                        <button class="btn btn-primary btn-sm" onclick="addTask()">+ Add</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function renderCalendar() {
+    const year = state.currentDate.getFullYear();
+    const month = state.currentDate.getMonth();
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const today = new Date().toISOString().slice(0, 10);
+    const tasks = getTasks();
+
+    let html = '';
+    // Empty cells before first day
+    for (let i = 0; i < firstDay; i++) {
+        html += '<div></div>';
+    }
+    // Days
+    for (let d = 1; d <= daysInMonth; d++) {
+        const dateStr = new Date(year, month, d).toISOString().slice(0, 10);
+        const dayTasks = tasks.filter(t => t.date === dateStr);
+        const isToday = dateStr === today;
+        const isSelected = dateStr === state.selectedDate;
+        html += `
+            <div class="calendar-day ${isToday ? 'today' : ''} ${dayTasks.length > 0 ? 'has-task' : ''}"
+                 style="${isSelected ? 'outline:2px solid var(--primary);outline-offset:1px;' : ''}"
+                 onclick="selectDate('${dateStr}')">
+                <span class="day-num">${d}</span>
+                ${dayTasks.length > 0 ? `<div class="day-tasks">${dayTasks.filter(t => !t.completed).length} pending</div>` : ''}
+            </div>
+        `;
+    }
+    return html;
+}
+
+function renderTaskItem(t) {
+    const subjectIcons = {
+        'algorithms': '⚡', 'data-structures': '🌳', 'discrete-mathematics': '∑',
+        'operating-systems': '⚙️', 'database-management-system': '🗄️',
+        'computer-networks': '🌐', 'theory-of-computation': '🔤',
+        'compiler-design': '🔧', 'digital-logic': '🔌',
+        'computer-organization': '💻', 'general-aptitude': '🧮', 'all': '📚'
+    };
+    return `
+        <div class="task-item ${t.completed ? 'completed' : ''}">
+            <div class="task-checkbox ${t.completed ? 'checked' : ''}" onclick="toggleTask(${t.id})">
+                ${t.completed ? '✓' : ''}
+            </div>
+            <div class="task-priority priority-${t.priority}"></div>
+            <div class="task-content">
+                <div class="task-title">${subjectIcons[t.subject] || '📝'} ${escapeHtml(t.title)}</div>
+                <div class="task-meta">
+                    ${t.priority.toUpperCase()} • ${t.duration || 0} min • ${t.subject.replace(/-/g, ' ')}
+                </div>
+            </div>
+            <button class="note-delete" style="background:none;border:none;color:var(--text-light);cursor:pointer;font-size:1.2rem;padding:4px 8px;" onclick="deleteTask(${t.id})" title="Delete">×</button>
+        </div>
+    `;
+}
+
+function toggleTask(id) {
+    const tasks = getTasks();
+    const t = tasks.find(x => x.id === id);
+    if (t) {
+        t.completed = !t.completed;
+        saveTasks(tasks);
+        renderPlanner();
+    }
+}
+
+function deleteTask(id) {
+    if (!confirm('Delete this task?')) return;
+    let tasks = getTasks();
+    tasks = tasks.filter(t => t.id !== id);
+    saveTasks(tasks);
+    renderPlanner();
+}
+
+function addTask() {
+    const title = document.getElementById('newTaskTitle').value.trim();
+    const subject = document.getElementById('newTaskSubject').value;
+    const priority = document.getElementById('newTaskPriority').value;
+    const duration = parseInt(document.getElementById('newTaskDuration').value, 10) || 60;
+    if (!title) {
+        alert('Please enter a task title');
+        return;
+    }
+    const tasks = getTasks();
+    const newTask = {
+        id: Date.now(),
+        date: state.selectedDate,
+        title, subject, priority, duration,
+        completed: false
+    };
+    tasks.push(newTask);
+    saveTasks(tasks);
+    document.getElementById('newTaskTitle').value = '';
+    renderPlanner();
+}
+
+function selectDate(dateStr) {
+    state.selectedDate = dateStr;
+    state.currentDate = new Date(dateStr);
+    renderPlanner();
+}
+
+function changeDay(delta) {
+    const d = new Date(state.selectedDate);
+    d.setDate(d.getDate() + delta);
+    state.selectedDate = d.toISOString().slice(0, 10);
+    state.currentDate = new Date(state.selectedDate);
+    renderPlanner();
+}
+
+function generateAIPlan() {
+    if (typeof window.SOH_AI !== 'undefined') {
+        window.SOH_AI.open();
+        window.SOH_AI.setMode('planner');
+        // Pre-fill with smart prompt
+        setTimeout(() => {
+            const input = document.getElementById('aiChatInput');
+            if (input) {
+                input.value = 'Create a 7-day study plan for GATE CSE. I want to focus on high-weight topics. Suggest specific topics, durations, and resources for each day.';
+                // Trigger input event for autosize
+                input.dispatchEvent(new Event('input'));
+            }
+        }, 300);
+    }
+}
+
+function escapeHtml(s) {
+    if (!s) return '';
+    return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+init();
+</script>
+<script src="./theme.js"></script>
+</body>
+</html>
