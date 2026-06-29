@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Video Lectures — SOH CSE</title>
+<meta name="description" content="Watch curated GATE CSE video lectures by subject. Take timestamped notes, bookmark videos, and add custom playlists.">
+<link rel="stylesheet" href="./style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23667eea'/%3E%3Ctext x='50' y='70' font-size='60' font-weight='bold' fill='white' text-anchor='middle' font-family='Arial'%3EG%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+
+<!-- ============ Top Navigation ============ -->
+<nav class="topnav">
+    <div class="topnav-inner">
+        <a href="./index.html" class="topnav-brand">
+            <div class="brand-mark">G</div>
+            <div class="brand-text">SOH CSE <small>GATE Preparation Hub</small></div>
+        </a>
+        <button class="topnav-menu-btn" onclick="document.querySelector('.topnav-links').classList.toggle('open')" aria-label="Toggle menu">
+            <span></span><span></span><span></span>
+        </button>
+        <div class="topnav-links">
+            <a href="./index.html" class="topnav-link">🏠 Home</a>
+            <a href="./materials.html" class="topnav-link">📚 Materials</a>
+            <a href="./pyq.html" class="topnav-link">📝 PYQs</a>
+            <a href="./videos.html" class="topnav-link active">🎥 Videos</a>
+            <a href="./resources.html" class="topnav-link">🚀 Resources</a>
+            <a href="./pyq.html?view=practice" class="topnav-cta">🎯 Practice</a>
+        </div>
+    </div>
+</nav>
+
+<!-- ============ Main Content ============ -->
+<div class="app-content">
+    <div class="app-content-scroll" id="contentArea">
+        <div id="mainContent" style="max-width: 1400px; margin: 0 auto;">
+            <!-- Loading state initially; will be replaced by renderBrowse() -->
+            <div class="loading-screen">
+                <div class="spinner"></div>
+                <p>Loading video catalog…</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="./chatbot.js"></script>
+<script src="./videos_data.js"></script>
+<script>
+// =================== State ===================
+const NOTES_KEY = 'sohcse_video_notes';
+const BOOKMARKS_KEY = 'sohcse_video_bookmarks';
+const RECENT_KEY = 'sohcse_video_recent';
+const CUSTOM_KEY = 'sohcse_video_custom';
+
+let state = {
+    view: 'browse',          // 'browse' | 'player'
+    subject: null,           // selected subject slug
+    currentPlaylist: null,   // { id, title, channel, source: 'catalog' | 'custom' }
+    currentSideTab: 'notes', // 'notes' | 'bookmarks' | 'recent' | 'playlists'
+};
+
+// YouTube IFrame API
+let ytPlayer = null;
+let ytReady = false;
+
+// Load YouTube IFrame API
+const tag = document.createElement('script');
+tag.src = "https://www.youtube.com/iframe_api";
+document.head.appendChild(tag);
+window.onYouTubeIframeAPIReady = function () {
+    ytReady = true;
+    // If user already clicked play before API loaded, retry
+    if (state.view === 'player' && state.currentPlaylist) {
+        loadPlaylistIntoPlayer(state.currentPlaylist.id);
+    }
+};
+
+// =================== Storage Helpers ===================
+function getAllNotes() {
+    try { return JSON.parse(localStorage.getItem(NOTES_KEY) || '{}'); }
+    catch { return {}; }
+}
+function getNotes(playlistId) {
+    return getAllNotes()[playlistId] || [];
+}
+function saveNote(playlistId, time, text) {
+    const all = getAllNotes();
+    if (!all[playlistId]) all[playlistId] = [];
+    all[playlistId].push({ time, text, createdAt: Date.now() });
+    localStorage.setItem(NOTES_KEY, JSON.stringify(all));
+}
+function deleteNote(playlistId, createdAt) {
+    const all = getAllNotes();
+    if (!all[playlistId]) return;
+    all[playlistId] = all[playlistId].filter(n => n.createdAt !== createdAt);
+    localStorage.setItem(NOTES_KEY, JSON.stringify(all));
+}
+
+function getBookmarks() {
+    try { return JSON.parse(localStorage.getItem(BOOKMARKS_KEY) || '[]'); }
+    catch { return []; }
+}
+function isBookmarked(playlistId) {
+    return getBookmarks().some(b => b.id === playlistId);
+}
+function toggleBookmark(playlist) {
+    const bm = getBookmarks();
+    const idx = bm.findIndex(b => b.id === playlist.id);
+    if (idx >= 0) {
+        bm.splice(idx, 1);
+        localStorage.setItem(BOOKMARKS_KEY, JSON.stringify(bm));
+        return false;
+    } else {
+        bm.push({
+            id: playlist.id,
+            title: playlist.title,
+            channel: playlist.channel,
+            subject: state.subject,
+            addedAt: Date.now()
+        });
+        localStorage.setItem(BOOKMARKS_KEY, JSON.stringify(bm));
+        return true;
+    }
+}
+
+function getRecent() {
+    try { return JSON.parse(localStorage.getItem(RECENT_KEY) || '[]'); }
+    catch { return []; }
+}
+function addRecent(playlist) {
+    let r = getRecent().filter(p => p.id !== playlist.id);
+    r.unshift({ id: playlist.id, title: playlist.title, channel: playlist.channel, subject: state.subject, playedAt: Date.now() });
+    r = r.slice(0, 12); // keep last 12
+    localStorage.setItem(RECENT_KEY, JSON.stringify(r));
+}
+
+function getCustomPlaylists() {
+    try { return JSON.parse(localStorage.getItem(CUSTOM_KEY) || '[]'); }
+    catch { return []; }
+}
+function addCustomPlaylist(url, title) {
+    const parsed = parseYouTubeUrl(url);
+    if (!parsed) return null;
+    const item = {
+        id: parsed.id,
+        type: parsed.type,
+        title: title || 'Custom Playlist',
+        channel: 'Added by you',
+        description: 'Your custom-added playlist.',
+        addedAt: Date.now()
+    };
+    const all = getCustomPlaylists();
+    if (!all.find(p => p.id === item.id)) {
+        all.push(item);
+        localStorage.setItem(CUSTOM_KEY, JSON.stringify(all));
+    }
+    return item;
+}
+
+function parseYouTubeUrl(url) {
+    // Playlist URL: youtube.com/playlist?list=PL...
+    const plMatch = url.match(/[?&]list=([^&\s]+)/);
+    if (plMatch) return { type: 'playlist', id: plMatch[1] };
+    // Watch URL with playlist
+    const watchListMatch = url.match(/[?&]list=([^&\s]+)/);
+    if (watchListMatch) return { type: 'playlist', id: watchListMatch[1] };
+    // youtu.be/VIDEO_ID
+    const shortMatch = url.match(/youtu\.be\/([^?\s]+)/);
+    if (shortMatch) return { type: 'video', id: shortMatch[1] };
+    // youtube.com/watch?v=VIDEO_ID
+    const watchMatch = url.match(/[?&]v=([^&\s]+)/);
+    if (watchMatch) return { type: 'video', id: watchMatch[1] };
+    // Direct ID
+    if (/^[A-Za-z0-9_-]{11}$/.test(url)) return { type: 'video', id: url };
+    if (/^(PL|UU|FL|RD|OL)[A-Za-z0-9_-]+$/.test(url)) return { type: 'playlist', id: url };
+    return null;
+}
+
+// =================== Init ===================
+function init() {
+    // Check URL params
+    const params = new URLSearchParams(location.search);
+    const subj = params.get('subject');
+    if (subj && VIDEO_CATALOG[subj]) state.subject = subj;
+    else state.subject = 'algorithms'; // default
+    renderBrowse();
+}
+
+// =================== Browse View ===================
+function renderBrowse() {
+    state.view = 'browse';
+    state.currentPlaylist = null;
+    const subjectKeys = Object.keys(VIDEO_CATALOG);
+    if (!state.subject) state.subject = subjectKeys[0];
+
+    const subj = VIDEO_CATALOG[state.subject];
+    const customPl = getCustomPlaylists();
+    const bookmarks = getBookmarks();
+    const recent = getRecent();
+
+    document.getElementById('mainContent').innerHTML = `
+        <div style="text-align:center;margin-bottom:24px;">
+            <div style="font-size:3rem;margin-bottom:8px;">🎥</div>
+            <h1 style="font-size:1.8rem;font-weight:800;color:var(--text);margin-bottom:4px;">Video Lectures</h1>
+            <p style="color:var(--text-muted);font-size:0.92rem;">Curated YouTube playlists for GATE CSE — take timestamped notes, bookmark videos, and add your own playlists.</p>
+        </div>
+
+        <div class="section-eyebrow">Choose Subject</div>
+        <div class="video-subject-tabs" id="subjectTabs">
+            ${subjectKeys.map(k => `
+                <button class="video-subject-tab ${k === state.subject ? 'active' : ''}" onclick="selectSubject('${k}')">
+                    ${VIDEO_CATALOG[k].icon} ${VIDEO_CATALOG[k].label}
+                </button>
+            `).join('')}
+            <button class="video-subject-tab" onclick="selectSubject('bookmarks')">⭐ Bookmarks (${bookmarks.length})</button>
+        </div>
+
+        ${state.subject === 'bookmarks' ? renderBookmarksView() : `
+            <div class="section-eyebrow">${subj.label} — Curated Playlists</div>
+            <div class="playlist-grid">
+                ${subj.playlists.map(p => renderPlaylistCard(p, 'catalog')).join('')}
+            </div>
+
+            ${customPl.length > 0 ? `
+                <div class="section-eyebrow" style="margin-top:30px;">⭐ Your Custom Playlists</div>
+                <div class="playlist-grid">
+                    ${customPl.map(p => renderPlaylistCard(p, 'custom')).join('')}
+                </div>
+            ` : ''}
+
+            <div class="custom-playlist-section">
+                <h3>➕ Add Custom Playlist</h3>
+                <p>Paste any YouTube playlist or video URL to add it to your collection.</p>
+                <div class="custom-playlist-form">
+                    <input type="text" id="customUrl" placeholder="https://www.youtube.com/playlist?list=PL..." />
+                    <input type="text" id="customTitle" placeholder="Optional title" style="max-width:200px;" />
+                    <button class="btn btn-ghost btn-sm" onclick="addCustomFromForm()">Add</button>
+                </div>
+            </div>
+
+            ${recent.length > 0 ? `
+                <div class="section-eyebrow" style="margin-top:30px;">🕘 Recently Watched</div>
+                <div class="playlist-grid">
+                    ${recent.slice(0, 6).map(p => renderPlaylistCard({ id: p.id, title: p.title, channel: p.channel, description: 'Recently watched playlist' }, 'recent')).join('')}
+                </div>
+            ` : ''}
+
+            <div class="section-eyebrow" style="margin-top:30px;">📺 Recommended Channels</div>
+            <div class="subjects-grid">
+                ${RECOMMENDED_CHANNELS.map(c => `
+                    <a class="subject-card" href="https://www.youtube.com/@${c.handle}" target="_blank" rel="noopener" style="text-decoration:none;">
+                        <div class="card-top">
+                            <div class="card-icon">📺</div>
+                            <div class="count-badge">↗</div>
+                        </div>
+                        <div class="card-title">${c.name}</div>
+                        <div class="card-meta">${c.why}</div>
+                    </a>
+                `).join('')}
+            </div>
+        `}
+    `;
+}
+
+function renderPlaylistCard(p, source) {
+    const isBm = isBookmarked(p.id);
+    const thumbContent = p.verified
+        ? `<div class="thumb-icon">▶</div>`
+        : `<div class="thumb-icon">▶</div>`;
+    return `
+        <div class="playlist-card" onclick="playPlaylist('${p.id}', ${JSON.stringify(p).replace(/"/g, '&quot;')})">
+            <div class="playlist-thumb">
+                ${thumbContent}
+                <div class="play-overlay">
+                    <div class="play-icon">▶</div>
+                </div>
+            </div>
+            <div class="playlist-info">
+                <div class="playlist-title">${escapeHtml(p.title)}</div>
+                <div class="playlist-channel">${escapeHtml(p.channel)} ${p.videos ? `• ${p.videos} videos` : ''}</div>
+                <div class="playlist-desc">${escapeHtml(p.description || '')}</div>
+                <div class="playlist-actions">
+                    <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation(); playPlaylist('${p.id}', ${JSON.stringify(p).replace(/"/g, '&quot;')})">▶ Play</button>
+                    <button class="btn btn-ghost btn-sm ${isBm ? 'bookmarked' : ''}" onclick="event.stopPropagation(); toggleBookmarkUI(${JSON.stringify(p).replace(/"/g, '&quot;')})" title="Bookmark">
+                        ${isBm ? '❤' : '🤍'}
+                    </button>
+                    <a href="https://www.youtube.com/playlist?list=${p.id}" target="_blank" rel="noopener" onclick="event.stopPropagation()" class="btn btn-ghost btn-sm" title="Open on YouTube">↗</a>
+                    ${p.verified ? '<span class="playlist-badge">✓ Verified</span>' : ''}
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function renderBookmarksView() {
+    const bm = getBookmarks();
+    if (bm.length === 0) {
+        return `
+            <div class="empty-state" style="margin-top:30px;">
+                <div class="empty-icon">⭐</div>
+                <h3>No bookmarks yet</h3>
+                <p>Click the heart icon on any playlist to bookmark it for quick access.</p>
+            </div>
+        `;
+    }
+    return `
+        <div class="section-eyebrow">Your Bookmarked Playlists (${bm.length})</div>
+        <div class="playlist-grid">
+            ${bm.map(p => renderPlaylistCard(p, 'bookmark')).join('')}
+        </div>
+    `;
+}
+
+function selectSubject(slug) {
+    state.subject = slug;
+    renderBrowse();
+    document.getElementById('contentArea').scrollTop = 0;
+}
+
+function toggleBookmarkUI(playlist) {
+    const wasBm = isBookmarked(playlist.id);
+    toggleBookmark(playlist);
+    // Re-render to update heart icon
+    renderBrowse();
+}
+
+function addCustomFromForm() {
+    const url = document.getElementById('customUrl').value.trim();
+    const title = document.getElementById('customTitle').value.trim();
+    if (!url) {
+        alert('Please paste a YouTube URL');
+        return;
+    }
+    const added = addCustomPlaylist(url, title);
+    if (!added) {
+        alert('Could not parse the URL. Please paste a valid YouTube playlist or video URL.');
+        return;
+    }
+    document.getElementById('customUrl').value = '';
+    document.getElementById('customTitle').value = '';
+    renderBrowse();
+}
+
+// =================== Player View ===================
+function playPlaylist(playlistId, playlistMeta) {
+    state.view = 'player';
+    state.currentPlaylist = { ...playlistMeta, id: playlistId };
+    addRecent(state.currentPlaylist);
+    renderPlayer();
+}
+
+function renderPlayer() {
+    const p = state.currentPlaylist;
+    if (!p) return;
+    const isBm = isBookmarked(p.id);
+
+    document.getElementById('mainContent').innerHTML = `
+        <button class="btn btn-ghost btn-sm" style="margin-bottom:14px;" onclick="renderBrowse()">← Back to all playlists</button>
+
+        <div class="player-view">
+            <div class="player-main">
+                <div class="player-frame-wrap" id="playerFrameWrap">
+                    <div id="ytPlayer"></div>
+                    ${!ytReady ? '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:white;background:black;"><div class="spinner" style="border-top-color:white;"></div></div>' : ''}
+                </div>
+                <div class="player-meta">
+                    <h2>${escapeHtml(p.title)}</h2>
+                    <div class="meta-row">
+                        <span>📺 ${escapeHtml(p.channel || 'YouTube')}</span>
+                        <button onclick="getCurrentTimeAndInsert()" title="Get current timestamp for note">⏱ Get Time</button>
+                        <button class="${isBm ? 'bookmarked' : ''}" onclick="toggleBookmarkUIPlayer()" title="Bookmark this playlist">
+                            ${isBm ? '❤ Bookmarked' : '🤍 Bookmark'}
+                        </button>
+                        <a href="https://www.youtube.com/playlist?list=${p.id}" target="_blank" rel="noopener" style="text-decoration:none;">
+                            <button title="Open on YouTube">↗ YouTube</button>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="player-side">
+                <div class="side-card">
+                    <div class="side-tabs">
+                        <button class="side-tab ${state.currentSideTab === 'notes' ? 'active' : ''}" onclick="setSideTab('notes')">📝 Notes</button>
+                        <button class="side-tab ${state.currentSideTab === 'bookmarks' ? 'active' : ''}" onclick="setSideTab('bookmarks')">⭐ Bookmarks</button>
+                        <button class="side-tab ${state.currentSideTab === 'recent' ? 'active' : ''}" onclick="setSideTab('recent')">🕘 Recent</button>
+                    </div>
+                    <div class="side-content" id="sideContent">
+                        ${renderSideContent()}
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Load playlist into player
+    if (ytReady) {
+        loadPlaylistIntoPlayer(p.id);
+    }
+}
+
+function renderSideContent() {
+    const p = state.currentPlaylist;
+    if (state.currentSideTab === 'notes') {
+        const notes = getNotes(p.id);
+        return `
+            <div class="note-input-wrap">
+                <textarea id="noteInput" placeholder="Type your note about this video..."></textarea>
+                <div class="note-actions">
+                    <button class="timestamp-btn" onclick="insertTimestamp()" title="Insert current video time">⏱ Add at current time</button>
+                    <button class="btn btn-ghost btn-sm" onclick="saveNoteFromInput()">Save Note</button>
+                </div>
+                <div id="currentTimeDisplay" style="font-size:0.75rem;color:var(--text-muted);margin-top:6px;"></div>
+            </div>
+            <div id="notesList">
+                ${notes.length === 0
+                    ? '<div class="empty-side"><div class="empty-icon">📝</div><div>No notes yet.<br>Add your first note above — click ⏱ to tag it with the current video timestamp.</div></div>'
+                    : notes.slice().reverse().map(n => `
+                        <div class="note-item">
+                            <div class="note-header">
+                                <button class="note-time" onclick="seekToNote(${n.time})" title="Jump to this point">▶ ${formatTime(n.time)}</button>
+                                <button class="note-delete" onclick="deleteNoteUI(${n.createdAt})" title="Delete">×</button>
+                            </div>
+                            <div class="note-text">${escapeHtml(n.text)}</div>
+                        </div>
+                    `).join('')
+                }
+            </div>
+        `;
+    } else if (state.currentSideTab === 'bookmarks') {
+        const bm = getBookmarks();
+        if (bm.length === 0) {
+            return '<div class="empty-side"><div class="empty-icon">⭐</div><div>No bookmarks yet.<br>Click the heart on any playlist to save it here.</div></div>';
+        }
+        return bm.map(b => `
+            <div class="note-item" style="cursor:pointer;" onclick="playPlaylist('${b.id}', ${JSON.stringify({ title: b.title, channel: b.channel }).replace(/"/g, '&quot;')})">
+                <div class="note-header">
+                    <span style="font-size:0.78rem;font-weight:600;color:var(--text);">${escapeHtml(b.title)}</span>
+                    <button class="note-delete" onclick="event.stopPropagation(); removeBookmarkUI('${b.id}')" title="Remove bookmark">×</button>
+                </div>
+                <div style="font-size:0.75rem;color:var(--text-muted);">📺 ${escapeHtml(b.channel || 'YouTube')}</div>
+            </div>
+        `).join('');
+    } else if (state.currentSideTab === 'recent') {
+        const r = getRecent();
+        if (r.length === 0) {
+            return '<div class="empty-side"><div class="empty-icon">🕘</div><div>No recently watched playlists.</div></div>';
+        }
+        return r.map(item => `
+            <div class="note-item" style="cursor:pointer;" onclick="playPlaylist('${item.id}', ${JSON.stringify({ title: item.title, channel: item.channel }).replace(/"/g, '&quot;')})">
+                <div class="note-header">
+                    <span style="font-size:0.78rem;font-weight:600;color:var(--text);">${escapeHtml(item.title)}</span>
+                </div>
+                <div style="font-size:0.72rem;color:var(--text-muted);">📺 ${escapeHtml(item.channel || 'YouTube')} • ${timeAgo(item.playedAt)}</div>
+            </div>
+        `).join('');
+    }
+    return '';
+}
+
+function setSideTab(tab) {
+    state.currentSideTab = tab;
+    const sc = document.getElementById('sideContent');
+    if (sc) sc.innerHTML = renderSideContent();
+}
+
+function toggleBookmarkUIPlayer() {
+    const p = state.currentPlaylist;
+    if (!p) return;
+    toggleBookmark(p);
+    renderPlayer();
+}
+
+function removeBookmarkUI(id) {
+    const bm = getBookmarks();
+    const idx = bm.findIndex(b => b.id === id);
+    if (idx >= 0) {
+        bm.splice(idx, 1);
+        localStorage.setItem(BOOKMARKS_KEY, JSON.stringify(bm));
+    }
+    setSideTab('bookmarks');
+}
+
+// =================== YouTube Player ===================
+function loadPlaylistIntoPlayer(playlistId) {
+    if (!ytReady) {
+        // Wait for API
+        const check = setInterval(() => {
+            if (ytReady) {
+                clearInterval(check);
+                actuallyLoadPlaylist(playlistId);
+            }
+        }, 200);
+        return;
+    }
+    actuallyLoadPlaylist(playlistId);
+}
+
+function actuallyLoadPlaylist(playlistId) {
+    if (ytPlayer) {
+        try { ytPlayer.loadPlaylist(playlistId); return; } catch (e) {}
+    }
+    try {
+        ytPlayer = new YT.Player('ytPlayer', {
+            height: '100%',
+            width: '100%',
+            playerVars: {
+                'listType': 'playlist',
+                'list': playlistId,
+                'autoplay': 1,
+                'controls': 1,
+                'modestbranding': 1,
+                'rel': 0,
+                'playsinline': 1
+            },
+            events: {
+                'onReady': (e) => { /* autoplay should kick in */ },
+                'onError': (e) => {
+                    console.warn('YouTube player error:', e.data);
+                    showPlayerError(playlistId);
+                }
+            }
+        });
+    } catch (err) {
+        console.error('Failed to create YT player:', err);
+        showPlayerError(playlistId);
+    }
+}
+
+function showPlayerError(playlistId) {
+    const wrap = document.getElementById('playerFrameWrap');
+    if (!wrap) return;
+    wrap.innerHTML = `
+        <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:white;background:linear-gradient(135deg,#1e293b,#0f172a);text-align:center;padding:30px;">
+            <div style="font-size:3rem;margin-bottom:14px;">📺</div>
+            <h3 style="color:white;margin-bottom:8px;">Could not load playlist directly</h3>
+            <p style="color:rgba(255,255,255,0.7);font-size:0.88rem;margin-bottom:18px;max-width:380px;">This playlist might be private, restricted, or the ID has changed. You can still watch it on YouTube:</p>
+            <a href="https://www.youtube.com/playlist?list=${playlistId}" target="_blank" rel="noopener" class="btn btn-primary btn-sm">↗ Open on YouTube</a>
+            <p style="color:rgba(255,255,255,0.5);font-size:0.75rem;margin-top:18px;">You can also add a custom playlist URL by going back.</p>
+        </div>
+    `;
+}
+
+function getCurrentTime() {
+    if (ytPlayer && ytPlayer.getCurrentTime) {
+        try { return Math.floor(ytPlayer.getCurrentTime()); } catch { return 0; }
+    }
+    return 0;
+}
+
+function seekToNote(seconds) {
+    if (ytPlayer && ytPlayer.seekTo) {
+        try {
+            ytPlayer.seekTo(seconds, true);
+            if (ytPlayer.getPlayerState && ytPlayer.getPlayerState() !== 1) {
+                ytPlayer.playVideo();
+            }
+        } catch (e) { console.warn('seek failed:', e); }
+    } else {
+        alert('Player not ready yet. Try again in a moment.');
+    }
+}
+
+function insertTimestamp() {
+    const time = getCurrentTime();
+    const input = document.getElementById('noteInput');
+    if (input) {
+        const stamp = `[${formatTime(time)}] `;
+        const cur = input.value;
+        // Insert at cursor or append
+        const start = input.selectionStart || cur.length;
+        input.value = cur.slice(0, start) + stamp + cur.slice(start);
+        input.focus();
+        input.selectionStart = input.selectionEnd = start + stamp.length;
+    }
+    // Update display
+    const display = document.getElementById('currentTimeDisplay');
+    if (display) display.textContent = `⏱ Last captured: ${formatTime(time)}`;
+}
+
+function getCurrentTimeAndInsert() {
+    insertTimestamp();
+}
+
+function saveNoteFromInput() {
+    const input = document.getElementById('noteInput');
+    if (!input || !input.value.trim()) {
+        alert('Type a note first.');
+        return;
+    }
+    const p = state.currentPlaylist;
+    const time = getCurrentTime();
+    saveNote(p.id, time, input.value.trim());
+    input.value = '';
+    setSideTab('notes'); // re-render
+}
+
+function deleteNoteUI(createdAt) {
+    const p = state.currentPlaylist;
+    deleteNote(p.id, createdAt);
+    setSideTab('notes');
+}
+
+// =================== Utilities ===================
+function formatTime(s) {
+    s = Math.max(0, Math.floor(s));
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const sec = s % 60;
+    return h > 0
+        ? `${h}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`
+        : `${m}:${String(sec).padStart(2, '0')}`;
+}
+
+function timeAgo(ts) {
+    const diff = Date.now() - ts;
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return 'just now';
+    if (mins < 60) return `${mins}m ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs}h ago`;
+    const days = Math.floor(hrs / 24);
+    if (days < 7) return `${days}d ago`;
+    return new Date(ts).toLocaleDateString();
+}
+
+function escapeHtml(s) {
+    if (!s) return '';
+    return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+// Start
+init();
+</script>
+</body>
+</html>

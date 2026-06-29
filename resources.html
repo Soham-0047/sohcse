@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GATE 2027 Resources — SOH CSE</title>
+<meta name="description" content="Complete GATE CSE 2027 preparation resources: syllabus, exam pattern, recommended books, mock tests, cutoff trends, study plans, and community links.">
+<link rel="stylesheet" href="./style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23667eea'/%3E%3Ctext x='50' y='70' font-size='60' font-weight='bold' fill='white' text-anchor='middle' font-family='Arial'%3EG%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+
+<!-- ============ Top Navigation ============ -->
+<nav class="topnav">
+    <div class="topnav-inner">
+        <a href="./index.html" class="topnav-brand">
+            <div class="brand-mark">G</div>
+            <div class="brand-text">SOH CSE <small>GATE Preparation Hub</small></div>
+        </a>
+        <button class="topnav-menu-btn" onclick="document.querySelector('.topnav-links').classList.toggle('open')" aria-label="Toggle menu">
+            <span></span><span></span><span></span>
+        </button>
+        <div class="topnav-links">
+            <a href="./index.html" class="topnav-link">🏠 Home</a>
+            <a href="./materials.html" class="topnav-link">📚 Materials</a>
+            <a href="./pyq.html" class="topnav-link">📝 PYQs</a>
+            <a href="./videos.html" class="topnav-link">🎥 Videos</a>
+            <a href="./resources.html" class="topnav-link active">🚀 Resources</a>
+            <a href="./pyq.html?view=practice" class="topnav-cta">🎯 Practice</a>
+        </div>
+    </div>
+</nav>
+
+<!-- ============ Main Content ============ -->
+<div class="app-content">
+    <div class="app-content-scroll" id="contentArea">
+        <div id="mainContent" style="max-width: 1200px; margin: 0 auto;">
+
+            <!-- Hero -->
+            <div style="text-align:center;margin-bottom:30px;">
+                <div style="font-size:3rem;margin-bottom:8px;">🚀</div>
+                <h1 style="font-size:2rem;font-weight:800;color:var(--text);margin-bottom:6px;">
+                    GATE CSE 2027 — Resources Hub
+                </h1>
+                <p style="color:var(--text-muted);font-size:0.95rem;max-width:680px;margin:0 auto;">
+                    Everything you need for GATE CSE 2027 prep: official syllabus, exam pattern, books, mock tests, cutoffs, study plans, and the best free online resources.
+                </p>
+            </div>
+
+            <!-- Quick links grid -->
+            <div class="section-eyebrow">Quick Resources</div>
+            <div class="resources-grid" style="margin-bottom:36px;">
+                <a class="resource-card" href="https://gate2026.iitr.ac.in/" target="_blank" rel="noopener" style="--card-grad: var(--grad-blue);">
+                    <div class="resource-icon">🏛️</div>
+                    <div class="resource-title">Official GATE Website</div>
+                    <div class="resource-desc">Latest official notifications, syllabus, eligibility, application portal, and exam dates from the organizing IIT.</div>
+                    <div class="resource-link">Open official site ↗</div>
+                </a>
+
+                <a class="resource-card" href="./pyq.html" style="--card-grad: var(--grad-purple);">
+                    <div class="resource-icon">📝</div>
+                    <div class="resource-title">Previous Year Questions</div>
+                    <div class="resource-desc">2,736 GATE CSE PYQs from 1987–2026 with chapter-wise organization, solutions, and practice mode.</div>
+                    <div class="resource-link">Practice PYQs →</div>
+                </a>
+
+                <a class="resource-card" href="./pyq.html?view=weightage" style="--card-grad: var(--grad-orange);">
+                    <div class="resource-icon">📊</div>
+                    <div class="resource-title">Weightage Analysis</div>
+                    <div class="resource-desc">Subject-wise and chapter-wise weightage based on the last 5 years. Focus your prep on high-weight topics.</div>
+                    <div class="resource-link">View analytics →</div>
+                </a>
+
+                <a class="resource-card" href="./videos.html" style="--card-grad: var(--grad-red);">
+                    <div class="resource-icon">🎥</div>
+                    <div class="resource-title">Video Lectures</div>
+                    <div class="resource-desc">Curated YouTube playlists for every subject from Gate Smashers, Neso Academy, Abdul Bari, Jenny's, and more.</div>
+                    <div class="resource-link">Watch lectures →</div>
+                </a>
+
+                <a class="resource-card" href="./materials.html" style="--card-grad: var(--grad-cyan);">
+                    <div class="resource-icon">📚</div>
+                    <div class="resource-title">Study Materials</div>
+                    <div class="resource-desc">70+ PDFs including standard textbooks (Cormen, Rosen, Navathe, Galvin), short notes, and RBR notes.</div>
+                    <div class="resource-link">Browse library →</div>
+                </a>
+
+                <a class="resource-card" href="https://gateoverflow.in/" target="_blank" rel="noopener" style="--card-grad: var(--grad-gold);">
+                    <div class="resource-icon">💬</div>
+                    <div class="resource-title">Gate Overflow Forum</div>
+                    <div class="resource-desc">Community-driven Q&A for GATE — every PYQ has discussion threads with multiple expert solutions.</div>
+                    <div class="resource-link">Join forum ↗</div>
+                </a>
+            </div>
+
+            <!-- Exam Pattern -->
+            <div class="section-card" style="margin-bottom:24px;">
+                <div class="section-eyebrow">Exam Pattern</div>
+                <h2 class="section-title" style="font-size:1.4rem;">GATE CSE 2027 — Paper Structure</h2>
+                <p class="section-subtitle" style="margin-bottom:20px;">Same pattern as recent years. 3-hour computer-based test with 65 questions worth 100 marks.</p>
+
+                <div class="stats-grid" style="margin-bottom:24px;">
+                    <div class="stat-card">
+                        <div class="stat-value">3 hrs</div>
+                        <div class="stat-label">Duration</div>
+                    </div>
+                    <div class="stat-card" style="--card-grad: var(--grad-blue);">
+                        <div class="stat-value">65</div>
+                        <div class="stat-label">Questions</div>
+                    </div>
+                    <div class="stat-card" style="--card-grad: var(--grad-orange);">
+                        <div class="stat-value">100</div>
+                        <div class="stat-label">Total Marks</div>
+                    </div>
+                    <div class="stat-card" style="--card-grad: var(--grad-red);">
+                        <div class="stat-value">2</div>
+                        <div class="stat-label">Sections (CS + GA)</div>
+                    </div>
+                </div>
+
+                <table class="cutoff-table">
+                    <thead>
+                        <tr>
+                            <th>Section</th>
+                            <th>Questions</th>
+                            <th>Marks</th>
+                            <th>Type</th>
+                            <th>Negative Marking</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="category-col">Computer Science (CS)</td>
+                            <td>55</td>
+                            <td>85</td>
+                            <td>MCQ + MSQ + NAT</td>
+                            <td>1-mark: −1/3<br>2-mark: −2/3<br>(MSQ/NAT: no negative)</td>
+                        </tr>
+                        <tr>
+                            <td class="category-col">General Aptitude (GA)</td>
+                            <td>10</td>
+                            <td>15</td>
+                            <td>MCQ (5 × 1-mark + 5 × 2-mark)</td>
+                            <td>Same as above</td>
+                        </tr>
+                        <tr>
+                            <td class="category-col">Total</td>
+                            <td><strong>65</strong></td>
+                            <td><strong>100</strong></td>
+                            <td colspan="2">3 hours, computer-based</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Eligibility & Timeline -->
+            <div class="section-card" style="margin-bottom:24px;">
+                <div class="section-eyebrow">Eligibility & Timeline</div>
+                <h2 class="section-title" style="font-size:1.4rem;">Who can apply & when</h2>
+                <p class="section-subtitle" style="margin-bottom:20px;">GATE 2027 is expected to follow the same pattern as 2026. Dates will be officially announced by IIT around July 2026.</p>
+
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px;margin-bottom:24px;">
+                    <div>
+                        <h4 style="margin-bottom:8px;">✅ Eligibility</h4>
+                        <ul style="font-size:0.88rem;color:var(--text-2);padding-left:18px;line-height:1.7;">
+                            <li>Currently in 3rd+ year of BE/BTech/BSc (Research)</li>
+                            <li>Completed Bachelor's in Engineering/Technology/Architecture (4+ years)</li>
+                            <li>Master's degree holders in Science/Mathematics/Statistics/Computer Applications</li>
+                            <li>International candidates from Bangladesh, Ethiopia, Nepal, Singapore, Sri Lanka, UAE</li>
+                            <li><strong>No age limit</strong> — can attempt any number of times</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 style="margin-bottom:8px;">🎓 Qualifying Marks</h4>
+                        <ul style="font-size:0.88rem;color:var(--text-2);padding-left:18px;line-height:1.7;">
+                            <li>General: 25 marks (or μ + σ, whichever higher)</li>
+                            <li>OBC-NCL/EWS: 90% of General cutoff</li>
+                            <li>SC/ST/PwD: 2/3 of General cutoff</li>
+                            <li>Score valid for <strong>3 years</strong></li>
+                            <li>Cutoff varies year-to-year based on difficulty</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <h4 style="margin-bottom:14px;">📅 Expected Timeline (based on past years)</h4>
+                <div>
+                    ${[
+                        { month: 'Jul–Aug 2026', title: 'Official Notification', desc: 'IIT announces GATE 2027 schedule, syllabus, and application dates.' },
+                        { month: 'Sep 2026', title: 'Application Window Opens', desc: 'Register online at the official GATE portal. Application fee: ₹1,750 (General/OBC), ₹875 (SC/ST/PwD/Female).' },
+                        { month: 'Nov 2026', title: 'Application Deadline (with late fee)', desc: 'Last date to apply. Late fee: ₹500 extra. Edit window opens shortly after.' },
+                        { month: 'Jan 2027', title: 'Admit Cards Released', desc: 'Download from official portal. Check exam center and shift timing.' },
+                        { month: 'Feb 2027', title: 'GATE 2027 Exam', desc: 'Conducted over 2 weekends (4 sessions). Computer-based test, 3 hours each.' },
+                        { month: 'Mar 2027', title: 'Answer Keys & Response Sheets', desc: 'Official answer key released. Challenge window opens for 3 days.' },
+                        { month: 'Mar 2027', title: 'Final Answer Key & Results', desc: 'Results announced. Scorecard available for download.' },
+                        { month: 'Apr–May 2027', title: 'COAP / CCMT Counseling', desc: 'MTech admissions at IITs/NITs/IIITs begin via COAP (IITs) and CCMT (NITs).' }
+                    ].map(t => `
+                        <div class="timeline-card">
+                            <div class="timeline-date">
+                                ${t.month.split(' ')[0]}
+                                <span class="month">${t.month.split(' ').slice(1).join(' ')}</span>
+                            </div>
+                            <div class="timeline-content">
+                                <h4>${t.title}</h4>
+                                <p>${t.desc}</p>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+
+            <!-- Recommended Books -->
+            <div class="section-card" style="margin-bottom:24px;">
+                <div class="section-eyebrow">Standard Textbooks</div>
+                <h2 class="section-title" style="font-size:1.4rem;">Recommended Books by Subject</h2>
+                <p class="section-subtitle" style="margin-bottom:14px;">The classic textbooks every GATE topper uses. Most are already available in <a href="./materials.html" style="color:var(--primary);">Study Materials</a>.</p>
+
+                <div class="book-list">
+                    ${[
+                        { subj: 'Algorithms', title: 'Introduction to Algorithms', author: 'Cormen, Leiserson, Rivest, Stein (CLRS)' },
+                        { subj: 'Algorithms', title: 'Algorithm Design', author: 'Kleinberg & Tardos' },
+                        { subj: 'Data Structures', title: 'Data Structures and Algorithm Analysis', author: 'Mark Allen Weiss' },
+                        { subj: 'Discrete Math', title: 'Discrete Mathematics and Its Applications', author: 'Kenneth H. Rosen' },
+                        { subj: 'Discrete Math', title: 'Discrete and Combinatorial Mathematics', author: 'Grimaldi' },
+                        { subj: 'Operating Systems', title: 'Operating System Concepts', author: 'Silberschatz, Galvin, Gagne' },
+                        { subj: 'Operating Systems', title: 'Modern Operating Systems', author: 'Andrew S. Tanenbaum' },
+                        { subj: 'DBMS', title: 'Database System Concepts', author: 'Silberschatz, Korth, Sudarshan' },
+                        { subj: 'DBMS', title: 'Fundamentals of Database Systems', author: 'Elmasri & Navathe' },
+                        { subj: 'Computer Networks', title: 'Computer Networking: A Top-Down Approach', author: 'Kurose & Ross' },
+                        { subj: 'Computer Networks', title: 'Computer Networks', author: 'Andrew S. Tanenbaum' },
+                        { subj: 'TOC', title: 'Introduction to Automata Theory, Languages, and Computation', author: 'Hopcroft, Motwani, Ullman' },
+                        { subj: 'Compiler Design', title: 'Compilers: Principles, Techniques, and Tools', author: 'Aho, Lam, Sethi, Ullman (Dragon Book)' },
+                        { subj: 'Digital Logic', title: 'Digital Design', author: 'M. Morris Mano' },
+                        { subj: 'Computer Organization', title: 'Computer Organization and Embedded Systems', author: 'Carl Hamacher' },
+                        { subj: 'Computer Organization', title: 'Computer Organization and Design', author: 'Patterson & Hennessy' },
+                        { subj: 'Programming', title: 'The C Programming Language', author: 'Kernighan & Ritchie (K&R)' },
+                        { subj: 'Aptitude', title: 'Quantitative Aptitude', author: 'R.S. Aggarwal' },
+                        { subj: 'Aptitude', title: 'Barron\'s 1100 Words', author: 'Barron\'s' }
+                    ].map(b => `
+                        <div class="book-item">
+                            <div class="book-subject">${b.subj}</div>
+                            <div class="book-title">${b.title}</div>
+                            <div class="book-author">by ${b.author}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+
+            <!-- Mock Tests -->
+            <div class="section-card" style="margin-bottom:24px;">
+                <div class="section-eyebrow">Mock Tests & Test Series</div>
+                <h2 class="section-title" style="font-size:1.4rem;">Best Mock Test Series for GATE CSE</h2>
+                <p class="section-subtitle" style="margin-bottom:18px;">Mock tests are critical for time management and exam temperament. Most toppers attempt 30–50 full-length mocks.</p>
+
+                <div class="resources-grid">
+                    <a class="resource-card" href="https://www.gateoverflow.in/" target="_blank" rel="noopener" style="--card-grad: var(--grad-blue);">
+                        <div class="resource-icon">🥇</div>
+                        <div class="resource-title">Gate Overflow Test Series</div>
+                        <div class="resource-desc">Most recommended by toppers. Questions are closest to actual GATE level. Affordable (₹500-1000).</div>
+                        <div class="resource-link">Visit Gate Overflow ↗</div>
+                    </a>
+                    <a class="resource-card" href="https://www.madeeasy.in/" target="_blank" rel="noopener" style="--card-grad: var(--grad-purple);">
+                        <div class="resource-icon">🥈</div>
+                        <div class="resource-title">Made Easy Test Series</div>
+                        <div class="resource-desc">Comprehensive coverage with 60+ tests. Detailed solutions and performance analysis. ~₹2000.</div>
+                        <div class="resource-link">Visit Made Easy ↗</div>
+                    </a>
+                    <a class="resource-card" href="https://www.aceenggacademy.com/" target="_blank" rel="noopener" style="--card-grad: var(--grad-orange);">
+                        <div class="resource-icon">🥉</div>
+                        <div class="resource-title">ACE Engineering Academy</div>
+                        <div class="resource-desc">Popular in South India. Good quality questions with subject-wise + full-length tests. ~₹1500.</div>
+                        <div class="resource-link">Visit ACE Academy ↗</div>
+                    </a>
+                    <a class="resource-card" href="https://www.geeksforgeeks.org/gate-mock-tests/" target="_blank" rel="noopener" style="--card-grad: var(--grad-red);">
+                        <div class="resource-icon">📘</div>
+                        <div class="resource-title">GeeksforGeeks Mock Tests</div>
+                        <div class="resource-desc">Free + paid tests. Good for subject-wise practice. Includes detailed editorials.</div>
+                        <div class="resource-link">Visit GFG ↗</div>
+                    </a>
+                    <a class="resource-card" href="https://testbook.com/gate-cse" target="_blank" rel="noopener" style="--card-grad: var(--grad-cyan);">
+                        <div class="resource-icon">📙</div>
+                        <div class="resource-title">Testbook GATE CSE</div>
+                        <div class="resource-desc">Large test bank with video solutions. Good UI and performance analytics. ~₹1500-3000.</div>
+                        <div class="resource-link">Visit Testbook ↗</div>
+                    </a>
+                    <a class="resource-card" href="https://www.unacademy.com/goal/gate-cs-it" target="_blank" rel="noopener" style="--card-grad: var(--grad-gold);">
+                        <div class="resource-icon">📕</div>
+                        <div class="resource-title">Unacademy GATE CSE</div>
+                        <div class="resource-desc">Live + recorded courses. Free tier available. Subscription gives access to test series.</div>
+                        <div class="resource-link">Visit Unacademy ↗</div>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Cutoff Trends -->
+            <div class="section-card" style="margin-bottom:24px;">
+                <div class="section-eyebrow">Cutoff Trends</div>
+                <h2 class="section-title" style="font-size:1.4rem;">GATE CSE Previous Year Cutoffs</h2>
+                <p class="section-subtitle" style="margin-bottom:14px;">Cutoff marks (out of 100) for GATE CSE qualification. For MTech admission to top IITs, you typically need a rank under 200–500.</p>
+
+                <table class="cutoff-table">
+                    <thead>
+                        <tr>
+                            <th>Year</th>
+                            <th>General</th>
+                            <th>OBC-NCL/EWS</th>
+                            <th>SC/ST/PwD</th>
+                            <th>Top 100 rank (approx)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td class="category-col">2026</td><td>28.5</td><td>25.6</td><td>19.0</td><td>75+ marks</td></tr>
+                        <tr><td class="category-col">2025</td><td>28.0</td><td>25.2</td><td>18.7</td><td>74+ marks</td></tr>
+                        <tr><td class="category-col">2024</td><td>27.5</td><td>24.7</td><td>18.3</td><td>72+ marks</td></tr>
+                        <tr><td class="category-col">2023</td><td>32.5</td><td>29.2</td><td>21.6</td><td>75+ marks</td></tr>
+                        <tr><td class="category-col">2022</td><td>25.0</td><td>22.5</td><td>16.6</td><td>71+ marks</td></tr>
+                        <tr><td class="category-col">2021</td><td>33.0</td><td>29.7</td><td>22.0</td><td>76+ marks</td></tr>
+                        <tr><td class="category-col">2020</td><td>28.5</td><td>25.6</td><td>19.0</td><td>72+ marks</td></tr>
+                    </tbody>
+                </table>
+                <p style="font-size:0.78rem;color:var(--text-muted);margin-top:10px;">
+                    ⚠ Indicative figures based on past years. Actual cutoffs vary based on paper difficulty. For top IIT MTech programs (IITB, IITD, IITM CSE), aim for under AIR 100.
+                </p>
+            </div>
+
+            <!-- Study Plan -->
+            <div class="section-card" style="margin-bottom:24px;">
+                <div class="section-eyebrow">Study Plan Templates</div>
+                <h2 class="section-title" style="font-size:1.4rem;">Suggested Study Plans</h2>
+                <p class="section-subtitle" style="margin-bottom:18px;">Two proven plans based on how much time you have. Adapt to your pace.</p>
+
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;">
+                    <div style="background:var(--bg-light);border:1px solid var(--border);border-radius:var(--r-lg);padding:20px;">
+                        <div class="feature-pill">12-Month Plan</div>
+                        <div class="feature-pill">Recommended</div>
+                        <h4 style="margin:8px 0;font-size:1.05rem;">📅 Year-Long Plan (Start ~Feb 2026)</h4>
+                        <ul style="font-size:0.85rem;color:var(--text-2);padding-left:18px;line-height:1.7;">
+                            <li><strong>Feb–Apr 2026:</strong> Foundation — Math, DS, Algorithms</li>
+                            <li><strong>May–Jul 2026:</strong> Core — OS, DBMS, CN, TOC</li>
+                            <li><strong>Aug–Sep 2026:</strong> Remaining — CO, CD, DL, Aptitude</li>
+                            <li><strong>Oct–Nov 2026:</strong> First-pass revision + PYQs (15 years)</li>
+                            <li><strong>Dec 2026–Jan 2027:</strong> Mock tests + weak area revision</li>
+                            <li><strong>Feb 2027:</strong> Final revision + 5-6 full mocks</li>
+                        </ul>
+                        <p style="font-size:0.78rem;color:var(--text-muted);margin-top:10px;">Daily: 4-6 hrs study, 1 hr PYQ practice, 30 min revision</p>
+                    </div>
+
+                    <div style="background:var(--bg-light);border:1px solid var(--border);border-radius:var(--r-lg);padding:20px;">
+                        <div class="feature-pill">6-Month Plan</div>
+                        <div class="feature-pill">Intensive</div>
+                        <h4 style="margin:8px 0;font-size:1.05rem;">⚡ Crash Plan (Start ~Aug 2026)</h4>
+                        <ul style="font-size:0.85rem;color:var(--text-2);padding-left:18px;line-height:1.7;">
+                            <li><strong>Aug 2026:</strong> DS + Algorithms (high weight)</li>
+                            <li><strong>Sep 2026:</strong> OS + DBMS</li>
+                            <li><strong>Oct 2026:</strong> CN + TOC + DM</li>
+                            <li><strong>Nov 2026:</strong> CO + CD + DL + Aptitude</li>
+                            <li><strong>Dec 2026:</strong> 10 PYQ papers + revision</li>
+                            <li><strong>Jan 2027:</strong> 20+ mock tests + final revision</li>
+                        </ul>
+                        <p style="font-size:0.78rem;color:var(--text-muted);margin-top:10px;">Daily: 6-8 hrs study, 1.5 hrs PYQs, 1 hr revision</p>
+                    </div>
+
+                    <div style="background:var(--bg-light);border:1px solid var(--border);border-radius:var(--r-lg);padding:20px;">
+                        <div class="feature-pill">Last 30 Days</div>
+                        <h4 style="margin:8px 0;font-size:1.05rem;">🎯 Final Month Strategy</h4>
+                        <ul style="font-size:0.85rem;color:var(--text-2);padding-left:18px;line-height:1.7;">
+                            <li>Take 8-10 full-length mock tests (timed)</li>
+                            <li>Revise formula sheets and short notes daily</li>
+                            <li>Solve last 5 years' PYQs chapter-wise</li>
+                            <li>Don't start any new topic in last 15 days</li>
+                            <li>Focus on weak areas identified in mocks</li>
+                            <li>Sleep 7+ hrs, eat well — avoid burnout</li>
+                            <li>Keep 1 day before exam fully light revision</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Community -->
+            <div class="section-card" style="margin-bottom:24px;">
+                <div class="section-eyebrow">Community & Support</div>
+                <h2 class="section-title" style="font-size:1.4rem;">Connect with other aspirants</h2>
+                <p class="section-subtitle" style="margin-bottom:18px;">Doubt-solving, peer learning, and topper insights — these communities are gold.</p>
+
+                <div class="resources-grid">
+                    <a class="resource-card" href="https://gateoverflow.in/" target="_blank" rel="noopener" style="--card-grad: var(--grad-blue);">
+                        <div class="resource-icon">💬</div>
+                        <div class="resource-title">Gate Overflow</div>
+                        <div class="resource-desc">The largest GATE community — every PYQ has detailed discussions. Best place for doubt-solving.</div>
+                        <div class="resource-link">Join ↗</div>
+                    </a>
+                    <a class="resource-card" href="https://www.reddit.com/r/gate/" target="_blank" rel="noopener" style="--card-grad: var(--grad-orange);">
+                        <div class="resource-icon">👽</div>
+                        <div class="resource-title">r/gate on Reddit</div>
+                        <div class="resource-desc">Active community of aspirants and toppers. Strategy threads, AMAs, and emotional support.</div>
+                        <div class="resource-link">Visit ↗</div>
+                    </a>
+                    <a class="resource-card" href="https://t.me/gatecs" target="_blank" rel="noopener" style="--card-grad: var(--grad-purple);">
+                        <div class="resource-icon">✈️</div>
+                        <div class="resource-title">Telegram Groups</div>
+                        <div class="resource-desc">Search "GATE CSE 2027" on Telegram. Active doubt-solving groups and study circles.</div>
+                        <div class="resource-link">Search Telegram ↗</div>
+                    </a>
+                    <a class="resource-card" href="https://www.youtube.com/results?search_query=gate+cse+topper+interview" target="_blank" rel="noopener" style="--card-grad: var(--grad-red);">
+                        <div class="resource-icon">🎤</div>
+                        <div class="resource-title">Topper Interviews</div>
+                        <div class="resource-desc">Watch AIR 1-100 topper interviews on YouTube. Learn their strategy, books, and mistakes to avoid.</div>
+                        <div class="resource-link">Watch ↗</div>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Pro Tips -->
+            <div class="section-card" style="margin-bottom:24px;background:var(--grad-brand);color:white;">
+                <div class="section-eyebrow" style="background:rgba(255,255,255,0.2);color:white;">From Toppers</div>
+                <h2 class="section-title" style="color:white;font-size:1.4rem;">💡 Pro Tips for GATE 2027</h2>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px;margin-top:18px;">
+                    <div>
+                        <div style="font-size:1.5rem;margin-bottom:6px;">🎯</div>
+                        <h4 style="color:white;margin-bottom:6px;">Aim for top 100, not just qualify</h4>
+                        <p style="font-size:0.85rem;opacity:0.92;line-height:1.55;">Aim high. If you target AIR 100, you'll likely land in top 1000. If you aim only to qualify, you might miss cutoff.</p>
+                    </div>
+                    <div>
+                        <div style="font-size:1.5rem;margin-bottom:6px;">📝</div>
+                        <h4 style="color:white;margin-bottom:6px;">PYQs > Everything</h4>
+                        <p style="font-size:0.85rem;opacity:0.92;line-height:1.55;">Solve last 15 years' PYQs at least 3 times. 70% of GATE questions are concept-repeats with new numbers.</p>
+                    </div>
+                    <div>
+                        <div style="font-size:1.5rem;margin-bottom:6px;">📊</div>
+                        <h4 style="color:white;margin-bottom:6px;">Mocks are non-negotiable</h4>
+                        <p style="font-size:0.85rem;opacity:0.92;line-height:1.55;">Take 30+ full mocks. Time management is what separates AIR 100 from AIR 1000.</p>
+                    </div>
+                    <div>
+                        <div style="font-size:1.5rem;margin-bottom:6px;">🚫</div>
+                        <h4 style="color:white;margin-bottom:6px;">Don't collect resources</h4>
+                        <p style="font-size:0.85rem;opacity:0.92;line-height:1.55;">Pick one textbook + one video lecture per subject. Finish them. Don't keep switching.</p>
+                    </div>
+                    <div>
+                        <div style="font-size:1.5rem;margin-bottom:6px;">📓</div>
+                        <h4 style="color:white;margin-bottom:6px;">Maintain short notes</h4>
+                        <p style="font-size:0.85rem;opacity:0.92;line-height:1.55;">Last 30 days, you'll only revise short notes. Start writing them from day 1.</p>
+                    </div>
+                    <div>
+                        <div style="font-size:1.5rem;margin-bottom:6px;">😴</div>
+                        <h4 style="color:white;margin-bottom:6px;">Sleep is study</h4>
+                        <p style="font-size:0.85rem;opacity:0.92;line-height:1.55;">7+ hours of sleep is non-negotiable. Burnout costs you months. Consistency > intensity.</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script src="./chatbot.js"></script>
+</body>
+</html>

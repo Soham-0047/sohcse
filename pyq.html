@@ -29,8 +29,8 @@
             <a href="./index.html" class="topnav-link">🏠 Home</a>
             <a href="./materials.html" class="topnav-link">📚 Materials</a>
             <a href="./pyq.html" class="topnav-link active">📝 PYQs</a>
-            <a href="javascript:void(0)" onclick="setView('papers')" class="topnav-link">📅 Year-wise</a>
-            <a href="javascript:void(0)" onclick="setView('weightage')" class="topnav-link">📊 Weightage</a>
+            <a href="./videos.html" class="topnav-link">🎥 Videos</a>
+            <a href="./resources.html" class="topnav-link">🚀 Resources</a>
             <a href="javascript:void(0)" onclick="setView('practice')" class="topnav-cta">🎯 Practice</a>
         </div>
     </div>
@@ -941,6 +941,9 @@ function renderPapers() {
             `}
         </div>
     `;
+
+    // Render math in any question cards that were injected (year detail view)
+    document.querySelectorAll('.q-content').forEach(renderMathIn);
 }
 
 function renderPaperYearDetail(papers) {
