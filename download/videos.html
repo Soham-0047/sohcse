@@ -839,6 +839,9 @@ function playVideo(id, type, meta) {
 
 // ============ Player View ============
 function playPlaylist(meta) {
+    if (typeof window.trackStudyActivity === 'function') {
+        window.trackStudyActivity(window.location.href, `🎥 ${meta.title}`, '🎥');
+    }
     state.view = 'player';
     state.currentPlaylist = meta;
     addRecent(meta);

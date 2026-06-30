@@ -2535,3 +2535,88 @@ body.focus-mode .app-content { height: 100vh; }
     }
     .topnav-dropdown.open .topnav-dropdown-menu { display: flex; }
 }
+
+/* ============ Loading Skeletons ============ */
+.skeleton {
+    background: var(--bg-light);
+    border-radius: var(--r);
+    overflow: hidden;
+    position: relative;
+}
+.skeleton::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+    animation: shimmer-skeleton 1.5s infinite;
+}
+[data-theme="dark"] .skeleton::after {
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
+}
+@keyframes shimmer-skeleton {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+.skeleton-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    padding: 22px;
+    margin-bottom: 14px;
+}
+.skeleton-line {
+    height: 12px;
+    background: var(--bg-light);
+    border-radius: 4px;
+    margin-bottom: 8px;
+}
+.skeleton-line.w-100 { width: 100%; }
+.skeleton-line.w-75 { width: 75%; }
+.skeleton-line.w-50 { width: 50%; }
+.skeleton-line.h-20 { height: 20px; }
+.skeleton-line.h-40 { height: 40px; }
+
+/* ============ KBD styling ============ */
+kbd {
+    background: var(--bg-light);
+    padding: 2px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    font-family: monospace;
+    font-size: 0.78rem;
+    color: var(--text-2);
+}
+
+/* ============ Continue Banner hover ============ */
+#continueBanner {
+    transition: all 0.3s var(--ease-out);
+}
+#continueBanner:hover {
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+}
+
+/* ============ Better focus states for accessibility ============ */
+button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+/* ============ Smooth scroll for dropdowns ============ */
+.topnav-dropdown-menu {
+    scroll-behavior: smooth;
+}
+
+/* ============ Better mobile bottom nav active indicator ============ */
+.mobile-bottom-nav-item.active::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 30px;
+    height: 3px;
+    background: var(--primary);
+    border-radius: 0 0 3px 3px;
+}
+.mobile-bottom-nav-item { position: relative; }

@@ -185,6 +185,11 @@ function selectSubject(slug) {
 }
 
 function selectChapter(subjectSlug, chapterSlug) {
+    if (typeof window.trackStudyActivity === 'function') {
+        const subj = data.subjects.find(s => s.subject === subjectSlug);
+        const chap = subj?.chapters.find(c => c.chapter === chapterSlug);
+        if (subj && chap) window.trackStudyActivity(window.location.href, `${subj.subject_label} › ${chap.chapter_label}`, '📝');
+    }
     state.view = 'chapter'; state.subject = subjectSlug; state.chapter = chapterSlug;
     state.page = 1; state.expandedExplanations.clear();
     state.expandedSubjects.add(subjectSlug); state.yearFilter = null; state.typeFilter = null;

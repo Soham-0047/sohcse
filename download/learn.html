@@ -1040,6 +1040,11 @@ function selectSubject(key) {
 }
 
 function selectTopic(subjKey, topicKey) {
+    if (typeof window.trackStudyActivity === 'function') {
+        const subj = NOTES[subjKey];
+        const topic = subj?.topics[topicKey];
+        if (subj && topic) window.trackStudyActivity(window.location.href, `📖 ${topic.title}`, '📖');
+    }
     state.subject = subjKey;
     state.topic = topicKey;
     renderSidebar();
