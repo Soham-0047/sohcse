@@ -696,18 +696,50 @@ body::before {
     flex-direction: column;
     transition: width 0.35s var(--ease-out), min-width 0.35s, background 0.3s;
 }
-.app-sidebar.collapsed { width: 60px; min-width: 60px; }
+.app-sidebar.collapsed { width: 56px; min-width: 56px; overflow: hidden; }
+.app-sidebar.collapsed .sidebar-header { padding: 14px 8px; text-align: center; }
 .app-sidebar.collapsed .sidebar-header-text,
-.app-sidebar.collapsed .sidebar-stats,
-.app-sidebar.collapsed .search-box,
-.app-sidebar.collapsed .breadcrumb,
-.app-sidebar.collapsed .folder-item span,
-.app-sidebar.collapsed .file-item span,
+.app-sidebar.collapsed .sidebar-stats { display: none; }
+.app-sidebar.collapsed .sidebar-header::after { display: none; }
+.app-sidebar.collapsed .sidebar-header .sidebar-icon-only {
+    display: block !important;
+    font-size: 1.4rem;
+    text-align: center;
+}
+.sidebar-icon-only { display: none; }
+.app-sidebar.collapsed .breadcrumb { display: none; }
+.app-sidebar.collapsed .sidebar-content { padding: 8px 4px; }
+.app-sidebar.collapsed .search-box { display: none; }
+.app-sidebar.collapsed .back-button,
+.app-sidebar.collapsed .home-link {
+    padding: 12px 8px;
+    justify-content: center;
+    border-radius: var(--r-sm);
+    margin-bottom: 6px;
+}
 .app-sidebar.collapsed .back-button span,
-.app-sidebar.collapsed .pyq-section-title,
-.app-sidebar.collapsed .subject-item > button > span:not(.chevron),
-.app-sidebar.collapsed .chapter-list,
 .app-sidebar.collapsed .home-link span { display: none; }
+.app-sidebar.collapsed .pyq-section-title { display: none; }
+.app-sidebar.collapsed .folder-item,
+.app-sidebar.collapsed .file-item {
+    padding: 12px 8px;
+    justify-content: center;
+    margin: 2px 0;
+    border-radius: var(--r-sm);
+}
+.app-sidebar.collapsed .folder-item span,
+.app-sidebar.collapsed .file-item span { display: none; }
+.app-sidebar.collapsed .folder-item .item-icon,
+.app-sidebar.collapsed .file-item .item-icon { margin: 0; }
+.app-sidebar.collapsed .subject-item > button {
+    padding: 12px 8px;
+    justify-content: center;
+}
+.app-sidebar.collapsed .subject-item > button > span:not(.chevron),
+.app-sidebar.collapsed .subject-item > button .count-badge,
+.app-sidebar.collapsed .subject-item > button .chevron { display: none; }
+.app-sidebar.collapsed .chapter-list { display: none; }
+.app-sidebar.collapsed .chapter-btn { display: none; }
 
 .sidebar-header {
     padding: 16px;
@@ -2128,3 +2160,151 @@ body::before {
 
 /* Smooth theme transition for all elements */
 * { transition: background-color 0.3s var(--ease-out), border-color 0.3s var(--ease-out), color 0.3s var(--ease-out); }
+
+/* ============ Navbar Hide/Show Toggle ============ */
+.topnav.hidden { transform: translateY(-100%); }
+.topnav { transition: transform 0.35s var(--ease-out), background 0.3s, border-color 0.3s; }
+
+.navbar-toggle {
+    background: rgba(102, 126, 234, 0.1);
+    border: 1px solid var(--border);
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.25s var(--ease-out);
+    flex-shrink: 0;
+    color: var(--text);
+}
+.navbar-toggle:hover {
+    background: var(--grad-brand);
+    color: white;
+    border-color: transparent;
+}
+
+/* When navbar is hidden, show a floating button to bring it back */
+.navbar-restore {
+    position: fixed;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-60px);
+    background: var(--grad-brand);
+    color: white;
+    border: none;
+    width: 36px;
+    height: 36px;
+    border-radius: 0 0 12px 12px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    z-index: 51;
+    transition: transform 0.35s var(--ease-out);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.navbar-restore.visible { transform: translateX(-50%) translateY(0); }
+.navbar-restore:hover { transform: translateX(-50%) translateY(0) scale(1.05); }
+
+/* Focus mode: both navbar and sidebar hidden, content takes full screen */
+body.focus-mode .topnav { transform: translateY(-100%); }
+body.focus-mode .app-sidebar { transform: translateX(-100%); }
+body.focus-mode .toggle-sidebar-btn { display: none; }
+body.focus-mode .navbar-restore { transform: translateX(-50%) translateY(0); }
+body.focus-mode .app-container { height: 100vh; }
+body.focus-mode .app-content { height: 100vh; }
+
+.app-sidebar { transition: transform 0.35s var(--ease-out), width 0.35s, min-width 0.35s, background 0.3s; }
+
+/* Floating sidebar restore button (when sidebar collapsed via focus mode) */
+.sidebar-restore {
+    position: fixed;
+    top: 50%;
+    left: 8px;
+    transform: translateY(-50%) translateX(-60px);
+    background: var(--grad-blue);
+    color: white;
+    border: none;
+    width: 30px;
+    height: 60px;
+    border-radius: 0 12px 12px 0;
+    cursor: pointer;
+    font-size: 0.85rem;
+    z-index: 51;
+    transition: transform 0.35s var(--ease-out);
+    box-shadow: 2px 0 10px rgba(0,0,0,0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.sidebar-restore.visible { transform: translateY(-50%) translateX(0); }
+.sidebar-restore:hover { width: 34px; }
+
+/* PW Notes cards */
+.pw-notes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 14px;
+    margin-top: 16px;
+}
+.pw-note-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    padding: 16px;
+    transition: all 0.3s var(--ease-out);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    position: relative;
+    overflow: hidden;
+}
+.pw-note-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--card-grad, var(--grad-brand));
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s var(--ease-out);
+}
+.pw-note-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow);
+    border-color: transparent;
+}
+.pw-note-card:hover::before { transform: scaleX(1); }
+.pw-note-card .pw-icon { font-size: 1.8rem; }
+.pw-note-card .pw-title { font-weight: 700; font-size: 0.92rem; color: var(--text); }
+.pw-note-card .pw-source { font-size: 0.74rem; color: var(--text-muted); }
+.pw-note-card .pw-actions { display: flex; gap: 6px; margin-top: 4px; }
+.pw-note-card .pw-actions a, .pw-note-card .pw-actions button {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    background: var(--bg-light);
+    color: var(--text-2);
+    text-decoration: none;
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-align: center;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s;
+}
+.pw-note-card .pw-actions a:hover, .pw-note-card .pw-actions button:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+.pw-note-card .pw-actions .view-btn {
+    background: var(--grad-brand);
+    color: white;
+    border-color: transparent;
+}
+.pw-note-card .pw-actions .view-btn:hover { transform: translateY(-1px); box-shadow: var(--shadow-sm); }

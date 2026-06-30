@@ -115,6 +115,78 @@
         });
     }
 
+    // ============ Navbar Hide/Show & Focus Mode ============
+    function initNavToggle() {
+        // Add navbar toggle button to topnav
+        const topnav = document.querySelector('.topnav-inner');
+        if (!topnav || document.getElementById('navbarToggle')) return;
+        const btn = document.createElement('button');
+        btn.id = 'navbarToggle';
+        btn.className = 'navbar-toggle';
+        btn.title = 'Hide navbar for more reading space (Ctrl+H)';
+        btn.setAttribute('aria-label', 'Toggle navbar');
+        btn.innerHTML = '👁';
+        btn.onclick = toggleNavbar;
+        const menuBtn = topnav.querySelector('.topnav-menu-btn');
+        if (menuBtn) { topnav.insertBefore(btn, menuBtn); } else { topnav.appendChild(btn); }
+
+        // Add restore button (floating, shown when navbar hidden)
+        const restore = document.createElement('button');
+        restore.className = 'navbar-restore';
+        restore.id = 'navbarRestore';
+        restore.innerHTML = '👁';
+        restore.title = 'Show navbar';
+        restore.onclick = showNavbar;
+        document.body.appendChild(restore);
+
+        // Add sidebar restore button (shown when sidebar collapsed via focus mode)
+        const sbRestore = document.createElement('button');
+        sbRestore.className = 'sidebar-restore';
+        sbRestore.id = 'sidebarRestore';
+        sbRestore.innerHTML = '▶';
+        sbRestore.title = 'Show sidebar';
+        sbRestore.onclick = showSidebar;
+        document.body.appendChild(sbRestore);
+    }
+
+    function toggleNavbar() {
+        const topnav = document.querySelector('.topnav');
+        const restore = document.getElementById('navbarRestore');
+        if (topnav.classList.contains('hidden')) {
+            showNavbar();
+        } else {
+            topnav.classList.add('hidden');
+            if (restore) restore.classList.add('visible');
+        }
+    }
+
+    function showNavbar() {
+        const topnav = document.querySelector('.topnav');
+        const restore = document.getElementById('navbarRestore');
+        topnav.classList.remove('hidden');
+        if (restore) restore.classList.remove('visible');
+        // Also exit focus mode if active
+        document.body.classList.remove('focus-mode');
+    }
+
+    function toggleFocusMode() {
+        if (document.body.classList.contains('focus-mode')) {
+            document.body.classList.remove('focus-mode');
+            const sb = document.getElementById('sidebar');
+            if (sb) sb.classList.remove('collapsed');
+            if (window.showToast) window.showToast('Focus mode off', 'info');
+        } else {
+            document.body.classList.add('focus-mode');
+            if (window.showToast) window.showToast('🎯 Focus mode on — navbar & sidebar hidden. Press Ctrl+F to exit.', 'info', 4000);
+        }
+    }
+
+    function showSidebar() {
+        const sb = document.getElementById('sidebar');
+        if (sb) sb.classList.remove('collapsed');
+        document.body.classList.remove('focus-mode');
+    }
+
     // ============ Reading Progress Bar ============
     function initReadingProgress() {
         const bar = document.createElement('div');
@@ -298,6 +370,20 @@
                 return;
             }
 
+            // Ctrl+H or Cmd+H — Toggle navbar (hide/show for more reading space)
+            if ((e.ctrlKey || e.metaKey) && e.key === 'h') {
+                e.preventDefault();
+                toggleNavbar();
+                return;
+            }
+
+            // Ctrl+F or Cmd+F — Toggle focus mode (hide both navbar & sidebar)
+            if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'F') {
+                e.preventDefault();
+                toggleFocusMode();
+                return;
+            }
+
             // Alt+key shortcuts for navigation
             if (e.altKey && !e.ctrlKey && !e.metaKey) {
                 const keyMap = {
@@ -348,6 +434,7 @@
     function init() {
         initTheme();
         injectThemeToggle();
+        initNavToggle();
         initCommandPalette();
         initKeyboardShortcuts();
         injectToastContainer();
@@ -379,6 +466,10 @@
         toggle: toggleTheme,
         setTheme: applyTheme,
         getTheme: () => document.documentElement.getAttribute('data-theme') || 'light',
-        showToast
+        showToast,
+        toggleNavbar,
+        toggleFocusMode,
+        showNavbar,
+        showSidebar
     };
 })();
