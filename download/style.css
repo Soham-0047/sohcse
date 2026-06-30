@@ -2308,3 +2308,230 @@ body.focus-mode .app-content { height: 100vh; }
     border-color: transparent;
 }
 .pw-note-card .pw-actions .view-btn:hover { transform: translateY(-1px); box-shadow: var(--shadow-sm); }
+
+/* ============ Grouped Dropdown Navigation ============ */
+.topnav-dropdown {
+    position: relative;
+}
+.topnav-dropdown-trigger {
+    padding: 8px 12px;
+    border-radius: var(--r-sm);
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-2);
+    transition: all 0.25s var(--ease-out);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: none;
+    border: none;
+    font-family: inherit;
+}
+.topnav-dropdown-trigger:hover { background: rgba(102, 126, 234, 0.1); color: var(--primary); }
+.topnav-dropdown-trigger .caret {
+    font-size: 0.65rem;
+    transition: transform 0.2s;
+}
+.topnav-dropdown.open .topnav-dropdown-trigger .caret { transform: rotate(180deg); }
+.topnav-dropdown.open .topnav-dropdown-trigger { background: rgba(102, 126, 234, 0.1); color: var(--primary); }
+
+.topnav-dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    min-width: 200px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    box-shadow: var(--shadow-lg);
+    padding: 6px;
+    display: none;
+    flex-direction: column;
+    gap: 2px;
+    z-index: 100;
+    animation: dropdownOpen 0.25s var(--ease-out);
+}
+.topnav-dropdown.open .topnav-dropdown-menu { display: flex; }
+@keyframes dropdownOpen {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.topnav-dropdown-menu a {
+    padding: 8px 12px;
+    border-radius: var(--r-sm);
+    text-decoration: none;
+    color: var(--text);
+    font-size: 0.82rem;
+    font-weight: 600;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.topnav-dropdown-menu a:hover { background: rgba(102, 126, 234, 0.1); color: var(--primary); }
+.topnav-dropdown-menu a.active { background: var(--grad-brand); color: white; }
+
+/* ============ Mobile Bottom Navigation ============ */
+.mobile-bottom-nav {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--bg-card);
+    border-top: 1px solid var(--border);
+    padding: 6px 8px;
+    z-index: 50;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
+    justify-content: space-around;
+    align-items: center;
+    transition: background 0.3s, border-color 0.3s;
+}
+.mobile-bottom-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 6px 10px;
+    border-radius: var(--r-sm);
+    text-decoration: none;
+    color: var(--text-muted);
+    font-size: 0.62rem;
+    font-weight: 600;
+    transition: all 0.2s;
+    flex: 1;
+    max-width: 70px;
+}
+.mobile-bottom-nav-item .icon { font-size: 1.2rem; }
+.mobile-bottom-nav-item:hover { color: var(--primary); background: rgba(102, 126, 234, 0.08); }
+.mobile-bottom-nav-item.active { color: var(--primary); }
+.mobile-bottom-nav-item.active .icon { transform: scale(1.15); }
+
+/* Mobile: hide topnav links, show bottom nav */
+@media (max-width: 768px) {
+    .mobile-bottom-nav { display: flex; }
+    body { padding-bottom: 60px; }
+    .ai-toggle-btn { bottom: 72px; }
+    .back-to-top { bottom: 72px; }
+}
+
+/* ============ In-App Browser Viewer ============ */
+.in-app-browser-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 5000;
+    background: var(--bg-body);
+    display: none;
+    flex-direction: column;
+    animation: fadeIn 0.25s;
+}
+.in-app-browser-overlay.open { display: flex; }
+.in-app-browser-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
+}
+.in-app-browser-header .title {
+    flex: 1;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.in-app-browser-header button {
+    padding: 6px 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    background: var(--bg-light);
+    color: var(--text-2);
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-weight: 600;
+    font-family: inherit;
+    transition: all 0.2s;
+}
+.in-app-browser-header button:hover { border-color: var(--primary); color: var(--primary); }
+.in-app-browser-header button.close-btn { background: var(--danger-bg); color: var(--danger); border-color: transparent; }
+.in-app-browser-header button.close-btn:hover { background: var(--danger); color: white; }
+.in-app-browser-frame {
+    flex: 1;
+    border: none;
+    width: 100%;
+    background: white;
+}
+.in-app-browser-fallback {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    text-align: center;
+    color: var(--text-muted);
+}
+.in-app-browser-fallback .icon { font-size: 3rem; margin-bottom: 12px; }
+.in-app-browser-fallback h3 { color: var(--text); margin-bottom: 8px; }
+.in-app-browser-fallback a { margin-top: 16px; }
+
+/* ============ Enhanced Card Hover Effects ============ */
+.subject-card, .resource-card, .feature-card, .chapter-card, .stat-card, .playlist-card {
+    will-change: transform;
+}
+
+/* ============ Smooth Page Transitions ============ */
+.page-transition {
+    animation: pageIn 0.4s var(--ease-out);
+}
+@keyframes pageIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ============ Better Empty States ============ */
+.empty-state {
+    padding: 50px 20px;
+}
+.empty-state .empty-icon {
+    animation: floatY 3s ease-in-out infinite;
+}
+
+/* ============ Scrollbar styling for dropdowns ============ */
+.topnav-dropdown-menu::-webkit-scrollbar { width: 4px; }
+.topnav-dropdown-menu::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* ============ Responsive topnav with dropdowns ============ */
+@media (max-width: 900px) {
+    .topnav-links {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: var(--bg-card);
+        flex-direction: column;
+        padding: 12px;
+        gap: 2px;
+        border-bottom: 1px solid var(--border);
+        box-shadow: var(--shadow-lg);
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+    .topnav-links.open { display: flex; animation: slideDown 0.3s var(--ease-out); }
+    .topnav-links .topnav-link { padding: 12px 14px; }
+    .topnav-dropdown { width: 100%; }
+    .topnav-dropdown-menu {
+        position: static;
+        display: flex;
+        box-shadow: none;
+        border: none;
+        padding-left: 16px;
+    }
+    .topnav-dropdown.open .topnav-dropdown-menu { display: flex; }
+}
