@@ -1081,22 +1081,27 @@ function renderTopic() {
         </div>
     `;
 
-    // Render math
-    setTimeout(() => {
-        document.querySelectorAll('.article-content').forEach(el => {
-            if (typeof renderMathInElement === 'function') {
-                renderMathInElement(el, {
-                    delimiters: [
-                        { left: '$$', right: '$$', display: true },
-                        { left: '$', right: '$', display: false },
-                        { left: '\\(', right: '\\)', display: false },
-                        { left: '\\[', right: '\\]', display: true },
-                    ],
-                    throwOnError: false
-                });
-            }
-        });
-    }, 50);
+    // Render math with retry — handles case where KaTeX hasn't loaded yet
+    function _tryRenderMath(attempt) {
+        if (typeof renderMathInElement === 'function') {
+            document.querySelectorAll('.article-content').forEach(el => {
+                try {
+                    renderMathInElement(el, {
+                        delimiters: [
+                            { left: '$$', right: '$$', display: true },
+                            { left: '$', right: '$', display: false },
+                            { left: '\\(', right: '\\)', display: false },
+                            { left: '\\[', right: '\\]', display: true },
+                        ],
+                        throwOnError: false
+                    });
+                } catch(e) {}
+            });
+        } else if (attempt < 50) {
+            setTimeout(() => _tryRenderMath(attempt + 1), 100);
+        }
+    }
+    _tryRenderMath(0);
 
     // Style tables and code blocks within article-content
     const style = document.createElement('style');

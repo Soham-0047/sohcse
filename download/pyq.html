@@ -649,7 +649,77 @@ function toggleExplanation(qid, btn) {
 }
 
 function sanitize(html) { if (!html) return ''; return DOMPurify.sanitize(html, { ADD_TAGS: ['sup', 'sub', 'u', 's'], ADD_ATTR: ['target'] }); }
-function renderMathIn(el) { if (typeof renderMathInElement !== 'function') return; renderMathInElement(el, { delimiters: [{ left: '$$', right: '$$', display: true }, { left: '$', right: '$', display: false }, { left: '\\(', right: '\\)', display: false }, { left: '\\[', right: '\\]', display: true }], throwOnError: false, ignoredTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'] }); }
+
+// Math rendering with retry — handles the case where KaTeX auto-render
+// hasn't loaded yet (deferred scripts). Retries every 100ms up to 5 seconds.
+let _katexReady = false;
+let _katexRetryQueue = [];
+
+function renderMathIn(el) {
+    if (typeof renderMathInElement === 'function') {
+        _katexReady = true;
+        try {
+            renderMathInElement(el, {
+                delimiters: [
+                    { left: '$$', right: '$$', display: true },
+                    { left: '$', right: '$', display: false },
+                    { left: '\\(', right: '\\)', display: false },
+                    { left: '\\[', right: '\\]', display: true }
+                ],
+                throwOnError: false,
+                ignoredTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+            });
+        } catch(e) { console.warn('KaTeX render error:', e); }
+    } else if (!_katexReady) {
+        // KaTeX not loaded yet — add to retry queue
+        _katexRetryQueue.push(el);
+    }
+}
+
+// Check periodically if KaTeX has loaded, then process the retry queue
+function _katexRetryLoop() {
+    if (typeof renderMathInElement === 'function') {
+        _katexReady = true;
+        // Process all queued elements
+        while (_katexRetryQueue.length > 0) {
+            const el = _katexRetryQueue.shift();
+            try {
+                renderMathInElement(el, {
+                    delimiters: [
+                        { left: '$$', right: '$$', display: true },
+                        { left: '$', right: '$', display: false },
+                        { left: '\\(', right: '\\)', display: false },
+                        { left: '\\[', right: '\\]', display: true }
+                    ],
+                    throwOnError: false,
+                    ignoredTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+                });
+            } catch(e) {}
+        }
+        // Also re-render any .q-content elements that might have been missed
+        document.querySelectorAll('.q-content').forEach(el => {
+            try {
+                renderMathInElement(el, {
+                    delimiters: [
+                        { left: '$$', right: '$$', display: true },
+                        { left: '$', right: '$', display: false },
+                        { left: '\\(', right: '\\)', display: false },
+                        { left: '\\[', right: '\\]', display: true }
+                    ],
+                    throwOnError: false,
+                    ignoredTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+                });
+            } catch(e) {}
+        });
+    } else {
+        // Retry in 100ms, up to 50 times (5 seconds total)
+        setTimeout(_katexRetryLoop, 100);
+    }
+}
+
+// Start the retry loop immediately
+_katexRetryLoop();
+
 function escapeHtml(s) { if (!s) return ''; return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
 function typeLabel(t) { return { mcq: 'MCQ', msq: 'MSQ', nat: 'NAT', subjective: 'Subjective', fill_blanks: 'Fill', true_false: 'T/F' }[t] || t; }
 
