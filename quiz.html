@@ -384,20 +384,25 @@ function renderQuiz() {
             <button class="btn btn-primary btn-lg" onclick="submitQuiz()">✓ Submit Quiz</button>
         </div>
     `;
-    // Render math
-    setTimeout(() => {
-        document.querySelectorAll('.q-content').forEach(el => {
-            if (typeof renderMathInElement === 'function') {
-                renderMathInElement(el, {
-                    delimiters: [
-                        { left: '$$', right: '$$', display: true },
-                        { left: '$', right: '$', display: false },
-                    ],
-                    throwOnError: false
-                });
-            }
-        });
-    }, 50);
+    // Render math with retry
+    function _tryQuizMath(attempt) {
+        if (typeof renderMathInElement === 'function') {
+            document.querySelectorAll('.q-content').forEach(el => {
+                try {
+                    renderMathInElement(el, {
+                        delimiters: [
+                            { left: '$$', right: '$$', display: true },
+                            { left: '$', right: '$', display: false },
+                        ],
+                        throwOnError: false
+                    });
+                } catch(e) {}
+            });
+        } else if (attempt < 50) {
+            setTimeout(() => _tryQuizMath(attempt + 1), 100);
+        }
+    }
+    _tryQuizMath(0);
 }
 
 function renderQuestion(q, idx) {
@@ -581,20 +586,25 @@ function renderResults(results, score, correct, wrong, unattempted) {
         <div class="section-eyebrow" style="margin-top:24px;">📝 Detailed Solutions</div>
         ${results.map((r, i) => renderResultCard(r, i)).join('')}
     `;
-    // Render math
-    setTimeout(() => {
-        document.querySelectorAll('.q-content').forEach(el => {
-            if (typeof renderMathInElement === 'function') {
-                renderMathInElement(el, {
-                    delimiters: [
-                        { left: '$$', right: '$$', display: true },
-                        { left: '$', right: '$', display: false },
-                    ],
-                    throwOnError: false
-                });
-            }
-        });
-    }, 50);
+    // Render math with retry
+    function _tryQuizMath(attempt) {
+        if (typeof renderMathInElement === 'function') {
+            document.querySelectorAll('.q-content').forEach(el => {
+                try {
+                    renderMathInElement(el, {
+                        delimiters: [
+                            { left: '$$', right: '$$', display: true },
+                            { left: '$', right: '$', display: false },
+                        ],
+                        throwOnError: false
+                    });
+                } catch(e) {}
+            });
+        } else if (attempt < 50) {
+            setTimeout(() => _tryQuizMath(attempt + 1), 100);
+        }
+    }
+    _tryQuizMath(0);
 }
 
 function renderResultCard(r, idx) {
@@ -669,6 +679,8 @@ function renderResultCard(r, idx) {
 
 init();
 </script>
+<script src="./loader.js"></script>
+<script src="./nav.js"></script>
 <script src="./theme.js"></script>
 </body>
 </html>

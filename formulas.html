@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Formula Book — GATE CSE Quick Reference | SOH CSE</title>
+<meta name="description" content="Comprehensive formula book for GATE CSE. Quick reference for all subjects with KaTeX-rendered math.">
+<link rel="stylesheet" href="./style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23667eea'/%3E%3Ctext x='50' y='70' font-size='60' font-weight='bold' fill='white' text-anchor='middle' font-family='Arial'%3EG%3C/text%3E%3C/svg%3E">
+<style>
+.formula-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    padding: 18px;
+    margin-bottom: 12px;
+    transition: all 0.2s;
+}
+.formula-card:hover { border-color: var(--primary); box-shadow: var(--shadow-sm); }
+.formula-title { font-weight: 700; font-size: 0.95rem; color: var(--text); margin-bottom: 8px; }
+.formula-body { font-size: 0.9rem; color: var(--text-2); line-height: 1.7; }
+.formula-body .katex { font-size: 1.05em; }
+.formula-note { font-size: 0.78rem; color: var(--text-muted); margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border-soft); }
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+    <div class="topnav-inner">
+        <a href="./index.html" class="topnav-brand">
+            <div class="brand-mark">G</div>
+            <div class="brand-text">SOH CSE <small>GATE Preparation Hub</small></div>
+        </a>
+        <button class="topnav-menu-btn" onclick="document.querySelector('.topnav-links').classList.toggle('open')" aria-label="Toggle menu">
+            <span></span><span></span><span></span>
+        </button>
+        <div class="topnav-links">
+            <a href="./index.html" class="topnav-link">🏠 Home</a>
+            <a href="./learn.html" class="topnav-link">📖 Learn</a>
+            <a href="./pyq.html" class="topnav-link">📝 PYQs</a>
+            <a href="./videos.html" class="topnav-link">🎥 Videos</a>
+            <a href="./calculator.html" class="topnav-link">🧮 Calculator</a>
+            <a href="./formulas.html" class="topnav-link active">📐 Formulas</a>
+            <a href="./timer.html" class="topnav-link">⏱ Timer</a>
+            <a href="./notes.html" class="topnav-link">📓 Notes</a>
+            <a href="./resources.html" class="topnav-link">🚀 Resources</a>
+        </div>
+    </div>
+</nav>
+
+<div class="app-content">
+    <div class="app-content-scroll" id="contentArea">
+        <div style="max-width:900px;margin:0 auto;">
+            <div style="text-align:center;margin-bottom:24px;">
+                <div style="font-size:3rem;margin-bottom:8px;">📐</div>
+                <h1 style="font-size:1.8rem;font-weight:800;color:var(--text);margin-bottom:4px;">Formula Book</h1>
+                <p style="color:var(--text-muted);font-size:0.92rem;">Quick reference for all GATE CSE formulas. Search, filter by subject, and copy for your notes.</p>
+            </div>
+
+            <input type="text" class="search-box" id="searchBox" placeholder="🔍 Search formulas (e.g., 'complexity', 'paging', 'hashing')..." oninput="filterFormulas()" style="margin-bottom:18px;">
+
+            <div class="tab-bar" style="display:flex;gap:4px;background:var(--bg-light);border-radius:var(--r);padding:4px;margin-bottom:18px;overflow-x:auto;">
+                <button class="tab-btn active" onclick="filterSubject('all', this)" style="padding:8px 14px;border:none;background:var(--bg-card);border-radius:var(--r-sm);cursor:pointer;font-size:0.82rem;font-weight:600;color:var(--primary);white-space:nowrap;">All</button>
+                <button class="tab-btn" onclick="filterSubject('algorithms', this)" style="padding:8px 14px;border:none;background:none;border-radius:var(--r-sm);cursor:pointer;font-size:0.82rem;font-weight:600;color:var(--text-muted);white-space:nowrap;">⚡ Algorithms</button>
+                <button class="tab-btn" onclick="filterSubject('ds', this)" style="padding:8px 14px;border:none;background:none;border-radius:var(--r-sm);cursor:pointer;font-size:0.82rem;font-weight:600;color:var(--text-muted);white-space:nowrap;">🌳 DS</button>
+                <button class="tab-btn" onclick="filterSubject('os', this)" style="padding:8px 14px;border:none;background:none;border-radius:var(--r-sm);cursor:pointer;font-size:0.82rem;font-weight:600;color:var(--text-muted);white-space:nowrap;">⚙️ OS</button>
+                <button class="tab-btn" onclick="filterSubject('dbms', this)" style="padding:8px 14px;border:none;background:none;border-radius:var(--r-sm);cursor:pointer;font-size:0.82rem;font-weight:600;color:var(--text-muted);white-space:nowrap;">🗄️ DBMS</button>
+                <button class="tab-btn" onclick="filterSubject('cn', this)" style="padding:8px 14px;border:none;background:none;border-radius:var(--r-sm);cursor:pointer;font-size:0.82rem;font-weight:600;color:var(--text-muted);white-space:nowrap;">🌐 CN</button>
+                <button class="tab-btn" onclick="filterSubject('coa', this)" style="padding:8px 14px;border:none;background:none;border-radius:var(--r-sm);cursor:pointer;font-size:0.82rem;font-weight:600;color:var(--text-muted);white-space:nowrap;">💻 COA</button>
+                <button class="tab-btn" onclick="filterSubject('dm', this)" style="padding:8px 14px;border:none;background:none;border-radius:var(--r-sm);cursor:pointer;font-size:0.82rem;font-weight:600;color:var(--text-muted);white-space:nowrap;">∑ Math</button>
+            </div>
+
+            <div id="formulasList"></div>
+        </div>
+    </div>
+</div>
+
+<script src="./chatbot.js"></script>
+<script>
+const FORMULAS = [
+    // Algorithms
+    { subject: 'algorithms', title: 'Master Theorem', body: 'For $T(n) = aT(n/b) + f(n)$:<br>• Case 1: $f(n) = O(n^{\\log_b a - \\epsilon}) \\Rightarrow T(n) = \\Theta(n^{\\log_b a})$<br>• Case 2: $f(n) = \\Theta(n^{\\log_b a}) \\Rightarrow T(n) = \\Theta(n^{\\log_b a} \\log n)$<br>• Case 3: $f(n) = \\Omega(n^{\\log_b a + \\epsilon}) \\Rightarrow T(n) = \\Theta(f(n))$', note: 'where $a \\geq 1, b > 1$' },
+    { subject: 'algorithms', title: 'Common Time Complexities', body: '• $O(1)$ — array index<br>• $O(\\log n)$ — binary search<br>• $O(n)$ — linear search<br>• $O(n \\log n)$ — merge sort, heap sort<br>• $O(n^2)$ — bubble, selection, insertion sort<br>• $O(2^n)$ — subset sum (naive)<br>• $O(n!)$ — TSP (naive)', note: '' },
+    { subject: 'algorithms', title: 'Dijkstra Complexity', body: 'Binary heap: $O((V + E) \\log V)$<br>Array: $O(V^2)$<br>Fibonacci heap: $O(E + V \\log V)$', note: 'Does NOT work with negative weights — use Bellman-Ford $O(VE)$' },
+    { subject: 'algorithms', title: 'Sorting Comparison', body: '<table style="width:100%;border-collapse:collapse;font-size:0.82rem;"><tr><th style="border:1px solid var(--border);padding:4px;">Sort</th><th style="border:1px solid var(--border);padding:4px;">Best</th><th style="border:1px solid var(--border);padding:4px;">Avg</th><th style="border:1px solid var(--border);padding:4px;">Worst</th><th style="border:1px solid var(--border);padding:4px;">Stable?</th></tr><tr><td style="border:1px solid var(--border);padding:4px;">Merge</td><td style="border:1px solid var(--border);padding:4px;">$n\\log n$</td><td style="border:1px solid var(--border);padding:4px;">$n\\log n$</td><td style="border:1px solid var(--border);padding:4px;">$n\\log n$</td><td style="border:1px solid var(--border);padding:4px;">✅</td></tr><tr><td style="border:1px solid var(--border);padding:4px;">Quick</td><td style="border:1px solid var(--border);padding:4px;">$n\\log n$</td><td style="border:1px solid var(--border);padding:4px;">$n\\log n$</td><td style="border:1px solid var(--border);padding:4px;">$n^2$</td><td style="border:1px solid var(--border);padding:4px;">❌</td></tr><tr><td style="border:1px solid var(--border);padding:4px;">Heap</td><td style="border:1px solid var(--border);padding:4px;">$n\\log n$</td><td style="border:1px solid var(--border);padding:4px;">$n\\log n$</td><td style="border:1px solid var(--border);padding:4px;">$n\\log n$</td><td style="border:1px solid var(--border);padding:4px;">❌</td></tr></table>', note: 'Build heap is $O(n)$, not $O(n \\log n)$' },
+
+    // Data Structures
+    { subject: 'ds', title: 'BST Operations', body: 'Search/Insert/Delete: $O(h)$ where $h$ = height<br>Balanced BST (AVL/RB): $h = O(\\log n)$<br>Skewed BST: $h = O(n)$', note: 'Inorder traversal of BST gives sorted output' },
+    { subject: 'ds', title: 'AVL Tree Balance Factor', body: '$BF = h_{left} - h_{right} \\in \\{-1, 0, 1\}$<br>Min nodes: $N(h) = N(h-1) + N(h-2) + 1$, $N(0)=1, N(1)=2$<br>Height: $h \\leq 1.44 \\log_2(n+2)$', note: 'Insert needs at most 1 rotation; Delete may need $O(\\log n)$' },
+    { subject: 'ds', title: 'Hash Table — Load Factor', body: '$\\alpha = \\frac{n}{m}$ (n = keys, m = slots)<br>Chaining: search $O(1 + \\alpha)$, $\\alpha$ can be $> 1$<br>Open addressing: search $O\\left(\\frac{1}{1-\\alpha}\\right)$, $\\alpha < 1$', note: 'Expected collisions (chaining): $\\frac{n(n-1)}{2m}$' },
+    { subject: 'ds', title: 'Binary Heap Operations', body: 'Build heap: $O(n)$<br>Insert: $O(\\log n)$<br>Extract-min/max: $O(\\log n)$<br>Find-min/max: $O(1)$<br>Increase/decrease key: $O(\\log n)$', note: 'Parent of $i$ (1-indexed) = $\\lfloor i/2 \\rfloor$, children = $2i, 2i+1$' },
+    { subject: 'ds', title: 'Graph — BFS vs DFS', body: 'Both: $O(V + E)$ with adjacency list, $O(V^2)$ with matrix<br>BFS: uses queue, finds shortest path (unweighted)<br>DFS: uses stack/recursion, cycle detection, topological sort', note: 'Number of edges in $K_n$ = $\\frac{n(n-1)}{2}$' },
+
+    // OS
+    { subject: 'os', title: 'CPU Scheduling Formulas', body: 'Turnaround Time = Completion − Arrival<br>Waiting Time = TAT − Burst<br>Response Time = First CPU − Arrival<br>Avg WT = $\\frac{\\sum WT_i}{n}$', note: 'SJF is optimal for minimum average waiting time' },
+    { subject: 'os', title: 'Page Replacement — Belady\'s Anomaly', body: 'FIFO: may show Belady\'s anomaly (more frames → more faults)<br>LRU/Optimal: stack algorithms, no Belady\'s anomaly', note: 'Optimal replaces page used farthest in the future' },
+    { subject: 'os', title: 'Effective Access Time (EAT)', body: 'TLB hit: $t_{TLB} + t_{mem}$<br>TLB miss: $t_{TLB} + 2 \\cdot t_{mem}$ (page table + data)<br>$EAT = h \\cdot (t_{TLB} + t_{mem}) + (1-h)(t_{TLB} + 2t_{mem})$<br>where $h$ = TLB hit ratio', note: 'Multi-level paging: each level adds one memory access' },
+    { subject: 'os', title: 'Banker\'s Algorithm', body: 'Need[i] = Max[i] − Allocation[i]<br>Safe state: exists sequence where all processes finish<br>Time: $O(m \\times n^2)$ where m = resources, n = processes', note: '4 deadlock conditions: Mutual Exclusion, Hold & Wait, No Preemption, Circular Wait' },
+    { subject: 'os', title: 'Disk Scheduling', body: 'FCFS: $\\sum |req_i - req_{i-1}|$<br>SSTF: shortest seek first<br>SCAN: elevator — go to end, reverse<br>C-SCAN: go to end, jump to start, continue', note: 'Throughput = requests serviced per unit time' },
+
+    // DBMS
+    { subject: 'dbms', title: 'Normal Forms Summary', body: '<strong>1NF:</strong> Atomic values<br><strong>2NF:</strong> 1NF + no partial dependency<br><strong>3NF:</strong> 2NF + no transitive dependency<br><strong>BCNF:</strong> For every $X \\to Y$, $X$ is superkey', note: 'Prime attribute = part of any candidate key' },
+    { subject: 'dbms', title: 'Conflict Serializability', body: 'Build precedence graph: edge $T_i \\to T_j$ if conflict<br>Serializable ⟺ graph is acyclic<br>Topological sort gives equivalent serial schedule', note: '3 conflict types: Read-Write, Write-Read, Write-Write' },
+    { subject: 'dbms', title: 'B+ Tree Properties', body: 'Order $p$: max $p$ children per internal node<br>Min children: $\\lceil p/2 \\rceil$ (non-root)<br>Min keys in internal: $\\lceil p/2 \\rceil - 1$<br>All data in leaves (linked list)', note: 'Preferred over B-tree for databases (range queries fast)' },
+    { subject: 'dbms', title: 'ACID Properties', body: '<strong>A</strong>tomicity: all or nothing<br><strong>C</strong>onsistency: valid state transitions<br><strong>I</strong>solation: concurrent = serial effect<br><strong>D</strong>urability: committed data survives crashes', note: 'Strict 2PL: exclusive locks held till commit' },
+
+    // CN
+    { subject: 'cn', title: 'IP Addressing — Hosts Formula', body: 'For /n subnet (IPv4):<br>Host bits = $32 - n$<br>Hosts = $2^{32-n} - 2$<br>/24 → 254 hosts, /26 → 62 hosts, /30 → 2 hosts', note: 'Subtract 2 for network ID (all 0s) and broadcast (all 1s)' },
+    { subject: 'cn', title: 'TCP Three-Way Handshake', body: '1. Client → SYN (seq=x)<br>2. Server → SYN+ACK (seq=y, ack=x+1)<br>3. Client → ACK (ack=y+1)', note: 'Connection established after step 3' },
+    { subject: 'cn', title: 'TCP Congestion Control', body: 'Slow Start: cwnd doubles each RTT (exponential)<br>AIMD: cwnd += 1 MSS per RTT (linear)<br>On 3 dup ACKs: ssthresh = cwnd/2, cwnd = ssthresh<br>On timeout: ssthresh = cwnd/2, cwnd = 1', note: 'Tahoe: no fast recovery; Reno: has fast recovery' },
+    { subject: 'cn', title: 'CSMA/CD Backoff', body: 'After collision: wait $k \\times 51.2\\mu s$<br>$k$ = random in $[0, 2^n - 1]$<br>$n$ = min(attempts, 10)<br>Max 16 attempts → abort', note: 'Binary exponential backoff' },
+    { subject: 'cn', title: 'Subnet Mask Reference', body: '/24 = 255.255.255.0 (254 hosts)<br>/25 = 255.255.255.128 (126 hosts)<br>/26 = 255.255.255.192 (62 hosts)<br>/27 = 255.255.255.224 (30 hosts)<br>/28 = 255.255.255.240 (14 hosts)<br>/30 = 255.255.255.252 (2 hosts)', note: 'Private: 10.x, 172.16-31.x, 192.168.x' },
+
+    // COA
+    { subject: 'coa', title: 'AMAT (Average Memory Access Time)', body: '$AMAT = Hit\\ Time + Miss\\ Rate \\times Miss\\ Penalty$<br>Multi-level:<br>$AMAT = H_1 T_1 + (1-H_1)[H_2(T_1+T_2) + (1-H_2)(T_1+T_2+T_3)]$', note: '$H_i$ = hit rate, $T_i$ = access time at level $i$' },
+    { subject: 'coa', title: 'Pipeline Speedup', body: '$Speedup = \\frac{n \\cdot k}{k + n - 1}$ (ideal, no stalls)<br>As $n \\to \\infty$: speedup → $k$ (number of stages)<br>Real speedup lower due to hazards', note: '3 hazards: Structural, Data (RAW/WAW/WAR), Control' },
+    { subject: 'coa', title: 'Cache Mapping', body: '<strong>Direct:</strong> block → 1 line. Fast, conflict misses.<br><strong>Fully Associative:</strong> block → any line. Flexible, slow search.<br><strong>N-way Set Associative:</strong> block → 1 set of N lines.<br>Physical address: Tag | Set Index | Block Offset', note: 'N-way: N blocks per set, N comparators needed' },
+    { subject: 'coa', title: '2\'s Complement Range', body: 'n bits: $-2^{n-1}$ to $+2^{n-1} - 1$<br>8-bit: -128 to +127<br>16-bit: -32768 to +32767<br>To negate: invert all bits, add 1', note: 'Overflow: carry into MSB ≠ carry out of MSB' },
+
+    // Discrete Math
+    { subject: 'dm', title: 'Pigeonhole Principle', body: 'If $n$ items in $m$ containers and $n > m$:<br>At least one container has $\\geq \\lceil n/m \\rceil$ items', note: 'Generalized: if $\\sum n_i > km$, some container has > $k$ items' },
+    { subject: 'dm', title: 'Binomial Coefficient Identities', body: '$\\binom{n}{k} = \\binom{n}{n-k}$<br>$\\binom{n}{k} = \\binom{n-1}{k-1} + \\binom{n-1}{k}$<br>$\\sum_{k=0}^{n} \\binom{n}{k} = 2^n$<br>$\\sum_{k=0}^{n} (-1)^k \\binom{n}{k} = 0$', note: 'Pascal\'s identity — basis for Pascal\'s triangle' },
+    { subject: 'dm', title: 'Euler\'s Formula (Planar Graphs)', body: 'For connected planar graph:<br>$V - E + F = 2$<br>where V = vertices, E = edges, F = faces', note: 'Generalized: $V - E + F = 1 + C$ where C = components' },
+    { subject: 'dm', title: 'Logical Equivalences', body: '$p \\to q \\equiv \\neg p \\lor q$<br>$\\neg(p \\land q) \\equiv \\neg p \\lor \\neg q$ (De Morgan)<br>$p \\to q \\equiv \\neg q \\to \\neg p$ (contrapositive)<br>$p \\leftrightarrow q \\equiv (p \\to q) \\land (q \\to p)$', note: 'Distributive: $p \\land (q \\lor r) \\equiv (p \\land q) \\lor (p \\land r)$' },
+    { subject: 'dm', title: 'Cayley\'s Formula', body: 'Number of labeled trees on $n$ vertices = $n^{n-2}$', note: 'e.g., n=3 → 3 trees; n=4 → 16 trees' },
+    { subject: 'dm', title: 'Equivalence Relation', body: 'A relation that is:<br>1. Reflexive: $(a,a) \\in R$<br>2. Symmetric: $(a,b) \\in R \\Rightarrow (b,a) \\in R$<br>3. Transitive: $(a,b),(b,c) \\in R \\Rightarrow (a,c) \\in R$<br>Partitions set into equivalence classes', note: 'Partial order: reflexive + antisymmetric + transitive' },
+];
+
+let currentSubject = 'all';
+
+function renderFormulas(filter = '') {
+    const list = document.getElementById('formulasList');
+    const filtered = FORMULAS.filter(f => {
+        if (currentSubject !== 'all' && f.subject !== currentSubject) return false;
+        if (filter) {
+            const q = filter.toLowerCase();
+            return f.title.toLowerCase().includes(q) || f.body.toLowerCase().includes(q);
+        }
+        return true;
+    });
+
+    if (filtered.length === 0) {
+        list.innerHTML = '<div class="empty-state"><div class="empty-icon">🔍</div><h3>No formulas found</h3><p>Try a different search term or subject filter.</p></div>';
+        return;
+    }
+
+    list.innerHTML = filtered.map(f => `
+        <div class="formula-card">
+            <div class="formula-title">${f.title}</div>
+            <div class="formula-body">${f.body}</div>
+            ${f.note ? `<div class="formula-note">💡 ${f.note}</div>` : ''}
+        </div>
+    `).join('');
+
+    // Render math
+    _tryRenderMath(0);
+}
+
+function _tryRenderMath(attempt) {
+    if (typeof renderMathInElement === 'function') {
+        document.querySelectorAll('.formula-card').forEach(el => {
+            try {
+                renderMathInElement(el, {
+                    delimiters: [
+                        { left: '$$', right: '$$', display: true },
+                        { left: '$', right: '$', display: false },
+                        { left: '\\(', right: '\\)', display: false },
+                        { left: '\\[', right: '\\]', display: true },
+                    ],
+                    throwOnError: false
+                });
+            } catch(e) {}
+        });
+    } else if (attempt < 50) {
+        setTimeout(() => _tryRenderMath(attempt + 1), 100);
+    }
+}
+
+function filterSubject(subj, btn) {
+    currentSubject = subj;
+    // Update active button
+    document.querySelectorAll('.tab-btn').forEach(b => {
+        b.style.background = 'none';
+        b.style.color = 'var(--text-muted)';
+    });
+    btn.style.background = 'var(--bg-card)';
+    btn.style.color = 'var(--primary)';
+    renderFormulas(document.getElementById('searchBox').value);
+}
+
+function filterFormulas() {
+    renderFormulas(document.getElementById('searchBox').value);
+}
+
+renderFormulas();
+</script>
+<script src="./loader.js"></script>
+<script src="./nav.js"></script>
+<script src="./theme.js"></script>
+</body>
+</html>

@@ -279,22 +279,27 @@ function renderStudy() {
         </div>
     `;
 
-    // Render math in both faces
-    setTimeout(() => {
-        document.querySelectorAll('.flashcard-face .card-content').forEach(el => {
-            if (typeof renderMathInElement === 'function') {
-                renderMathInElement(el, {
-                    delimiters: [
-                        { left: '$$', right: '$$', display: true },
-                        { left: '$', right: '$', display: false },
-                        { left: '\\(', right: '\\)', display: false },
-                        { left: '\\[', right: '\\]', display: true },
-                    ],
-                    throwOnError: false
-                });
-            }
-        });
-    }, 50);
+    // Render math in both faces with retry
+    function _tryRenderFlashcardMath(attempt) {
+        if (typeof renderMathInElement === 'function') {
+            document.querySelectorAll('.flashcard-face .card-content').forEach(el => {
+                try {
+                    renderMathInElement(el, {
+                        delimiters: [
+                            { left: '$$', right: '$$', display: true },
+                            { left: '$', right: '$', display: false },
+                            { left: '\\(', right: '\\)', display: false },
+                            { left: '\\[', right: '\\]', display: true },
+                        ],
+                        throwOnError: false
+                    });
+                } catch(e) {}
+            });
+        } else if (attempt < 50) {
+            setTimeout(() => _tryRenderFlashcardMath(attempt + 1), 100);
+        }
+    }
+    _tryRenderFlashcardMath(0);
 }
 
 function sanitizeHtml(html) {
@@ -347,6 +352,8 @@ function renderSessionComplete() {
 
 init();
 </script>
+<script src="./loader.js"></script>
+<script src="./nav.js"></script>
 <script src="./theme.js"></script>
 </body>
 </html>

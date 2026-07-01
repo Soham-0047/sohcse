@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Study Timer — Pomodoro | SOH CSE</title>
+<meta name="description" content="Pomodoro study timer with session tracking. Stay focused with 25-minute work sessions and 5-minute breaks.">
+<link rel="stylesheet" href="./style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23667eea'/%3E%3Ctext x='50' y='70' font-size='60' font-weight='bold' fill='white' text-anchor='middle' font-family='Arial'%3EG%3C/text%3E%3C/svg%3E">
+<style>
+.timer-container {
+    max-width: 500px;
+    margin: 30px auto;
+    text-align: center;
+}
+.timer-display {
+    font-size: 5rem;
+    font-weight: 900;
+    font-variant-numeric: tabular-nums;
+    background: var(--grad-brand);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1;
+    margin: 20px 0;
+    letter-spacing: -0.03em;
+}
+.timer-mode {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+.timer-progress-ring {
+    width: 280px;
+    height: 280px;
+    margin: 20px auto;
+    position: relative;
+}
+.timer-progress-ring svg { transform: rotate(-90deg); }
+.timer-progress-ring circle {
+    fill: none;
+    stroke-width: 8;
+    stroke-linecap: round;
+}
+.timer-progress-ring .bg-ring { stroke: var(--border); }
+.timer-progress-ring .progress-ring {
+    stroke: url(#gradient);
+    stroke-dasharray: 753.98;
+    stroke-dashoffset: 753.98;
+    transition: stroke-dashoffset 1s linear;
+}
+.timer-progress-ring .timer-center {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+.timer-controls {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin: 24px 0;
+}
+.timer-btn {
+    padding: 14px 32px;
+    border: none;
+    border-radius: var(--r);
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s var(--ease-out);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+.timer-btn.primary { background: var(--grad-brand); color: white; box-shadow: var(--shadow-brand); }
+.timer-btn.primary:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(102,126,234,0.5); }
+.timer-btn.secondary { background: var(--bg-light); color: var(--text); border: 1px solid var(--border); }
+.timer-btn.secondary:hover { border-color: var(--primary); color: var(--primary); }
+
+.mode-selector {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    margin-bottom: 20px;
+    background: var(--bg-light);
+    border-radius: var(--r);
+    padding: 4px;
+}
+.mode-btn {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    background: none;
+    border-radius: var(--r-sm);
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    transition: all 0.2s;
+    font-family: inherit;
+}
+.mode-btn.active { background: var(--bg-card); color: var(--primary); box-shadow: var(--shadow-sm); }
+
+.session-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-top: 30px;
+}
+.session-stat {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    padding: 16px;
+    text-align: center;
+}
+.session-stat .stat-v { font-size: 1.8rem; font-weight: 800; color: var(--primary); line-height: 1; }
+.session-stat .stat-l { font-size: 0.72rem; color: var(--text-muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; }
+
+.session-log {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    padding: 16px;
+    margin-top: 20px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+.session-log h3 { font-size: 0.95rem; margin-bottom: 10px; color: var(--text); }
+.log-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-soft);
+    font-size: 0.82rem;
+}
+.log-item:last-child { border-bottom: none; }
+.log-item .log-type { font-weight: 600; color: var(--text); }
+.log-item .log-time { color: var(--text-muted); }
+.log-item.work .log-type::before { content: '📖 '; }
+.log-item.break .log-type::before { content: '☕ '; }
+.log-item.long-break .log-type::before { content: '🌴 '; }
+
+.settings-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: center;
+    margin-top: 20px;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+.settings-row input {
+    width: 50px;
+    padding: 6px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    text-align: center;
+    font-size: 0.85rem;
+    font-family: inherit;
+    background: var(--bg-card);
+    color: var(--text);
+}
+
+@media (max-width: 500px) {
+    .timer-display { font-size: 3.5rem; }
+    .timer-progress-ring { width: 220px; height: 220px; }
+    .session-stats { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+    <div class="topnav-inner">
+        <a href="./index.html" class="topnav-brand">
+            <div class="brand-mark">G</div>
+            <div class="brand-text">SOH CSE <small>GATE Preparation Hub</small></div>
+        </a>
+        <button class="topnav-menu-btn" onclick="document.querySelector('.topnav-links').classList.toggle('open')" aria-label="Toggle menu">
+            <span></span><span></span><span></span>
+        </button>
+        <div class="topnav-links">
+            <a href="./index.html" class="topnav-link">🏠 Home</a>
+            <a href="./learn.html" class="topnav-link">📖 Learn</a>
+            <a href="./pyq.html" class="topnav-link">📝 PYQs</a>
+            <a href="./videos.html" class="topnav-link">🎥 Videos</a>
+            <a href="./calculator.html" class="topnav-link">🧮 Calculator</a>
+            <a href="./formulas.html" class="topnav-link">📐 Formulas</a>
+            <a href="./timer.html" class="topnav-link active">⏱ Timer</a>
+            <a href="./notes.html" class="topnav-link">📓 Notes</a>
+            <a href="./resources.html" class="topnav-link">🚀 Resources</a>
+        </div>
+    </div>
+</nav>
+
+<div class="app-content">
+    <div class="app-content-scroll" id="contentArea">
+        <div style="max-width:600px;margin:0 auto;">
+            <div style="text-align:center;margin-bottom:24px;">
+                <div style="font-size:3rem;margin-bottom:8px;">⏱</div>
+                <h1 style="font-size:1.8rem;font-weight:800;color:var(--text);margin-bottom:4px;">Pomodoro Study Timer</h1>
+                <p style="color:var(--text-muted);font-size:0.92rem;">Stay focused with 25-minute work sessions and 5-minute breaks. Track your study streak.</p>
+            </div>
+
+            <div class="timer-container">
+                <div class="mode-selector">
+                    <button class="mode-btn active" onclick="setMode('work', this)">📖 Work (25m)</button>
+                    <button class="mode-btn" onclick="setMode('break', this)">☕ Break (5m)</button>
+                    <button class="mode-btn" onclick="setMode('long-break', this)">🌴 Long Break (15m)</button>
+                </div>
+
+                <div class="timer-progress-ring">
+                    <svg width="280" height="280">
+                        <defs>
+                            <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+                            </linearGradient>
+                        </defs>
+                        <circle class="bg-ring" cx="140" cy="140" r="120"></circle>
+                        <circle class="progress-ring" id="progressRing" cx="140" cy="140" r="120"></circle>
+                    </svg>
+                    <div class="timer-center">
+                        <div class="timer-mode" id="timerMode">Work Session</div>
+                        <div class="timer-display" id="timerDisplay">25:00</div>
+                    </div>
+                </div>
+
+                <div class="timer-controls">
+                    <button class="timer-btn primary" id="startBtn" onclick="toggleTimer()">▶ Start</button>
+                    <button class="timer-btn secondary" onclick="resetTimer()">🔄 Reset</button>
+                    <button class="timer-btn secondary" onclick="skipTimer()">⏭ Skip</button>
+                </div>
+
+                <div class="session-stats">
+                    <div class="session-stat">
+                        <div class="stat-v" id="completedSessions">0</div>
+                        <div class="stat-l">Sessions Today</div>
+                    </div>
+                    <div class="session-stat">
+                        <div class="stat-v" id="totalFocusTime">0m</div>
+                        <div class="stat-l">Focus Time</div>
+                    </div>
+                    <div class="session-stat">
+                        <div class="stat-v" id="streakDays">0</div>
+                        <div class="stat-l">Day Streak</div>
+                    </div>
+                </div>
+
+                <div class="settings-row">
+                    <label>Work: <input type="number" id="workMin" value="25" min="1" max="60"> min</label>
+                    <label>Break: <input type="number" id="breakMin" value="5" min="1" max="30"> min</label>
+                </div>
+
+                <div class="session-log" id="sessionLog" style="display:none;">
+                    <h3>📋 Session History</h3>
+                    <div id="logList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="./chatbot.js"></script>
+<script>
+const TIMER_KEY = 'sohcse_timer_data';
+
+let timer = {
+    mode: 'work',
+    timeLeft: 25 * 60,
+    isRunning: false,
+    interval: null,
+    completedToday: 0,
+    totalFocusSeconds: 0,
+    streak: 0,
+    lastSessionDate: null,
+    log: []
+};
+
+// Load saved data
+function loadData() {
+    try {
+        const saved = JSON.parse(localStorage.getItem(TIMER_KEY));
+        if (saved) {
+            // Reset daily stats if new day
+            const today = new Date().toISOString().slice(0, 10);
+            if (saved.lastSessionDate !== today) {
+                saved.completedToday = 0;
+                saved.totalFocusSeconds = 0;
+            }
+            timer = { ...timer, ...saved };
+        }
+    } catch {}
+}
+
+function saveData() {
+    timer.lastSessionDate = new Date().toISOString().slice(0, 10);
+    localStorage.setItem(TIMER_KEY, JSON.stringify(timer));
+}
+
+const MODES = {
+    'work': { label: 'Work Session', defaultMin: 25, color: '#667eea' },
+    'break': { label: 'Short Break', defaultMin: 5, color: '#10b981' },
+    'long-break': { label: 'Long Break', defaultMin: 15, color: '#06b6d4' }
+};
+
+function getDuration(mode) {
+    if (mode === 'work') return parseInt(document.getElementById('workMin')?.value || 25) * 60;
+    if (mode === 'break') return parseInt(document.getElementById('breakMin')?.value || 5) * 60;
+    if (mode === 'long-break') return 15 * 60;
+    return 25 * 60;
+}
+
+function setMode(mode, btn) {
+    if (timer.isRunning) {
+        if (!confirm('Timer is running. Switch mode?')) return;
+        pauseTimer();
+    }
+    timer.mode = mode;
+    timer.timeLeft = getDuration(mode);
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('timerMode').textContent = MODES[mode].label;
+    updateDisplay();
+    updateProgressRing();
+}
+
+function toggleTimer() {
+    if (timer.isRunning) pauseTimer();
+    else startTimer();
+}
+
+function startTimer() {
+    timer.isRunning = true;
+    document.getElementById('startBtn').innerHTML = '⏸ Pause';
+    timer.interval = setInterval(tick, 1000);
+}
+
+function pauseTimer() {
+    timer.isRunning = false;
+    document.getElementById('startBtn').innerHTML = '▶ Resume';
+    clearInterval(timer.interval);
+}
+
+function tick() {
+    timer.timeLeft--;
+    if (timer.timeLeft <= 0) {
+        completeSession();
+        return;
+    }
+    updateDisplay();
+    updateProgressRing();
+}
+
+function completeSession() {
+    clearInterval(timer.interval);
+    timer.isRunning = false;
+    document.getElementById('startBtn').innerHTML = '▶ Start';
+
+    // Log the session
+    const sessionLog = {
+        type: timer.mode,
+        duration: getDuration(timer.mode),
+        time: new Date().toLocaleTimeString()
+    };
+    timer.log.unshift(sessionLog);
+    timer.log = timer.log.slice(0, 20);
+
+    if (timer.mode === 'work') {
+        timer.completedToday++;
+        timer.totalFocusSeconds += getDuration('work');
+        // Update streak
+        const today = new Date().toISOString().slice(0, 10);
+        if (timer.lastSessionDate !== today) {
+            timer.streak = (timer.lastSessionDate === yesterday()) ? timer.streak + 1 : 1;
+        } else if (timer.streak === 0) {
+            timer.streak = 1;
+        }
+        saveData();
+        if (window.showToast) window.showToast('🎉 Work session complete! Take a break.', 'success', 4000);
+        // Auto-switch to break
+        setTimeout(() => {
+            const nextMode = timer.completedToday % 4 === 0 ? 'long-break' : 'break';
+            const btns = document.querySelectorAll('.mode-btn');
+            const idx = nextMode === 'long-break' ? 2 : 1;
+            setMode(nextMode, btns[idx]);
+        }, 1000);
+    } else {
+        saveData();
+        if (window.showToast) window.showToast('☕ Break over! Ready to focus?', 'info', 4000);
+        setTimeout(() => {
+            setMode('work', document.querySelector('.mode-btn'));
+        }, 1000);
+    }
+
+    updateStats();
+    renderLog();
+}
+
+function yesterday() {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    return d.toISOString().slice(0, 10);
+}
+
+function resetTimer() {
+    if (timer.isRunning) pauseTimer();
+    timer.timeLeft = getDuration(timer.mode);
+    updateDisplay();
+    updateProgressRing();
+    document.getElementById('startBtn').innerHTML = '▶ Start';
+}
+
+function skipTimer() {
+    if (timer.isRunning || timer.timeLeft < getDuration(timer.mode)) {
+        completeSession();
+    } else {
+        // Just switch mode
+        const nextMode = timer.mode === 'work' ? 'break' : 'work';
+        const btns = document.querySelectorAll('.mode-btn');
+        const idx = nextMode === 'break' ? 1 : 0;
+        setMode(nextMode, btns[idx]);
+    }
+}
+
+function updateDisplay() {
+    const m = Math.floor(timer.timeLeft / 60);
+    const s = timer.timeLeft % 60;
+    document.getElementById('timerDisplay').textContent = `${m}:${String(s).padStart(2, '0')}`;
+    document.title = `${m}:${String(s).padStart(2, '0')} — ${MODES[timer.mode].label} | SOH CSE`;
+}
+
+function updateProgressRing() {
+    const total = getDuration(timer.mode);
+    const progress = (total - timer.timeLeft) / total;
+    const circumference = 2 * Math.PI * 120;
+    const offset = circumference * (1 - progress);
+    document.getElementById('progressRing').style.strokeDashoffset = offset;
+}
+
+function updateStats() {
+    document.getElementById('completedSessions').textContent = timer.completedToday;
+    const hours = Math.floor(timer.totalFocusSeconds / 3600);
+    const mins = Math.floor((timer.totalFocusSeconds % 3600) / 60);
+    document.getElementById('totalFocusTime').textContent = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+    document.getElementById('streakDays').textContent = timer.streak;
+}
+
+function renderLog() {
+    if (timer.log.length === 0) {
+        document.getElementById('sessionLog').style.display = 'none';
+        return;
+    }
+    document.getElementById('sessionLog').style.display = 'block';
+    document.getElementById('logList').innerHTML = timer.log.map(l => `
+        <div class="log-item ${l.type}">
+            <span class="log-type">${MODES[l.type].label}</span>
+            <span class="log-time">${Math.floor(l.duration / 60)}m • ${l.time}</span>
+        </div>
+    `).join('');
+}
+
+// Initialize
+loadData();
+updateDisplay();
+updateProgressRing();
+updateStats();
+renderLog();
+</script>
+<script src="./loader.js"></script>
+<script src="./nav.js"></script>
+<script src="./theme.js"></script>
+</body>
+</html>

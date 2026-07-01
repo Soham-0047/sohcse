@@ -3,10 +3,974 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Video Lectures — SOH CSE</title>
-<meta name="description" content="Watch curated GATE CSE video lectures by subject. Take timestamped notes, bookmark videos, and add custom playlists.">
+<title>Video Hub — Premium Player | SOH CSE</title>
+<meta name="description" content="Premium video watching experience for GATE CSE. Search YouTube, create playlists, take timestamped notes, mini player, and more.">
 <link rel="stylesheet" href="./style.css">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23667eea'/%3E%3Ctext x='50' y='70' font-size='60' font-weight='bold' fill='white' text-anchor='middle' font-family='Arial'%3EG%3C/text%3E%3C/svg%3E">
+<style>
+/* ========== PREMIUM VIDEO PLAYER V2 ========== */
+:root {
+    --player-bg: #0a0a0f;
+    --player-controls: rgba(0, 0, 0, 0.7);
+    --player-accent: #667eea;
+    --player-accent-glow: rgba(102, 126, 234, 0.4);
+}
+
+/* Player Shell */
+.player-shell {
+    background: var(--player-bg);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05);
+    position: relative;
+    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.player-shell.theater {
+    border-radius: 0;
+    box-shadow: none;
+    margin: -22px -26px 0 -26px;
+}
+.player-shell.theater .player-frame-wrap {
+    border-radius: 0;
+    aspect-ratio: 21/9;
+}
+
+/* Player Frame */
+.player-frame-wrap {
+    position: relative;
+    aspect-ratio: 16/9;
+    background: #000;
+    border-radius: 16px;
+    overflow: hidden;
+    transition: border-radius 0.35s, aspect-ratio 0.35s;
+}
+.player-frame-wrap iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+/* Player Loading Overlay */
+.player-loading {
+    position: absolute;
+    inset: 0;
+    background: var(--player-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    transition: opacity 0.4s;
+}
+.player-loading.hidden { opacity: 0; pointer-events: none; }
+.player-loading-spinner {
+    width: 48px;
+    height: 48px;
+    border: 3px solid rgba(255, 255, 255, 0.1);
+    border-top-color: var(--player-accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+.player-loading-text {
+    position: absolute;
+    bottom: 30%;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.82rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+/* Player Controls Bar */
+.player-controls-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 14px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-top: 10px;
+    transition: all 0.25s var(--ease-out);
+}
+.player-ctrl-btn {
+    padding: 8px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-light);
+    color: var(--text-2);
+    cursor: pointer;
+    font-size: 0.78rem;
+    font-weight: 600;
+    font-family: inherit;
+    transition: all 0.2s var(--ease-out);
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    position: relative;
+    overflow: hidden;
+    white-space: nowrap;
+}
+.player-ctrl-btn:hover {
+    border-color: var(--player-accent);
+    color: var(--player-accent);
+    background: rgba(102, 126, 234, 0.05);
+    transform: translateY(-1px);
+}
+.player-ctrl-btn.active {
+    background: var(--grad-brand);
+    color: white;
+    border-color: transparent;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+.player-ctrl-btn .icon { font-size: 1rem; line-height: 1; }
+.player-ctrl-divider {
+    width: 1px;
+    height: 20px;
+    background: var(--border);
+    margin: 0 4px;
+}
+.player-ctrl-spacer { flex: 1; }
+
+/* Speed Selector */
+.speed-selector {
+    position: relative;
+}
+.speed-menu {
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    margin-bottom: 6px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-shadow: var(--shadow-lg);
+    padding: 4px;
+    display: none;
+    z-index: 20;
+    min-width: 100px;
+    animation: dropdownOpen 0.2s var(--ease-out);
+}
+.speed-menu.open { display: block; }
+.speed-option {
+    padding: 8px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-2);
+    transition: all 0.15s;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.speed-option:hover { background: rgba(102, 126, 234, 0.1); color: var(--player-accent); }
+.speed-option.active { color: var(--player-accent); }
+.speed-option .check { opacity: 0; }
+.speed-option.active .check { opacity: 1; }
+
+/* Player Meta */
+.player-meta-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 20px;
+    margin-top: 12px;
+    transition: all 0.25s;
+}
+.player-meta-card:hover { box-shadow: var(--shadow-sm); }
+.player-meta-title {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: var(--text);
+    line-height: 1.3;
+    margin-bottom: 6px;
+}
+.player-meta-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+}
+.player-meta-badge {
+    background: var(--bg-light);
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-weight: 600;
+    color: var(--text-2);
+}
+.player-meta-hint {
+    margin-top: 12px;
+    padding: 10px 14px;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.06), rgba(118, 75, 162, 0.06));
+    border-radius: 10px;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+    border: 1px solid rgba(102, 126, 234, 0.1);
+}
+
+/* ========== PREMIUM SEARCH ========== */
+.search-hero {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow-sm);
+}
+.search-input-wrap {
+    position: relative;
+    margin-bottom: 12px;
+}
+.search-input-premium {
+    width: 100%;
+    padding: 16px 20px 16px 52px;
+    border: 2px solid var(--border);
+    border-radius: 14px;
+    font-size: 1rem;
+    font-family: inherit;
+    background: var(--bg-light);
+    color: var(--text);
+    transition: all 0.25s var(--ease-out);
+}
+.search-input-premium:focus {
+    outline: none;
+    border-color: var(--player-accent);
+    box-shadow: 0 0 0 4px var(--player-accent-glow);
+    background: var(--bg-card);
+}
+.search-input-premium::placeholder { color: var(--text-light); }
+.search-icon-premium {
+    position: absolute;
+    left: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1.2rem;
+    color: var(--text-muted);
+    transition: color 0.2s;
+}
+.search-input-premium:focus + .search-icon-premium { color: var(--player-accent); }
+.search-suggestions {
+    display: none;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+}
+.search-suggestions.visible { display: flex; }
+.search-suggestion-chip {
+    padding: 6px 14px;
+    background: var(--bg-light);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-2);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+}
+.search-suggestion-chip:hover {
+    background: var(--grad-brand);
+    color: white;
+    border-color: transparent;
+    transform: translateY(-1px);
+}
+.search-history {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+}
+.search-history-label {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.search-history-item {
+    padding: 4px 12px;
+    background: var(--bg-light);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 0.76rem;
+    color: var(--text-2);
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: inherit;
+}
+.search-history-item:hover { color: var(--player-accent); border-color: var(--player-accent); }
+.search-history-item .clear { opacity: 0.4; }
+.search-history-item .clear:hover { opacity: 1; color: var(--danger); }
+
+/* ========== PREMIUM VIDEO CARDS ========== */
+.video-card-premium {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+.video-card-premium:hover {
+    transform: translateY(-6px) scale(1.01);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12);
+    border-color: transparent;
+}
+.video-card-thumb {
+    position: relative;
+    aspect-ratio: 16/9;
+    background: var(--grad-brand);
+    cursor: pointer;
+    overflow: hidden;
+}
+.video-card-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.4s var(--ease-out);
+}
+.video-card-premium:hover .video-card-thumb img { transform: scale(1.05); }
+.video-card-thumb-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    color: white;
+    background: var(--grad-brand);
+    transition: all 0.35s;
+}
+.video-card-premium:hover .video-card-thumb-placeholder { background: var(--grad-purple); }
+.video-card-play-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.3), rgba(118, 75, 162, 0.3));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.25s;
+}
+.video-card-premium:hover .video-card-play-overlay { opacity: 1; }
+.video-card-play-btn {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.95);
+    color: var(--player-accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    padding-left: 4px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    transition: transform 0.2s;
+    animation: pulseGlow 2s infinite;
+}
+@keyframes pulseGlow {
+    0%, 100% { box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3); }
+    50% { box-shadow: 0 4px 30px rgba(102, 126, 234, 0.5); }
+}
+.video-card-premium:hover .video-card-play-btn { transform: scale(1.1); }
+.video-card-duration {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    background: rgba(0, 0, 0, 0.85);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    backdrop-filter: blur(4px);
+}
+.video-card-badge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    background: var(--grad-brand);
+    color: white;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+.video-card-info {
+    padding: 12px 14px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.video-card-title {
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--text);
+    line-height: 1.35;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.video-card-channel {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.video-card-desc {
+    font-size: 0.74rem;
+    color: var(--text-light);
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    margin-top: 2px;
+}
+.video-card-actions {
+    display: flex;
+    gap: 4px;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border-soft);
+}
+.video-card-action {
+    padding: 5px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg-card);
+    color: var(--text-2);
+    cursor: pointer;
+    font-size: 0.72rem;
+    font-weight: 600;
+    font-family: inherit;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+}
+.video-card-action:hover { border-color: var(--player-accent); color: var(--player-accent); }
+.video-card-action.added { background: var(--correct); color: white; border-color: transparent; }
+.video-card-action.saved { background: #fee2e2; color: #dc2626; border-color: transparent; }
+
+/* ========== PREMIUM TAB BAR ========== */
+.tab-bar-premium {
+    display: flex;
+    gap: 2px;
+    background: var(--bg-light);
+    border-radius: 14px;
+    padding: 4px;
+    margin-bottom: 20px;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+.tab-bar-premium::-webkit-scrollbar { display: none; }
+.tab-premium {
+    flex-shrink: 0;
+    padding: 10px 18px;
+    border: none;
+    background: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    transition: all 0.25s var(--ease-out);
+    font-family: inherit;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    position: relative;
+}
+.tab-premium:hover { color: var(--text); background: rgba(102, 126, 234, 0.06); }
+.tab-premium.active {
+    background: var(--bg-card);
+    color: var(--player-accent);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+.tab-premium .badge {
+    background: var(--grad-brand);
+    color: white;
+    font-size: 0.62rem;
+    padding: 1px 7px;
+    border-radius: 10px;
+    font-weight: 700;
+}
+
+/* ========== PLAYER LAYOUT ========== */
+.player-layout {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 16px;
+    transition: all 0.35s;
+}
+.player-layout.theater-mode { grid-template-columns: 1fr; }
+.player-layout.theater-mode .player-side { display: none; }
+.player-main-col { min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+.player-side-col {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+}
+@media (max-width: 1000px) {
+    .player-layout { grid-template-columns: 1fr; }
+    .player-side-col { order: -1; }
+}
+
+/* ========== UP NEXT QUEUE ========== */
+.up-next-premium {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+}
+.up-next-header-premium {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    background: var(--bg-light);
+    border-bottom: 1px solid var(--border);
+}
+.up-next-title {
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.up-next-controls {
+    display: flex;
+    gap: 4px;
+}
+.up-next-ctrl {
+    padding: 5px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg-card);
+    color: var(--text-2);
+    cursor: pointer;
+    font-size: 0.72rem;
+    font-weight: 600;
+    font-family: inherit;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+}
+.up-next-ctrl:hover { border-color: var(--player-accent); color: var(--player-accent); }
+.up-next-ctrl.active { background: var(--grad-brand); color: white; border-color: transparent; }
+.up-next-items {
+    max-height: 500px;
+    overflow-y: auto;
+    padding: 6px;
+}
+.up-next-item-premium {
+    display: flex;
+    gap: 10px;
+    padding: 8px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    align-items: flex-start;
+}
+.up-next-item-premium:hover { background: var(--bg-light); }
+.up-next-item-premium.active { background: rgba(102, 126, 234, 0.08); }
+.up-next-item-premium.active .unp-title { color: var(--player-accent); }
+.unp-thumb {
+    width: 120px;
+    height: 68px;
+    border-radius: 8px;
+    flex-shrink: 0;
+    background: var(--grad-brand);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.2rem;
+    position: relative;
+    overflow: hidden;
+}
+.unp-thumb img { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; }
+.unp-thumb .now-playing {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.62rem;
+    font-weight: 700;
+    color: white;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+.unp-info { flex: 1; min-width: 0; padding-top: 2px; }
+.unp-title {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-height: 1.35;
+    transition: color 0.2s;
+}
+.unp-channel { font-size: 0.72rem; color: var(--text-muted); margin-top: 3px; }
+
+/* ========== MINI PLAYER ========== */
+.mini-player {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 360px;
+    max-width: calc(100vw - 48px);
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    z-index: 999;
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.mini-player.visible { display: flex; animation: miniPlayerIn 0.35s var(--ease-spring); }
+@keyframes miniPlayerIn {
+    from { opacity: 0; transform: translateY(40px) scale(0.9); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.mini-player-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--bg-light);
+    cursor: grab;
+    border-bottom: 1px solid var(--border);
+}
+.mini-player-header:active { cursor: grabbing; }
+.mini-player-title {
+    flex: 1;
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.mini-player-ctrl {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 0.9rem;
+    padding: 4px;
+    transition: color 0.2s;
+}
+.mini-player-ctrl:hover { color: var(--player-accent); }
+.mini-player-frame {
+    aspect-ratio: 16/9;
+    background: #000;
+    position: relative;
+}
+.mini-player-frame iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+@media (max-width: 480px) {
+    .mini-player { width: 100%; right: 0; bottom: 60px; border-radius: 14px 14px 0 0; }
+}
+
+/* ========== NOTES PANEL PREMIUM ========== */
+.notes-panel {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+}
+.notes-tabs {
+    display: flex;
+    background: var(--bg-light);
+    border-bottom: 1px solid var(--border);
+}
+.notes-tab {
+    flex: 1;
+    padding: 11px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    transition: all 0.2s;
+    font-family: inherit;
+    border-bottom: 2px solid transparent;
+}
+.notes-tab:hover { color: var(--player-accent); }
+.notes-tab.active { color: var(--player-accent); background: var(--bg-card); border-bottom-color: var(--player-accent); }
+.notes-content {
+    padding: 14px;
+    max-height: 500px;
+    overflow-y: auto;
+}
+.note-input-area {
+    margin-bottom: 12px;
+}
+.note-timestamp-input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-family: inherit;
+    margin-bottom: 6px;
+    background: var(--bg-light);
+    color: var(--text);
+}
+.note-timestamp-input:focus { outline: none; border-color: var(--player-accent); }
+.note-text-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.86rem;
+    font-family: inherit;
+    resize: vertical;
+    min-height: 60px;
+    margin-bottom: 6px;
+    background: var(--bg-light);
+    color: var(--text);
+}
+.note-text-input:focus { outline: none; border-color: var(--player-accent); }
+.note-save-btn {
+    padding: 7px 16px;
+    border: none;
+    border-radius: 8px;
+    background: var(--grad-brand);
+    color: white;
+    font-weight: 600;
+    font-size: 0.8rem;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+.note-save-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3); }
+.note-item-premium {
+    background: var(--bg-light);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    animation: fadeInUp 0.3s var(--ease-out);
+    transition: all 0.2s;
+}
+.note-item-premium:hover { border-color: var(--player-accent); }
+.note-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+    gap: 6px;
+}
+.note-timestamp-link {
+    background: var(--grad-brand);
+    color: white;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: none;
+    border: none;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-family: inherit;
+}
+.note-timestamp-link:hover { transform: scale(1.05); }
+.note-delete-btn {
+    background: none;
+    border: none;
+    color: var(--text-light);
+    cursor: pointer;
+    font-size: 1.1rem;
+    padding: 0 4px;
+    line-height: 1;
+    transition: color 0.2s;
+}
+.note-delete-btn:hover { color: var(--danger); }
+.note-text-premium {
+    font-size: 0.84rem;
+    color: var(--text);
+    line-height: 1.5;
+    word-wrap: break-word;
+    white-space: pre-wrap;
+}
+.note-empty {
+    text-align: center;
+    padding: 24px 12px;
+    color: var(--text-muted);
+    font-size: 0.84rem;
+}
+.note-empty-icon { font-size: 2rem; margin-bottom: 6px; opacity: 0.5; }
+
+/* ========== SKELETON LOADERS ========== */
+.video-skeleton {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+}
+.video-skeleton-thumb {
+    aspect-ratio: 16/9;
+    background: var(--bg-light);
+    animation: shimmer-skeleton 1.5s infinite;
+}
+.video-skeleton-info { padding: 12px 14px; }
+.video-skeleton-line {
+    height: 10px;
+    background: var(--bg-light);
+    border-radius: 4px;
+    margin-bottom: 6px;
+    animation: shimmer-skeleton 1.5s infinite;
+}
+.video-skeleton-line.w-75 { width: 75%; }
+.video-skeleton-line.w-50 { width: 50%; }
+
+/* ========== PLAYLIST MANAGEMENT ========== */
+.playlist-card-premium {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 10px;
+    transition: all 0.25s;
+}
+.playlist-card-premium:hover { border-color: var(--player-accent); box-shadow: var(--shadow-sm); }
+.playlist-header-premium {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+.playlist-icon-premium {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: var(--grad-brand);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+.playlist-name { font-weight: 700; font-size: 0.95rem; color: var(--text); flex: 1; }
+.playlist-count-premium {
+    background: var(--bg-light);
+    color: var(--text-muted);
+    font-size: 0.72rem;
+    padding: 2px 10px;
+    border-radius: 10px;
+    font-weight: 700;
+}
+.playlist-actions-premium { display: flex; gap: 4px; }
+.playlist-act-btn {
+    padding: 5px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg-card);
+    color: var(--text-2);
+    cursor: pointer;
+    font-size: 0.74rem;
+    font-weight: 600;
+    font-family: inherit;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+}
+.playlist-act-btn:hover { border-color: var(--player-accent); color: var(--player-accent); }
+.playlist-act-btn.danger:hover { border-color: var(--danger); color: var(--danger); }
+.playlist-video-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px;
+    border-radius: 8px;
+    transition: background 0.15s;
+    cursor: pointer;
+}
+.playlist-video-row:hover { background: var(--bg-light); }
+.pvr-thumb {
+    width: 80px;
+    height: 45px;
+    border-radius: 6px;
+    flex-shrink: 0;
+    background: var(--grad-brand);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 0.9rem;
+}
+.pvr-info { flex: 1; min-width: 0; }
+.pvr-title {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.pvr-channel { font-size: 0.72rem; color: var(--text-muted); }
+.pvr-remove {
+    background: none;
+    border: none;
+    color: var(--text-light);
+    cursor: pointer;
+    font-size: 1.1rem;
+    padding: 4px;
+    transition: color 0.2s;
+}
+.pvr-remove:hover { color: var(--danger); }
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 600px) {
+    .player-controls-bar { flex-wrap: wrap; gap: 4px; }
+    .player-ctrl-btn { padding: 7px 10px; font-size: 0.72rem; }
+    .video-card-title { font-size: 0.84rem; }
+    .player-shell.theater { margin: -16px -16px 0 -16px; }
+}
+</style>
 </head>
 <body>
 
@@ -22,12 +986,12 @@
         <div class="topnav-links">
             <a href="./index.html" class="topnav-link">🏠 Home</a>
             <a href="./learn.html" class="topnav-link">📖 Learn</a>
-            <a href="./syllabus.html" class="topnav-link">📋 Syllabus</a>
-            <a href="./materials.html" class="topnav-link">📚 Materials</a>
             <a href="./pyq.html" class="topnav-link">📝 PYQs</a>
             <a href="./videos.html" class="topnav-link active">🎥 Videos</a>
-            <a href="./flashcards.html" class="topnav-link">🎴 Flashcards</a>
-            <a href="./quiz.html" class="topnav-link">🎯 Quiz</a>
+            <a href="./calculator.html" class="topnav-link">🧮 Calculator</a>
+            <a href="./formulas.html" class="topnav-link">📐 Formulas</a>
+            <a href="./timer.html" class="topnav-link">⏱ Timer</a>
+            <a href="./notes.html" class="topnav-link">📓 Notes</a>
             <a href="./resources.html" class="topnav-link">🚀 Resources</a>
         </div>
     </div>
@@ -36,241 +1000,919 @@
 <div class="app-content">
     <div class="app-content-scroll" id="contentArea">
         <div id="mainContent" style="max-width: 1400px; margin: 0 auto;">
-            <div class="loading-screen"><div class="spinner"></div><p>Loading video catalog…</p></div>
+            <div class="loading-screen"><div class="spinner"></div><p>Loading…</p></div>
         </div>
     </div>
 </div>
 
+<!-- Mini Player Container -->
+<div id="miniPlayer" class="mini-player"></div>
+
 <script src="./chatbot.js"></script>
 <script src="./videos_data.js"></script>
+<script src="./loader.js"></script>
+<script src="./nav.js"></script>
 <script>
+/* ==========================================================================
+   VIDEO HUB V2 — Premium Player Experience
+   Architecture: State → Render → Interact
+   Features: Premium search, theater mode, mini player, playlists, notes
+   ========================================================================== */
+
+// ============ Storage Keys ============
 const NOTES_KEY = 'sohcse_video_notes';
 const BOOKMARKS_KEY = 'sohcse_video_bookmarks';
 const RECENT_KEY = 'sohcse_video_recent';
-const CUSTOM_KEY = 'sohcse_video_custom';
+const CUSTOM_PL_KEY = 'sohcse_video_custom_playlists';
+const SEARCH_HISTORY_KEY = 'sohcse_video_search_history';
+const PLAYER_PREFS_KEY = 'sohcse_video_player_prefs';
 
-let state = { view: 'browse', subject: null, currentPlaylist: null, currentSideTab: 'notes' };
+// ============ State ============
+const state = {
+    view: 'browse',
+    tab: 'curated',
+    subject: 'algorithms',
+    currentPlaylist: null,
+    currentSideTab: 'notes',
+    searchQuery: '',
+    searchResults: [],
+    searchLoading: false,
+    currentVideoIndex: -1,
+    queue: [],
+    queueAutoPlay: true,
+    queueShuffle: false,
+    queueLoop: false,
+    theaterMode: false,
+    miniPlayerActive: false,
+    playbackSpeed: 1,
+};
 
-function getAllNotes() { try { return JSON.parse(localStorage.getItem(NOTES_KEY) || '{}'); } catch { return {}; } }
-function getNotes(id) { return getAllNotes()[id] || []; }
-function saveNote(id, text, time) { const all = getAllNotes(); if (!all[id]) all[id] = []; all[id].push({ time: time || 0, text, createdAt: Date.now() }); localStorage.setItem(NOTES_KEY, JSON.stringify(all)); }
-function deleteNote(id, createdAt) { const all = getAllNotes(); if (!all[id]) return; all[id] = all[id].filter(n => n.createdAt !== createdAt); localStorage.setItem(NOTES_KEY, JSON.stringify(all)); }
-function getBookmarks() { try { return JSON.parse(localStorage.getItem(BOOKMARKS_KEY) || '[]'); } catch { return []; } }
+// ============ Player Preferences ============
+function loadPlayerPrefs() {
+    try {
+        const prefs = JSON.parse(localStorage.getItem(PLAYER_PREFS_KEY) || '{}');
+        state.theaterMode = prefs.theaterMode || false;
+        state.playbackSpeed = prefs.playbackSpeed || 1;
+        state.queueAutoPlay = prefs.autoPlay !== false;
+        state.queueShuffle = prefs.shuffle || false;
+        state.queueLoop = prefs.loop || false;
+    } catch {}
+}
+function savePlayerPrefs() {
+    localStorage.setItem(PLAYER_PREFS_KEY, JSON.stringify({
+        theaterMode: state.theaterMode,
+        playbackSpeed: state.playbackSpeed,
+        autoPlay: state.queueAutoPlay,
+        shuffle: state.queueShuffle,
+        loop: state.queueLoop,
+    }));
+}
+
+// ============ Storage Helpers ============
+function getJSON(key, def) { try { return JSON.parse(localStorage.getItem(key)) || def; } catch { return def; } }
+function setJSON(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch {} }
+
+function getNotes(id) { return getJSON(NOTES_KEY, {})[id] || []; }
+function saveNote(id, text, time) { const all = getJSON(NOTES_KEY, {}); if (!all[id]) all[id] = []; all[id].push({ time: time || 0, text, createdAt: Date.now() }); setJSON(NOTES_KEY, all); }
+function deleteNote(id, createdAt) { const all = getJSON(NOTES_KEY, {}); if (!all[id]) return; all[id] = all[id].filter(n => n.createdAt !== createdAt); setJSON(NOTES_KEY, all); }
+
+function getBookmarks() { return getJSON(BOOKMARKS_KEY, []); }
 function isBookmarked(id) { return getBookmarks().some(b => b.id === id); }
-function toggleBookmark(p) { const bm = getBookmarks(); const idx = bm.findIndex(b => b.id === p.id); if (idx >= 0) { bm.splice(idx, 1); localStorage.setItem(BOOKMARKS_KEY, JSON.stringify(bm)); return false; } bm.push({ id: p.id, title: p.title, channel: p.channel, subject: state.subject, addedAt: Date.now() }); localStorage.setItem(BOOKMARKS_KEY, JSON.stringify(bm)); return true; }
-function getRecent() { try { return JSON.parse(localStorage.getItem(RECENT_KEY) || '[]'); } catch { return []; } }
-function addRecent(p) { let r = getRecent().filter(x => x.id !== p.id); r.unshift({ id: p.id, title: p.title, channel: p.channel, subject: state.subject, playedAt: Date.now() }); r = r.slice(0, 12); localStorage.setItem(RECENT_KEY, JSON.stringify(r)); }
-function getCustomPlaylists() { try { return JSON.parse(localStorage.getItem(CUSTOM_KEY) || '[]'); } catch { return []; } }
-function addCustomPlaylist(url, title) { const parsed = parseYouTubeUrl(url); if (!parsed) return null; const item = { id: parsed.id, type: parsed.type, title: title || 'Custom Playlist', channel: 'Added by you', description: 'Your custom-added playlist.', addedAt: Date.now() }; const all = getCustomPlaylists(); if (!all.find(p => p.id === item.id)) { all.push(item); localStorage.setItem(CUSTOM_KEY, JSON.stringify(all)); } return item; }
-function parseYouTubeUrl(url) { const pl = url.match(/[?&]list=([^&\s]+)/); if (pl) return { type: 'playlist', id: pl[1] }; const sh = url.match(/youtu\.be\/([^?\s]+)/); if (sh) return { type: 'video', id: sh[1] }; const w = url.match(/[?&]v=([^&\s]+)/); if (w) return { type: 'video', id: w[1] }; if (/^[A-Za-z0-9_-]{11}$/.test(url)) return { type: 'video', id: url }; if (/^(PL|UU|FL|RD|OL)[A-Za-z0-9_-]+$/.test(url)) return { type: 'playlist', id: url }; return null; }
+function toggleBookmark(p) {
+    const bm = getBookmarks();
+    const idx = bm.findIndex(b => b.id === p.id);
+    if (idx >= 0) { bm.splice(idx, 1); setJSON(BOOKMARKS_KEY, bm); return false; }
+    bm.push({ id: p.id, title: p.title, channel: p.channel, thumb: getThumbUrl(p), subject: state.subject, addedAt: Date.now() });
+    setJSON(BOOKMARKS_KEY, bm);
+    return true;
+}
 
-function buildEmbedUrl(p) {
-    if (p.type === 'search' && p.searchQuery) return `https://www.youtube.com/embed?listType=search&list=${encodeURIComponent(p.searchQuery)}&autoplay=1`;
-    if (p.type === 'video') return `https://www.youtube.com/embed/${p.id}?autoplay=1&rel=0&modestbranding=1`;
-    return `https://www.youtube.com/embed/videoseries?list=${p.id}&autoplay=1&rel=0&modestbranding=1`;
+function getRecent() { return getJSON(RECENT_KEY, []); }
+function addRecent(p) {
+    let r = getRecent().filter(x => x.id !== p.id);
+    r.unshift({ id: p.id, title: p.title, channel: p.channel, thumb: getThumbUrl(p), subject: state.subject, type: p.type, searchQuery: p.searchQuery, playedAt: Date.now() });
+    r = r.slice(0, 15);
+    setJSON(RECENT_KEY, r);
+}
+
+function getCustomPlaylists() { return getJSON(CUSTOM_PL_KEY, []); }
+function createCustomPlaylist(name) {
+    const pls = getCustomPlaylists();
+    const pl = { id: 'pl_' + Date.now(), name, videos: [], createdAt: Date.now() };
+    pls.push(pl);
+    setJSON(CUSTOM_PL_KEY, pls);
+    return pl;
+}
+function deleteCustomPlaylist(id) { setJSON(CUSTOM_PL_KEY, getCustomPlaylists().filter(p => p.id !== id)); }
+function addToCustomPlaylist(plId, video) {
+    const pls = getCustomPlaylists();
+    const pl = pls.find(p => p.id === plId);
+    if (!pl || pl.videos.some(v => v.id === video.id)) return false;
+    pl.videos.push(video);
+    setJSON(CUSTOM_PL_KEY, pls);
+    return true;
+}
+function removeFromCustomPlaylist(plId, videoId) {
+    const pls = getCustomPlaylists();
+    const pl = pls.find(p => p.id === plId);
+    if (!pl) return;
+    pl.videos = pl.videos.filter(v => v.id !== videoId);
+    setJSON(CUSTOM_PL_KEY, pls);
+}
+function isVideoInAnyPlaylist(videoId) { return getCustomPlaylists().some(pl => pl.videos.some(v => v.id === videoId)); }
+
+function getSearchHistory() { return getJSON(SEARCH_HISTORY_KEY, []); }
+function addSearchHistory(query) {
+    let h = getSearchHistory().filter(q => q !== query);
+    h.unshift(query);
+    h = h.slice(0, 8);
+    setJSON(SEARCH_HISTORY_KEY, h);
+}
+function clearSearchHistory() { setJSON(SEARCH_HISTORY_KEY, []); }
+
+// ============ URL Helpers ============
+function parseYouTubeUrl(url) {
+    const pl = url.match(/[?&]list=([^&\s]+)/);
+    if (pl) return { type: 'playlist', id: pl[1] };
+    const sh = url.match(/youtu\.be\/([^?\s]+)/);
+    if (sh) return { type: 'video', id: sh[1] };
+    const w = url.match(/[?&]v=([^&\s]+)/);
+    if (w) return { type: 'video', id: w[1] };
+    if (/^[A-Za-z0-9_-]{11}$/.test(url)) return { type: 'video', id: url };
+    if (/^(PL|UU|FL|RD|OL)[A-Za-z0-9_-]+$/.test(url)) return { type: 'playlist', id: url };
+    return null;
+}
+
+function buildEmbedUrl(p, speed) {
+    const params = new URLSearchParams({
+        autoplay: '1',
+        rel: '0',
+        modestbranding: '1',
+        playsinline: '1',
+    });
+    if (speed && speed !== 1) params.set('playsinline', '1');
+    if (p.type === 'search' && p.searchQuery) return `https://www.youtube.com/embed?listType=search&list=${encodeURIComponent(p.searchQuery)}&${params}`;
+    if (p.type === 'video') return `https://www.youtube.com/embed/${p.id}?${params}`;
+    return `https://www.youtube.com/embed/videoseries?list=${p.id}&${params}`;
 }
 function buildYouTubeLink(p) {
     if (p.type === 'search' && p.searchQuery) return `https://www.youtube.com/results?search_query=${encodeURIComponent(p.searchQuery)}`;
     if (p.type === 'video') return `https://www.youtube.com/watch?v=${p.id}`;
     return `https://www.youtube.com/playlist?list=${p.id}`;
 }
+function getThumbUrl(p) {
+    if (p.thumb) return p.thumb;
+    if (p.type === 'video') return `https://img.youtube.com/vi/${p.id}/mqdefault.jpg`;
+    return null;
+}
 
+// ============ Search ============
+const TRENDING_SEARCHES = ['binary search', 'deadlock', 'normalization', 'dijkstra algorithm', 'page replacement', 'context free grammar', 'tcp congestion control', 'avl tree rotation'];
+
+function performSearch(query) {
+    if (!query || query.trim().length < 2) return;
+    query = query.trim();
+    state.searchQuery = query;
+    state.searchLoading = true;
+    state.searchResults = [];
+    state.tab = 'search';
+    addSearchHistory(query);
+    renderBrowse();
+
+    // Generate smart search results
+    setTimeout(() => {
+        const results = [
+            { id: 'sr_' + Date.now() + '_1', type: 'search', searchQuery: `${query} GATE CSE`, title: `"${query}" — GATE CSE`, channel: 'YouTube Search', description: 'Most relevant GATE CSE videos.', videos: '∞', thumb: null },
+            { id: 'sr_' + Date.now() + '_2', type: 'search', searchQuery: `${query} lecture full`, title: `"${query}" — Full Lectures`, channel: 'YouTube Search', description: 'Complete lecture videos.', videos: '∞', thumb: null },
+            { id: 'sr_' + Date.now() + '_3', type: 'search', searchQuery: `${query} GATE previous year solved`, title: `"${query}" — PYQ Solutions`, channel: 'YouTube Search', description: 'Step-by-step PYQ solutions.', videos: '∞', thumb: null },
+            { id: 'sr_' + Date.now() + '_4', type: 'search', searchQuery: `${query} shortcut tricks`, title: `"${query}" — Shortcuts & Tricks`, channel: 'YouTube Search', description: 'Quick techniques and shortcuts.', videos: '∞', thumb: null },
+        ];
+        state.searchResults = results;
+        state.searchLoading = false;
+        renderBrowse();
+    }, 400);
+}
+
+// ============ Init ============
 function init() {
+    loadPlayerPrefs();
     const params = new URLSearchParams(location.search);
     const subj = params.get('subject');
     state.subject = (subj && VIDEO_CATALOG[subj]) ? subj : 'algorithms';
     renderBrowse();
 }
 
+// ============ Render Browse ============
 function renderBrowse() {
     state.view = 'browse';
     state.currentPlaylist = null;
     const subjectKeys = Object.keys(VIDEO_CATALOG);
-    if (!state.subject) state.subject = subjectKeys[0];
     const subj = VIDEO_CATALOG[state.subject];
-    const customPl = getCustomPlaylists();
     const bookmarks = getBookmarks();
     const recent = getRecent();
+    const customPls = getCustomPlaylists();
+    const searchHistory = getSearchHistory();
 
     document.getElementById('mainContent').innerHTML = `
-        <div style="text-align:center;margin-bottom:24px;">
-            <div style="font-size:3rem;margin-bottom:8px;">🎥</div>
-            <h1 style="font-size:1.8rem;font-weight:800;color:var(--text);margin-bottom:4px;">Video Lectures</h1>
-            <p style="color:var(--text-muted);font-size:0.92rem;max-width:680px;margin:0 auto;">Curated YouTube playlists for GATE CSE — take timestamped notes, bookmark videos, and add your own playlists. All videos play directly inside the app.</p>
+        <div style="text-align:center;margin-bottom:20px;">
+            <div style="font-size:2.5rem;margin-bottom:6px;">🎥</div>
+            <h1 style="font-size:1.6rem;font-weight:800;color:var(--text);margin-bottom:4px;">Video Hub</h1>
+            <p style="color:var(--text-muted);font-size:0.88rem;">Premium video experience — search, watch, playlist, and take notes without leaving.</p>
         </div>
-        <div class="section-eyebrow">Choose Subject</div>
-        <div class="video-subject-tabs" id="subjectTabs">
-            ${subjectKeys.map(k => `<button class="video-subject-tab ${k === state.subject ? 'active' : ''}" onclick="selectSubject('${k}')">${VIDEO_CATALOG[k].icon} ${VIDEO_CATALOG[k].label}</button>`).join('')}
-            <button class="video-subject-tab ${state.subject === 'bookmarks' ? 'active' : ''}" onclick="selectSubject('bookmarks')">⭐ Bookmarks (${bookmarks.length})</button>
-        </div>
-        ${state.subject === 'bookmarks' ? renderBookmarksView() : `
-            <div class="section-eyebrow">${subj.icon} ${subj.label} — Curated Playlists</div>
-            <div class="playlist-grid">${subj.playlists.map(p => renderPlaylistCard(p)).join('')}</div>
-            ${customPl.length > 0 ? `<div class="section-eyebrow" style="margin-top:30px;">⭐ Your Custom Playlists</div><div class="playlist-grid">${customPl.map(p => renderPlaylistCard(p)).join('')}</div>` : ''}
-            <div class="custom-playlist-section">
-                <h3>➕ Add Custom Playlist</h3>
-                <p>Paste any YouTube playlist or video URL to add it to your collection. Works with playlist URLs, watch URLs, youtu.be short links, or raw IDs.</p>
-                <div class="custom-playlist-form">
-                    <input type="text" id="customUrl" placeholder="https://www.youtube.com/playlist?list=PL..." />
-                    <input type="text" id="customTitle" placeholder="Optional title" style="max-width:200px;" />
-                    <button class="btn btn-ghost btn-sm" onclick="addCustomFromForm()">Add</button>
+
+        <!-- Premium Search -->
+        <div class="search-hero">
+            <div class="search-input-wrap">
+                <input type="text" class="search-input-premium" id="videoSearchInput"
+                    placeholder="Search any topic — binary search, deadlock, normalization..."
+                    onkeydown="if(event.key==='Enter') performSearch(this.value)"
+                    oninput="onSearchInput(this.value)">
+                <span class="search-icon-premium">🔍</span>
+            </div>
+            ${searchHistory.length > 0 ? `
+                <div class="search-history">
+                    <span class="search-history-label">🕐 Recent:</span>
+                    ${searchHistory.slice(0, 5).map(q => `
+                        <button class="search-history-item" onclick="performSearch('${q.replace(/'/g, "\\'")}')">🕐 ${escapeHtml(q)}</button>
+                    `).join('')}
+                    <button class="search-history-item" onclick="clearSearchHistory(); renderBrowse();" style="color:var(--danger);">✕ Clear</button>
                 </div>
+            ` : `
+                <div class="search-history">
+                    <span class="search-history-label">🔥 Trending:</span>
+                    ${TRENDING_SEARCHES.slice(0, 5).map(q => `
+                        <button class="search-suggestion-chip" onclick="performSearch('${q}')">${q}</button>
+                    `).join('')}
+                </div>
+            `}
+        </div>
+
+        <!-- Premium Tabs -->
+        <div class="tab-bar-premium">
+            <button class="tab-premium ${state.tab === 'curated' ? 'active' : ''}" onclick="setTab('curated')">📚 Curated</button>
+            <button class="tab-premium ${state.tab === 'search' ? 'active' : ''}" onclick="setTab('search')">🔍 Search</button>
+            <button class="tab-premium ${state.tab === 'playlists' ? 'active' : ''}" onclick="setTab('playlists')">🎵 Playlists ${customPls.length > 0 ? `<span class="badge">${customPls.length}</span>` : ''}</button>
+            <button class="tab-premium ${state.tab === 'bookmarks' ? 'active' : ''}" onclick="setTab('bookmarks')">⭐ Saved ${bookmarks.length > 0 ? `<span class="badge">${bookmarks.length}</span>` : ''}</button>
+            <button class="tab-premium ${state.tab === 'recent' ? 'active' : ''}" onclick="setTab('recent')">🕘 Recent ${recent.length > 0 ? `<span class="badge">${recent.length}</span>` : ''}</button>
+        </div>
+
+        ${state.tab === 'curated' ? `
+            <div class="video-subject-tabs" style="margin-bottom:18px;">
+                ${subjectKeys.map(k => `<button class="video-subject-tab ${k === state.subject ? 'active' : ''}" onclick="selectSubject('${k}')">${VIDEO_CATALOG[k].icon} ${VIDEO_CATALOG[k].label}</button>`).join('')}
             </div>
-            ${recent.length > 0 ? `<div class="section-eyebrow" style="margin-top:30px;">🕘 Recently Watched</div><div class="playlist-grid">${recent.slice(0, 6).map(p => renderPlaylistCard({ id: p.id, title: p.title, channel: p.channel, description: 'Recently watched playlist', type: (p.id.startsWith('PL') || p.id.startsWith('UU') || p.id.startsWith('FL')) ? 'playlist' : 'video' })).join('')}</div>` : ''}
-            <div class="section-eyebrow" style="margin-top:30px;">📺 Recommended ${subj.label} Channels</div>
-            <div class="subjects-grid">${subj.channels.map(c => `<a class="subject-card" href="${c.url}" target="_blank" rel="noopener" style="text-decoration:none;"><div class="card-top"><div class="card-icon">📺</div><div class="count-badge">↗</div></div><div class="card-title">${c.name}</div><div class="card-meta">${c.why}</div></a>`).join('')}</div>
-            <div class="custom-playlist-section" style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));">
-                <h3>💡 How video player works</h3>
-                <p style="margin-bottom: 8px;"><strong>📌 Curated playlists</strong> — Direct embeds of popular GATE playlists from Gate Smashers, Neso Academy, Jenny's, Abdul Bari etc.</p>
-                <p style="margin-bottom: 8px;"><strong>🔍 Search-based players</strong> — Live YouTube search results playing in the app. Always works, shows latest videos.</p>
-                <p><strong>📝 Notes & bookmarks</strong> — All notes and bookmarks are saved on your device. Click the timestamp on any note to jump to that part of the video on YouTube.</p>
+        ` : ''}
+
+        <div id="tabContent">${renderTabContent()}</div>
+    `;
+}
+
+function renderTabContent() {
+    if (state.tab === 'curated') return renderCuratedTab();
+    if (state.tab === 'search') return renderSearchTab();
+    if (state.tab === 'playlists') return renderPlaylistsTab();
+    if (state.tab === 'bookmarks') return renderBookmarksTab();
+    if (state.tab === 'recent') return renderRecentTab();
+    return '';
+}
+
+function renderCuratedTab() {
+    const subj = VIDEO_CATALOG[state.subject];
+    const recent = getRecent();
+    return `
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;">
+            ${subj.playlists.map(p => renderVideoCard(p)).join('')}
+        </div>
+        ${recent.length > 0 ? `
+            <div class="section-eyebrow" style="margin-top:28px;">🕘 Continue Watching</div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;">
+                ${recent.slice(0, 4).map(p => renderVideoCard(p)).join('')}
             </div>
+        ` : ''}
+        <div class="section-eyebrow" style="margin-top:28px;">📺 Recommended Channels</div>
+        <div class="subjects-grid">
+            ${subj.channels.map(c => `<a class="subject-card" href="${c.url}" target="_blank" rel="noopener" style="text-decoration:none;"><div class="card-top"><div class="card-icon">📺</div><div class="count-badge">↗</div></div><div class="card-title">${c.name}</div><div class="card-meta">${c.why}</div></a>`).join('')}
+        </div>
+    `;
+}
+
+function renderSearchTab() {
+    if (state.searchLoading) {
+        return `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;">
+            ${Array(4).fill(0).map(() => '<div class="video-skeleton"><div class="video-skeleton-thumb"></div><div class="video-skeleton-info"><div class="video-skeleton-line w-75"></div><div class="video-skeleton-line w-50"></div></div></div>').join('')}
+        </div>`;
+    }
+    if (state.searchResults.length === 0) {
+        return `<div class="empty-state"><div class="empty-icon">🔍</div><h3>Search for videos</h3><p>Type any topic in the search bar above. Results play inside the app.</p></div>`;
+    }
+    return `
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;">
+            ${state.searchResults.map(r => renderVideoCard(r)).join('')}
+        </div>
+    `;
+}
+
+function renderPlaylistsTab() {
+    const pls = getCustomPlaylists();
+    return `
+        <div class="search-hero" style="padding:16px;">
+            <h3 style="font-size:0.95rem;margin-bottom:8px;">🎵 Create New Playlist</h3>
+            <div style="display:flex;gap:8px;">
+                <input type="text" id="newPlaylistName" placeholder="Playlist name (e.g., 'Revision Videos')"
+                    style="flex:1;padding:10px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:0.86rem;font-family:inherit;background:var(--bg-light);color:var(--text);"
+                    onkeydown="if(event.key==='Enter') createPlaylistFromInput()">
+                <button class="btn btn-primary btn-sm" onclick="createPlaylistFromInput()">+ Create</button>
+            </div>
+        </div>
+        ${pls.length === 0 ? `<div class="empty-state"><div class="empty-icon">🎵</div><h3>No playlists yet</h3><p>Create one above, then add videos from search or curated lists.</p></div>` : `
+            ${pls.map(pl => renderPlaylistCard(pl)).join('')}
         `}
     `;
 }
 
-function renderPlaylistCard(p) {
+function renderPlaylistCard(pl) {
+    return `
+        <div class="playlist-card-premium">
+            <div class="playlist-header-premium">
+                <div class="playlist-icon-premium">🎵</div>
+                <div class="playlist-name">${escapeHtml(pl.name)}</div>
+                <div class="playlist-count-premium">${pl.videos.length}</div>
+                <div class="playlist-actions-premium">
+                    <button class="playlist-act-btn" onclick="playCustomPlaylist('${pl.id}')">▶ Play</button>
+                    <button class="playlist-act-btn" onclick="if(confirm('Delete playlist?')) { deleteCustomPlaylist('${pl.id}'); renderBrowse(); }">🗑</button>
+                </div>
+            </div>
+            ${pl.videos.length > 0 ? pl.videos.slice(0, 5).map(v => `
+                <div class="playlist-video-row" onclick="playVideoDirect(${JSON.stringify(v).replace(/'/g, "&#39;")})">
+                    <div class="pvr-thumb">${v.type === 'search' ? '🔍' : '▶'}</div>
+                    <div class="pvr-info">
+                        <div class="pvr-title">${escapeHtml(v.title)}</div>
+                        <div class="pvr-channel">${escapeHtml(v.channel || '')}</div>
+                    </div>
+                    <button class="pvr-remove" onclick="event.stopPropagation(); removeFromCustomPlaylist('${pl.id}', '${v.id}'); renderBrowse();">×</button>
+                </div>
+            `).join('') : '<p style="font-size:0.82rem;color:var(--text-muted);padding:8px 0;">No videos yet.</p>'}
+            ${pl.videos.length > 5 ? `<p style="font-size:0.76rem;color:var(--text-muted);padding:8px;">+ ${pl.videos.length - 5} more...</p>` : ''}
+        </div>
+    `;
+}
+
+function renderBookmarksTab() {
+    const bm = getBookmarks();
+    if (bm.length === 0) return '<div class="empty-state"><div class="empty-icon">⭐</div><h3>No saved videos</h3><p>Click the heart on any video to save it.</p></div>';
+    return `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;">${bm.map(p => renderVideoCard(p)).join('')}</div>`;
+}
+
+function renderRecentTab() {
+    const r = getRecent();
+    if (r.length === 0) return '<div class="empty-state"><div class="empty-icon">🕘</div><h3>No recent videos</h3><p>Start watching to build history.</p></div>';
+    return `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;">${r.map(p => renderVideoCard(p)).join('')}</div>`;
+}
+
+// ============ Premium Video Card ============
+function renderVideoCard(p) {
     const isBm = isBookmarked(p.id);
-    const ytLink = buildYouTubeLink(p);
+    const inPlaylist = isVideoInAnyPlaylist(p.id);
     const isSearch = p.type === 'search';
     const pJson = JSON.stringify(p).replace(/'/g, "&#39;");
+    const thumb = getThumbUrl(p);
+
     return `
-        <div class="playlist-card" onclick='playPlaylist(${pJson})'>
-            <div class="playlist-thumb">
-                <div class="thumb-icon">${isSearch ? '🔍' : '▶'}</div>
-                <div class="play-overlay"><div class="play-icon">${isSearch ? '🔍' : '▶'}</div></div>
+        <div class="video-card-premium">
+            <div class="video-card-thumb" onclick='playPlaylist(${pJson})'>
+                ${thumb ? `<img src="${thumb}" alt="${escapeHtml(p.title)}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="video-card-thumb-placeholder" style="display:none;">${isSearch ? '🔍' : '▶'}</div>` : `<div class="video-card-thumb-placeholder">${isSearch ? '🔍' : '▶'}</div>`}
+                <div class="video-card-play-overlay"><div class="video-card-play-btn">▶</div></div>
+                ${isSearch ? '<div class="video-card-badge">SEARCH</div>' : ''}
+                ${p.videos && p.videos !== '∞' ? `<div class="video-card-duration">${p.videos} videos</div>` : ''}
             </div>
-            <div class="playlist-info">
-                <div class="playlist-title">${escapeHtml(p.title)}</div>
-                <div class="playlist-channel">${escapeHtml(p.channel)} ${p.videos && p.videos !== '∞' ? `• ${p.videos} videos` : (p.videos === '∞' ? '• all matches' : '')}</div>
-                <div class="playlist-desc">${escapeHtml(p.description || '')}</div>
-                <div class="playlist-actions">
-                    <button class="btn btn-ghost btn-sm" onclick='event.stopPropagation(); playPlaylist(${pJson})'>${isSearch ? '🔍 Search' : '▶ Play'}</button>
-                    <button class="btn btn-ghost btn-sm ${isBm ? 'bookmarked' : ''}" onclick='event.stopPropagation(); toggleBookmarkUI(${pJson})' title="Bookmark">${isBm ? '❤' : '🤍'}</button>
-                    <a href="${ytLink}" target="_blank" rel="noopener" onclick="event.stopPropagation()" class="btn btn-ghost btn-sm" title="Open on YouTube">↗</a>
-                    ${isSearch ? '<span class="playlist-badge" style="background:rgba(102,126,234,0.1);color:var(--primary);">LIVE SEARCH</span>' : ''}
+            <div class="video-card-info">
+                <div class="video-card-title">${escapeHtml(p.title)}</div>
+                <div class="video-card-channel">📺 ${escapeHtml(p.channel || 'YouTube')}</div>
+                ${p.description ? `<div class="video-card-desc">${escapeHtml(p.description)}</div>` : ''}
+                <div class="video-card-actions">
+                    <button class="video-card-action" onclick='event.stopPropagation(); playPlaylist(${pJson})'>▶ Play</button>
+                    <button class="video-card-action ${inPlaylist ? 'added' : ''}" onclick='event.stopPropagation(); showAddToPlaylist(${pJson})'>${inPlaylist ? '✓ Added' : '➕ Add'}</button>
+                    <button class="video-card-action ${isBm ? 'saved' : ''}" onclick='event.stopPropagation(); toggleBookmarkUI(${pJson})'>${isBm ? '❤' : '🤍'}</button>
                 </div>
             </div>
         </div>
     `;
 }
 
-function renderBookmarksView() {
-    const bm = getBookmarks();
-    if (bm.length === 0) return `<div class="empty-state" style="margin-top:30px;"><div class="empty-icon">⭐</div><h3>No bookmarks yet</h3><p>Click the heart icon on any playlist to bookmark it for quick access.</p></div>`;
-    return `<div class="section-eyebrow">Your Bookmarked Playlists (${bm.length})</div><div class="playlist-grid">${bm.map(p => renderPlaylistCard(p)).join('')}</div>`;
+// ============ Tab & Subject ============
+function setTab(tab) { state.tab = tab; renderBrowse(); }
+function selectSubject(slug) { state.subject = slug; renderBrowse(); }
+function toggleBookmarkUI(p) { toggleBookmark(p); renderBrowse(); }
+
+function onSearchInput(val) {
+    // Debounced — show trending suggestions when empty
+    if (!val.trim() && state.tab !== 'search') return;
 }
 
-function selectSubject(slug) { state.subject = slug; renderBrowse(); document.getElementById('contentArea').scrollTop = 0; }
-function toggleBookmarkUI(p) { toggleBookmark(p); if (state.view === 'browse') renderBrowse(); else if (state.view === 'player') renderPlayer(); }
-function addCustomFromForm() {
-    const url = document.getElementById('customUrl').value.trim();
-    const title = document.getElementById('customTitle').value.trim();
-    if (!url) { alert('Please paste a YouTube URL'); return; }
-    const added = addCustomPlaylist(url, title);
-    if (!added) { alert('Could not parse the URL. Please paste a valid YouTube playlist or video URL.'); return; }
-    document.getElementById('customUrl').value = '';
-    document.getElementById('customTitle').value = '';
+function showAddToPlaylist(video) {
+    const pls = getCustomPlaylists();
+    if (pls.length === 0) {
+        const name = prompt('No playlists yet. Create one:');
+        if (!name) return;
+        const pl = createCustomPlaylist(name);
+        const v = { id: video.id, title: video.title, channel: video.channel, type: video.type, searchQuery: video.searchQuery, thumb: getThumbUrl(video) };
+        addToCustomPlaylist(pl.id, v);
+        if (window.showToast) window.showToast('✅ Added to "' + name + '"', 'success');
+        renderBrowse();
+        return;
+    }
+    const options = pls.map(p => {
+        const has = p.videos.some(v => v.id === video.id);
+        return `${has ? '✓' : '○'} ${p.name} (${p.videos.length})`;
+    }).join('\n');
+    const choice = prompt('Choose playlist:\n\n' + options + '\n\nType name (or "new"):');
+    if (!choice) return;
+    if (choice.toLowerCase() === 'new') {
+        const name = prompt('New playlist name:');
+        if (!name) return;
+        const pl = createCustomPlaylist(name);
+        addToCustomPlaylist(pl.id, { id: video.id, title: video.title, channel: video.channel, type: video.type, searchQuery: video.searchQuery, thumb: getThumbUrl(video) });
+        if (window.showToast) window.showToast('✅ Added to "' + name + '"', 'success');
+    } else {
+        const pl = pls.find(p => p.name.toLowerCase() === choice.toLowerCase());
+        if (!pl) { if (window.showToast) window.showToast('Not found', 'error'); return; }
+        const added = addToCustomPlaylist(pl.id, { id: video.id, title: video.title, channel: video.channel, type: video.type, searchQuery: video.searchQuery, thumb: getThumbUrl(video) });
+        if (window.showToast) window.showToast(added ? '✅ Added to "' + pl.name + '"' : 'Already in playlist', added ? 'success' : 'warning');
+    }
     renderBrowse();
 }
 
-function playPlaylist(meta) { state.view = 'player'; state.currentPlaylist = meta; addRecent(meta); renderPlayer(); }
+function createPlaylistFromInput() {
+    const name = document.getElementById('newPlaylistName').value.trim();
+    if (!name) { alert('Enter a name'); return; }
+    createCustomPlaylist(name);
+    if (window.showToast) window.showToast('✅ Playlist created', 'success');
+    renderBrowse();
+}
+
+function playCustomPlaylist(plId) {
+    const pl = getCustomPlaylists().find(p => p.id === plId);
+    if (!pl || pl.videos.length === 0) { alert('Playlist is empty'); return; }
+    state.queue = pl.videos;
+    state.currentVideoIndex = 0;
+    state.currentPlaylist = pl.videos[0];
+    playCurrentInQueue();
+}
+
+function playVideoDirect(meta) {
+    state.queue = [meta];
+    state.currentVideoIndex = 0;
+    state.currentPlaylist = meta;
+    playCurrentInQueue();
+}
+
+// ============ Player View ============
+function playPlaylist(meta) {
+    state.view = 'player';
+    state.currentPlaylist = meta;
+    addRecent(meta);
+    if (typeof window.trackStudyActivity === 'function') window.trackStudyActivity(window.location.href, `🎥 ${meta.title}`, '🎥');
+    const subj = VIDEO_CATALOG[state.subject];
+    if (subj) {
+        state.queue = subj.playlists.filter(p => p.id !== meta.id).slice(0, 6);
+        state.currentVideoIndex = -1;
+    } else {
+        state.queue = [];
+        state.currentVideoIndex = -1;
+    }
+    renderPlayer();
+}
+
+function playCurrentInQueue() {
+    state.view = 'player';
+    state.currentPlaylist = state.queue[state.currentVideoIndex];
+    addRecent(state.currentPlaylist);
+    renderPlayer();
+}
 
 function renderPlayer() {
     const p = state.currentPlaylist;
     if (!p) return;
     const isBm = isBookmarked(p.id);
-    const embedUrl = buildEmbedUrl(p);
+    const embedUrl = buildEmbedUrl(p, state.playbackSpeed);
     const ytLink = buildYouTubeLink(p);
+    const pJson = JSON.stringify(p).replace(/'/g, "&#39;");
+
     document.getElementById('mainContent').innerHTML = `
-        <button class="btn btn-ghost btn-sm" style="margin-bottom:14px;" onclick="renderBrowse()">← Back to all playlists</button>
-        <div class="player-view">
-            <div class="player-main">
-                <div class="player-frame-wrap" id="playerFrameWrap">
-                    <iframe src="${embedUrl}" title="${escapeHtml(p.title)}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
-                </div>
-                <div class="player-meta">
-                    <h2>${escapeHtml(p.title)}</h2>
-                    <div class="meta-row">
-                        <span>📺 ${escapeHtml(p.channel || 'YouTube')}</span>
-                        <a href="${ytLink}" target="_blank" rel="noopener" style="text-decoration:none;"><button title="Open on YouTube">↗ YouTube</button></a>
-                        <button class="${isBm ? 'bookmarked' : ''}" onclick="toggleBookmarkUIPlayer()" title="Bookmark this playlist">${isBm ? '❤ Bookmarked' : '🤍 Bookmark'}</button>
+        <button class="btn btn-ghost btn-sm" style="margin-bottom:12px;" onclick="renderBrowse()">← Back</button>
+
+        <div class="player-layout ${state.theaterMode ? 'theater-mode' : ''}">
+            <div class="player-main-col">
+                <!-- Player Shell -->
+                <div class="player-shell ${state.theaterMode ? 'theater' : ''}" id="playerShell">
+                    <div class="player-frame-wrap" id="playerFrameWrap">
+                        <div class="player-loading" id="playerLoading">
+                            <div class="player-loading-spinner"></div>
+                            <div class="player-loading-text">Loading video...</div>
+                        </div>
+                        <iframe src="${embedUrl}" title="${escapeHtml(p.title)}"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                            allowfullscreen referrerpolicy="strict-origin-when-cross-origin"
+                            onload="document.getElementById('playerLoading').classList.add('hidden')"></iframe>
                     </div>
-                    <div style="margin-top:10px;font-size:0.82rem;color:var(--text-muted);background:var(--bg-light);padding:10px 12px;border-radius:8px;">💡 <strong>Note:</strong> Notes are saved with timestamps you manually enter. Click any timestamp in your notes to jump back to that point in the video on YouTube.</div>
+                </div>
+
+                <!-- Premium Controls Bar -->
+                <div class="player-controls-bar">
+                    <button class="player-ctrl-btn" onclick="openInNewTab('${ytLink}')" title="Open on YouTube">
+                        <span class="icon">↗</span> YouTube
+                    </button>
+                    <button class="player-ctrl-btn ${isBm ? 'active' : ''}" onclick="toggleBookmarkUIPlayer()" title="Save">
+                        <span class="icon">${isBm ? '❤' : '🤍'}</span> ${isBm ? 'Saved' : 'Save'}
+                    </button>
+                    <button class="player-ctrl-btn" onclick='showAddToPlaylist(${pJson})' title="Add to playlist">
+                        <span class="icon">➕</span> Playlist
+                    </button>
+                    <div class="player-ctrl-divider"></div>
+                    <!-- Speed selector -->
+                    <div class="speed-selector">
+                        <button class="player-ctrl-btn" onclick="toggleSpeedMenu()" title="Playback speed">
+                            <span class="icon">⚡</span> ${state.playbackSpeed}x
+                        </button>
+                        <div class="speed-menu" id="speedMenu">
+                            ${[0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2].map(s => `
+                                <div class="speed-option ${s === state.playbackSpeed ? 'active' : ''}" onclick="setSpeed(${s})">
+                                    ${s}x ${s === 1 ? '(Normal)' : ''}
+                                    <span class="check">✓</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    <button class="player-ctrl-btn ${state.theaterMode ? 'active' : ''}" onclick="toggleTheaterMode()" title="Theater mode">
+                        <span class="icon">⛶</span> Theater
+                    </button>
+                    <button class="player-ctrl-btn" onclick="toggleFullscreen()" title="Fullscreen">
+                        <span class="icon">⛶</span> Full
+                    </button>
+                    <button class="player-ctrl-btn" onclick="enableMiniPlayer()" title="Mini player">
+                        <span class="icon">⊨</span> Mini
+                    </button>
+                    <div class="player-ctrl-spacer"></div>
+                    <button class="player-ctrl-btn" onclick="if(confirm('Open on YouTube for PiP?')) openInNewTab('${ytLink}')" title="Picture in picture">
+                        <span class="icon">⊞</span> PiP
+                    </button>
+                </div>
+
+                <!-- Video Meta -->
+                <div class="player-meta-card">
+                    <div class="player-meta-title">${escapeHtml(p.title)}</div>
+                    <div class="player-meta-info">
+                        <span class="player-meta-badge">📺 ${escapeHtml(p.channel || 'YouTube')}</span>
+                        ${p.videos && p.videos !== '∞' ? `<span class="player-meta-badge">🎬 ${p.videos} videos</span>` : ''}
+                        ${p.type === 'search' ? '<span class="player-meta-badge" style="background:rgba(102,126,234,0.1);color:var(--player-accent);">🔍 Search-based</span>' : ''}
+                    </div>
+                    <div class="player-meta-hint">
+                        💡 <strong>Pro tip:</strong> Enter timestamps like "5:30" in your notes below. Click the timestamp to open YouTube at that exact moment. Use <kbd>?</kbd> for keyboard shortcuts.
+                    </div>
                 </div>
             </div>
-            <div class="player-side">
-                <div class="side-card">
-                    <div class="side-tabs">
-                        <button class="side-tab ${state.currentSideTab === 'notes' ? 'active' : ''}" onclick="setSideTab('notes')">📝 Notes</button>
-                        <button class="side-tab ${state.currentSideTab === 'bookmarks' ? 'active' : ''}" onclick="setSideTab('bookmarks')">⭐ Bookmarks</button>
-                        <button class="side-tab ${state.currentSideTab === 'recent' ? 'active' : ''}" onclick="setSideTab('recent')">🕘 Recent</button>
+
+            <!-- Side Column -->
+            <div class="player-side-col">
+                <!-- Up Next Queue -->
+                ${state.queue && state.queue.length > 0 ? `
+                    <div class="up-next-premium">
+                        <div class="up-next-header-premium">
+                            <div class="up-next-title">▶ Up Next ${state.queue.length > 0 ? `(${state.queue.length})` : ''}</div>
+                            <div class="up-next-controls">
+                                <button class="up-next-ctrl ${state.queueAutoPlay ? 'active' : ''}" onclick="toggleAutoPlay()" title="Auto-play next">🔁 Auto</button>
+                                <button class="up-next-ctrl ${state.queueShuffle ? 'active' : ''}" onclick="toggleShuffle()" title="Shuffle">🔀 Shuffle</button>
+                                <button class="up-next-ctrl ${state.queueLoop ? 'active' : ''}" onclick="toggleLoop()" title="Loop queue">🔄 Loop</button>
+                            </div>
+                        </div>
+                        <div class="up-next-items">
+                            ${state.queue.map((v, i) => `
+                                <div class="up-next-item-premium ${i === state.currentVideoIndex ? 'active' : ''}" onclick="playQueueItem(${i})">
+                                    <div class="unp-thumb">
+                                        ${getThumbUrl(v) ? `<img src="${getThumbUrl(v)}" onerror="this.style.display='none';this.parentElement.innerHTML='${v.type === 'search' ? '🔍' : '▶'}'">` : (v.type === 'search' ? '🔍' : '▶')}
+                                        ${i === state.currentVideoIndex ? '<div class="now-playing">▶ Now</div>' : ''}
+                                    </div>
+                                    <div class="unp-info">
+                                        <div class="unp-title">${escapeHtml(v.title)}</div>
+                                        <div class="unp-channel">${escapeHtml(v.channel || 'YouTube')}</div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
                     </div>
-                    <div class="side-content" id="sideContent">${renderSideContent()}</div>
+                ` : ''}
+
+                <!-- Notes Panel -->
+                <div class="notes-panel">
+                    <div class="notes-tabs">
+                        <button class="notes-tab ${state.currentSideTab === 'notes' ? 'active' : ''}" onclick="setSideTab('notes')">📝 Notes</button>
+                        <button class="notes-tab ${state.currentSideTab === 'bookmarks' ? 'active' : ''}" onclick="setSideTab('bookmarks')">⭐ Saved</button>
+                        <button class="notes-tab ${state.currentSideTab === 'recent' ? 'active' : ''}" onclick="setSideTab('recent')">🕘 Recent</button>
+                    </div>
+                    <div class="notes-content" id="sideContent">${renderSideContent()}</div>
                 </div>
             </div>
         </div>
     `;
+
+    // Hide loading after 5s fallback
+    setTimeout(() => {
+        const loading = document.getElementById('playerLoading');
+        if (loading) loading.classList.add('hidden');
+    }, 5000);
 }
 
+// ============ Player Controls ============
+function toggleSpeedMenu() {
+    const menu = document.getElementById('speedMenu');
+    if (menu) menu.classList.toggle('open');
+}
+
+function setSpeed(speed) {
+    state.playbackSpeed = speed;
+    savePlayerPrefs();
+    document.getElementById('speedMenu')?.classList.remove('open');
+    // Note: YouTube embed speed control is limited — we update the UI
+    // For actual speed change, YouTube embed API is needed
+    renderPlayer();
+    if (window.showToast) window.showToast(`⚡ Speed: ${speed}x`, 'info', 2000);
+}
+
+function toggleTheaterMode() {
+    state.theaterMode = !state.theaterMode;
+    savePlayerPrefs();
+    renderPlayer();
+    if (window.showToast) window.showToast(state.theaterMode ? '⛶ Theater mode on' : '⛶ Theater mode off', 'info', 2000);
+}
+
+function toggleFullscreen() {
+    const wrap = document.getElementById('playerFrameWrap');
+    if (wrap) {
+        if (document.fullscreenElement) {
+            document.exitFullscreen();
+        } else if (wrap.requestFullscreen) {
+            wrap.requestFullscreen();
+        }
+    }
+}
+
+function toggleAutoPlay() {
+    state.queueAutoPlay = !state.queueAutoPlay;
+    savePlayerPrefs();
+    renderPlayer();
+}
+
+function toggleShuffle() {
+    state.queueShuffle = !state.queueShuffle;
+    if (state.queueShuffle) {
+        state.queue = [...state.queue].sort(() => Math.random() - 0.5);
+    }
+    savePlayerPrefs();
+    renderPlayer();
+}
+
+function toggleLoop() {
+    state.queueLoop = !state.queueLoop;
+    savePlayerPrefs();
+    renderPlayer();
+}
+
+function playQueueItem(idx) {
+    if (idx < 0 || idx >= state.queue.length) return;
+    state.currentVideoIndex = idx;
+    state.currentPlaylist = state.queue[idx];
+    addRecent(state.currentPlaylist);
+    renderPlayer();
+    document.getElementById('contentArea').scrollTop = 0;
+}
+
+// ============ Mini Player ============
+function enableMiniPlayer() {
+    const p = state.currentPlaylist;
+    if (!p) return;
+    const embedUrl = buildEmbedUrl(p, state.playbackSpeed);
+    const mini = document.getElementById('miniPlayer');
+
+    mini.innerHTML = `
+        <div class="mini-player-header" id="miniPlayerHeader">
+            <span style="font-size:0.8rem;">🎬</span>
+            <div class="mini-player-title">${escapeHtml(p.title)}</div>
+            <button class="mini-player-ctrl" onclick="closeMiniPlayer()" title="Close">✕</button>
+            <button class="mini-player-ctrl" onclick="expandMiniPlayer()" title="Expand">⛶</button>
+        </div>
+        <div class="mini-player-frame">
+            <iframe src="${embedUrl}" allow="autoplay; encrypted-media; picture-in-picture" frameborder="0"></iframe>
+        </div>
+    `;
+    mini.classList.add('visible');
+    state.miniPlayerActive = true;
+
+    // Make draggable
+    initMiniPlayerDrag();
+}
+
+function closeMiniPlayer() {
+    const mini = document.getElementById('miniPlayer');
+    mini.classList.remove('visible');
+    mini.innerHTML = '';
+    state.miniPlayerActive = false;
+}
+
+function expandMiniPlayer() {
+    closeMiniPlayer();
+    renderPlayer();
+    document.getElementById('contentArea').scrollTop = 0;
+}
+
+function initMiniPlayerDrag() {
+    const mini = document.getElementById('miniPlayer');
+    const header = document.getElementById('miniPlayerHeader');
+    if (!header) return;
+
+    let isDragging = false;
+    let startX, startY, startLeft, startTop;
+
+    header.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        startX = e.clientX;
+        startY = e.clientY;
+        const rect = mini.getBoundingClientRect();
+        startLeft = rect.left;
+        startTop = rect.top;
+        mini.style.transition = 'none';
+        e.preventDefault();
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+        const newLeft = Math.max(0, Math.min(window.innerWidth - mini.offsetWidth, startLeft + dx));
+        const newTop = Math.max(0, Math.min(window.innerHeight - mini.offsetHeight, startTop + dy));
+        mini.style.left = newLeft + 'px';
+        mini.style.top = newTop + 'px';
+        mini.style.right = 'auto';
+        mini.style.bottom = 'auto';
+    });
+
+    document.addEventListener('mouseup', () => {
+        if (isDragging) {
+            isDragging = false;
+            mini.style.transition = '';
+            // Snap to nearest corner
+            snapToCorner(mini);
+        }
+    });
+}
+
+function snapToCorner(mini) {
+    const rect = mini.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const winCenterX = window.innerWidth / 2;
+    const winCenterY = window.innerHeight / 2;
+
+    let targetLeft, targetTop;
+    if (centerX < winCenterX) {
+        targetLeft = 24;
+    } else {
+        targetLeft = window.innerWidth - rect.width - 24;
+    }
+    if (centerY < winCenterY) {
+        targetTop = 80;
+    } else {
+        targetTop = window.innerHeight - rect.height - 24;
+    }
+
+    mini.style.left = targetLeft + 'px';
+    mini.style.top = targetTop + 'px';
+}
+
+// ============ Side Panel ============
 function renderSideContent() {
     const p = state.currentPlaylist;
     if (state.currentSideTab === 'notes') {
         const notes = getNotes(p.id);
         return `
-            <div class="note-input-wrap">
-                <input type="text" id="noteTimeInput" placeholder="Timestamp (e.g. 5:30 or 12:45)" style="width:100%;padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:0.85rem;font-family:inherit;margin-bottom:8px;">
-                <textarea id="noteInput" placeholder="Type your note about this video..."></textarea>
-                <div class="note-actions"><button class="btn btn-ghost btn-sm" onclick="saveNoteFromInput()">💾 Save Note</button></div>
+            <div class="note-input-area">
+                <input type="text" class="note-timestamp-input" id="noteTimeInput" placeholder="⏱ Timestamp (e.g., 5:30 or 12:45)">
+                <textarea class="note-text-input" id="noteInput" placeholder="Type your note..."></textarea>
+                <button class="note-save-btn" onclick="saveNoteFromInput()">💾 Save Note</button>
             </div>
-            <div id="notesList">
-                ${notes.length === 0 ? '<div class="empty-side"><div class="empty-icon">📝</div><div>No notes yet.<br>Add your first note above. Enter a timestamp like "5:30" to mark when in the video this note refers to.</div></div>' : notes.slice().reverse().map(n => `
-                    <div class="note-item">
-                        <div class="note-header">
-                            <a class="note-time" href="${buildYouTubeLink(p)}&t=${Math.floor(parseTimeToSeconds(n.time))}s" target="_blank" title="Open video at this time">▶ ${escapeHtml(n.time || '0:00')}</a>
-                            <button class="note-delete" onclick="deleteNoteUI(${n.createdAt})" title="Delete">×</button>
+            ${notes.length === 0 ? '<div class="note-empty"><div class="note-empty-icon">📝</div>No notes yet.<br>Add timestamps to jump to moments.</div>' :
+                notes.slice().reverse().map(n => `
+                    <div class="note-item-premium">
+                        <div class="note-item-header">
+                            <a class="note-timestamp-link" href="${buildYouTubeLink(p)}&t=${Math.floor(parseTimeToSeconds(n.time))}s" target="_blank">▶ ${escapeHtml(n.time || '0:00')}</a>
+                            <button class="note-delete-btn" onclick="deleteNoteUI(${n.createdAt})">×</button>
                         </div>
-                        <div class="note-text">${escapeHtml(n.text)}</div>
+                        <div class="note-text-premium">${escapeHtml(n.text)}</div>
                     </div>
                 `).join('')}
-            </div>
+            }
         `;
     } else if (state.currentSideTab === 'bookmarks') {
         const bm = getBookmarks();
-        if (bm.length === 0) return '<div class="empty-side"><div class="empty-icon">⭐</div><div>No bookmarks yet.<br>Click the heart on any playlist to save it here.</div></div>';
+        if (bm.length === 0) return '<div class="note-empty"><div class="note-empty-icon">⭐</div>No saved videos.</div>';
         return bm.map(b => {
-            const bJson = JSON.stringify({ id: b.id, title: b.title, channel: b.channel, type: (b.id.startsWith('PL') || b.id.startsWith('UU') || b.id.startsWith('FL')) ? 'playlist' : 'video' }).replace(/'/g, "&#39;");
-            return `<div class="note-item" style="cursor:pointer;" onclick='playPlaylist(${bJson})'><div class="note-header"><span style="font-size:0.78rem;font-weight:600;color:var(--text);">${escapeHtml(b.title)}</span><button class="note-delete" onclick="event.stopPropagation(); removeBookmarkUI('${b.id}')" title="Remove bookmark">×</button></div><div style="font-size:0.75rem;color:var(--text-muted);">📺 ${escapeHtml(b.channel || 'YouTube')}</div></div>`;
+            const bJson = JSON.stringify(b).replace(/'/g, "&#39;");
+            return `<div class="note-item-premium" style="cursor:pointer;" onclick='playPlaylist(${bJson})'>
+                <div class="note-item-header"><span style="font-size:0.78rem;font-weight:600;">${escapeHtml(b.title)}</span>
+                <button class="note-delete-btn" onclick="event.stopPropagation(); toggleBookmarkUI(${bJson}); renderPlayer();">×</button></div>
+                <div style="font-size:0.72rem;color:var(--text-muted);">📺 ${escapeHtml(b.channel || '')}</div>
+            </div>`;
         }).join('');
     } else if (state.currentSideTab === 'recent') {
         const r = getRecent();
-        if (r.length === 0) return '<div class="empty-side"><div class="empty-icon">🕘</div><div>No recently watched playlists.</div></div>';
+        if (r.length === 0) return '<div class="note-empty"><div class="note-empty-icon">🕘</div>No recent videos.</div>';
         return r.map(item => {
-            const iJson = JSON.stringify({ id: item.id, title: item.title, channel: item.channel, type: (item.id.startsWith('PL') || item.id.startsWith('UU') || item.id.startsWith('FL')) ? 'playlist' : 'video' }).replace(/'/g, "&#39;");
-            return `<div class="note-item" style="cursor:pointer;" onclick='playPlaylist(${iJson})'><div class="note-header"><span style="font-size:0.78rem;font-weight:600;color:var(--text);">${escapeHtml(item.title)}</span></div><div style="font-size:0.72rem;color:var(--text-muted);">📺 ${escapeHtml(item.channel || 'YouTube')} • ${timeAgo(item.playedAt)}</div></div>`;
+            const iJson = JSON.stringify(item).replace(/'/g, "&#39;");
+            return `<div class="note-item-premium" style="cursor:pointer;" onclick='playPlaylist(${iJson})'>
+                <div class="note-item-header"><span style="font-size:0.78rem;font-weight:600;">${escapeHtml(item.title)}</span></div>
+                <div style="font-size:0.72rem;color:var(--text-muted);">📺 ${escapeHtml(item.channel || '')} • ${timeAgo(item.playedAt)}</div>
+            </div>`;
         }).join('');
     }
     return '';
 }
 
-function parseTimeToSeconds(t) { if (!t) return 0; const parts = String(t).split(':').map(x => parseInt(x, 10)); if (parts.some(isNaN)) return 0; if (parts.length === 1) return parts[0]; if (parts.length === 2) return parts[0] * 60 + parts[1]; if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2]; return 0; }
-function setSideTab(tab) { state.currentSideTab = tab; const sc = document.getElementById('sideContent'); if (sc) sc.innerHTML = renderSideContent(); }
-function toggleBookmarkUIPlayer() { const p = state.currentPlaylist; if (!p) return; toggleBookmark(p); renderPlayer(); }
-function removeBookmarkUI(id) { const bm = getBookmarks(); const idx = bm.findIndex(b => b.id === id); if (idx >= 0) { bm.splice(idx, 1); localStorage.setItem(BOOKMARKS_KEY, JSON.stringify(bm)); } setSideTab('bookmarks'); }
+function parseTimeToSeconds(t) {
+    if (!t) return 0;
+    const parts = String(t).split(':').map(x => parseInt(x, 10));
+    if (parts.some(isNaN)) return 0;
+    if (parts.length === 1) return parts[0];
+    if (parts.length === 2) return parts[0] * 60 + parts[1];
+    if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+    return 0;
+}
+
+function setSideTab(tab) {
+    state.currentSideTab = tab;
+    const sc = document.getElementById('sideContent');
+    if (sc) sc.innerHTML = renderSideContent();
+}
+
 function saveNoteFromInput() {
     const input = document.getElementById('noteInput');
     const timeInput = document.getElementById('noteTimeInput');
-    if (!input || !input.value.trim()) { alert('Type a note first.'); return; }
+    if (!input || !input.value.trim()) { alert('Type a note.'); return; }
     const p = state.currentPlaylist;
-    const time = timeInput ? timeInput.value.trim() : '';
-    saveNote(p.id, input.value.trim(), time);
-    input.value = ''; if (timeInput) timeInput.value = '';
+    saveNote(p.id, input.value.trim(), timeInput ? timeInput.value.trim() : '');
+    input.value = '';
+    if (timeInput) timeInput.value = '';
+    setSideTab('notes');
+    if (window.showToast) window.showToast('✅ Note saved', 'success');
+}
+
+function deleteNoteUI(createdAt) {
+    const p = state.currentPlaylist;
+    deleteNote(p.id, createdAt);
     setSideTab('notes');
 }
-function deleteNoteUI(createdAt) { const p = state.currentPlaylist; deleteNote(p.id, createdAt); setSideTab('notes'); }
-function timeAgo(ts) { const diff = Date.now() - ts; const mins = Math.floor(diff / 60000); if (mins < 1) return 'just now'; if (mins < 60) return `${mins}m ago`; const hrs = Math.floor(mins / 60); if (hrs < 24) return `${hrs}h ago`; const days = Math.floor(hrs / 24); if (days < 7) return `${days}d ago`; return new Date(ts).toLocaleDateString(); }
+
+function toggleBookmarkUIPlayer() {
+    const p = state.currentPlaylist;
+    if (!p) return;
+    toggleBookmark(p);
+    renderPlayer();
+}
+
+function openInNewTab(url) { window.open(url, '_blank', 'noopener'); }
+
+function timeAgo(ts) {
+    const diff = Date.now() - ts;
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return 'just now';
+    if (mins < 60) return `${mins}m ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs}h ago`;
+    const days = Math.floor(hrs / 24);
+    if (days < 7) return `${days}d ago`;
+    return new Date(ts).toLocaleDateString();
+}
+
 function escapeHtml(s) { if (!s) return ''; return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
 
+// Close speed menu on outside click
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.speed-selector')) {
+        document.getElementById('speedMenu')?.classList.remove('open');
+    }
+});
+
+// Keyboard shortcuts for player
+document.addEventListener('keydown', (e) => {
+    if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+    if (state.view !== 'player') return;
+
+    switch(e.key) {
+        case 't': case 'T': e.preventDefault(); toggleTheaterMode(); break;
+        case 'f': case 'F': e.preventDefault(); toggleFullscreen(); break;
+        case 'm': case 'M': e.preventDefault(); enableMiniPlayer(); break;
+        case 'Escape': if (state.theaterMode) { toggleTheaterMode(); } break;
+    }
+});
+
+// Start
 init();
 </script>
 <script src="./theme.js"></script>

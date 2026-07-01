@@ -27,6 +27,10 @@
             <a href="./materials.html" class="topnav-link active">📚 Materials</a>
             <a href="./pyq.html" class="topnav-link">📝 PYQs</a>
             <a href="./videos.html" class="topnav-link">🎥 Videos</a>
+            <a href="./calculator.html" class="topnav-link">🧮 Calculator</a>
+            <a href="./formulas.html" class="topnav-link">📐 Formulas</a>
+            <a href="./timer.html" class="topnav-link">⏱ Timer</a>
+            <a href="./notes.html" class="topnav-link">📓 Notes</a>
             <a href="./flashcards.html" class="topnav-link">🎴 Flashcards</a>
             <a href="./quiz.html" class="topnav-link">🎯 Quiz</a>
             <a href="./progress.html" class="topnav-link">📊 Progress</a>
@@ -69,6 +73,14 @@
                 <a href="./videos.html" class="btn btn-ghost btn-sm">🎥 Video Lectures →</a>
                 <a href="./resources.html" class="btn btn-ghost btn-sm">🚀 GATE 2027 Resources →</a>
             </div>
+
+            <!-- PW Short Notes Section -->
+            <div style="width:100%;max-width:800px;margin-top:30px;text-align:left;">
+                <div class="section-eyebrow" style="display:inline-block;margin-bottom:12px;">✍️ Free Short Notes by PhysicsWallah</div>
+                <h3 style="font-size:1.1rem;margin-bottom:6px;color:var(--text);">Subject-wise Short Notes (Free PDFs)</h3>
+                <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:16px;">High-quality free short notes from PhysicsWallah for all 12 GATE CSE subjects. Click "View" to read inside the app, or "Download" to save.</p>
+                <div class="pw-notes-grid" id="pwNotesGrid"></div>
+            </div>
         </div>
         <div class="loading-screen" id="loadingScreen" style="display:none;">
             <div class="spinner"></div>
@@ -79,6 +91,7 @@
 </div>
 
 <script src="./chatbot.js"></script>
+<script src="./pw_notes_data.js"></script>
 <script>
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
@@ -106,7 +119,51 @@ let currentPath = [];
 let allFiles = [];
 let sidebarCollapsed = false;
 
-function init() { buildFileList(); updateStats(); renderNavigation(); }
+function init() {
+    buildFileList();
+    updateStats();
+    renderNavigation();
+    renderPWNotes();
+}
+
+function renderPWNotes() {
+    const grid = document.getElementById('pwNotesGrid');
+    if (!grid || typeof PW_NOTES === 'undefined') return;
+    grid.innerHTML = PW_NOTES.map(note => `
+        <div class="pw-note-card" style="--card-grad: ${note.color};">
+            <div style="display:flex;align-items:center;gap:8px;">
+                <span class="pw-icon">${note.icon}</span>
+                <div style="flex:1;">
+                    <div class="pw-title">${note.title}</div>
+                    <div class="pw-source">by ${note.source}</div>
+                </div>
+            </div>
+            <p style="font-size:0.78rem;color:var(--text-muted);line-height:1.5;">${note.description}</p>
+            <div class="pw-actions">
+                <button class="view-btn" onclick="showExternalPDF('${note.url}', '${note.title.replace(/'/g, "\\'")}')">📖 View</button>
+                <a href="${note.url}" download target="_blank" rel="noopener">⬇ Download</a>
+            </div>
+        </div>
+    `).join('');
+}
+
+function showExternalPDF(url, title) {
+    document.getElementById('welcomeScreen').style.display = 'none';
+    document.getElementById('loadingScreen').style.display = 'flex';
+    document.getElementById('pdfViewer').style.display = 'none';
+    document.getElementById('pdfControls').style.display = 'flex';
+
+    // Set AI context
+    if (typeof window.setAIContext === 'function') {
+        window.setAIContext(`Currently viewing: ${title} (PW Short Notes)`);
+    }
+
+    // Show in iframe (for external PDFs, just load directly)
+    document.getElementById('loadingScreen').style.display = 'none';
+    const viewer = document.getElementById('pdfViewer');
+    viewer.src = url;
+    viewer.style.display = 'block';
+}
 
 function updateStats() {
     let folderCount = 0, pdfCount = 0;
@@ -207,6 +264,8 @@ function toggleSidebar() { sidebarCollapsed = !sidebarCollapsed; document.getEle
 
 init();
 </script>
+<script src="./loader.js"></script>
+<script src="./nav.js"></script>
 <script src="./theme.js"></script>
 </body>
 </html>

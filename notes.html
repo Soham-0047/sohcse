@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Personal Notebook — SOH CSE</title>
+<meta name="description" content="Personal notebook for GATE CSE prep. Create, tag, and organize your study notes by subject.">
+<link rel="stylesheet" href="./style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23667eea'/%3E%3Ctext x='50' y='70' font-size='60' font-weight='bold' fill='white' text-anchor='middle' font-family='Arial'%3EG%3C/text%3E%3C/svg%3E">
+<style>
+.note-editor {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    padding: 18px;
+    margin-bottom: 18px;
+}
+.note-editor input[type="text"] {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--r-sm);
+    font-size: 1rem;
+    font-weight: 700;
+    font-family: inherit;
+    margin-bottom: 10px;
+    background: var(--bg-card);
+    color: var(--text);
+}
+.note-editor input:focus { outline: none; border-color: var(--primary); }
+.note-editor textarea {
+    width: 100%;
+    min-height: 200px;
+    padding: 14px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--r-sm);
+    font-size: 0.9rem;
+    font-family: inherit;
+    resize: vertical;
+    line-height: 1.6;
+    background: var(--bg-card);
+    color: var(--text);
+}
+.note-editor textarea:focus { outline: none; border-color: var(--primary); }
+.note-meta-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+.note-meta-row select {
+    padding: 8px 12px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--r-sm);
+    font-size: 0.85rem;
+    font-family: inherit;
+    background: var(--bg-card);
+    color: var(--text);
+}
+.note-item {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    padding: 16px;
+    margin-bottom: 12px;
+    transition: all 0.2s;
+}
+.note-item:hover { border-color: var(--primary); box-shadow: var(--shadow-sm); }
+.note-item .note-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+.note-item .note-title { font-weight: 700; font-size: 0.98rem; color: var(--text); flex: 1; }
+.note-item .note-actions { display: flex; gap: 4px; }
+.note-item .note-actions button {
+    padding: 4px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg-card);
+    color: var(--text-2);
+    cursor: pointer;
+    font-size: 0.75rem;
+    font-weight: 600;
+    font-family: inherit;
+    transition: all 0.2s;
+}
+.note-item .note-actions button:hover { border-color: var(--primary); color: var(--primary); }
+.note-item .note-actions button.danger:hover { border-color: var(--danger); color: var(--danger); }
+.note-item .note-content {
+    font-size: 0.88rem;
+    color: var(--text-2);
+    line-height: 1.6;
+    white-space: pre-wrap;
+    max-height: 300px;
+    overflow-y: auto;
+}
+.note-item .note-tags {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+}
+.note-item .note-tag {
+    background: rgba(102, 126, 234, 0.1);
+    color: var(--primary);
+    padding: 3px 10px;
+    border-radius: var(--r-full);
+    font-size: 0.72rem;
+    font-weight: 600;
+}
+.note-item .note-date {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    margin-top: 8px;
+}
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+    <div class="topnav-inner">
+        <a href="./index.html" class="topnav-brand">
+            <div class="brand-mark">G</div>
+            <div class="brand-text">SOH CSE <small>GATE Preparation Hub</small></div>
+        </a>
+        <button class="topnav-menu-btn" onclick="document.querySelector('.topnav-links').classList.toggle('open')" aria-label="Toggle menu">
+            <span></span><span></span><span></span>
+        </div>
+        <div class="topnav-links">
+            <a href="./index.html" class="topnav-link">🏠 Home</a>
+            <a href="./learn.html" class="topnav-link">📖 Learn</a>
+            <a href="./pyq.html" class="topnav-link">📝 PYQs</a>
+            <a href="./videos.html" class="topnav-link">🎥 Videos</a>
+            <a href="./calculator.html" class="topnav-link">🧮 Calculator</a>
+            <a href="./formulas.html" class="topnav-link">📐 Formulas</a>
+            <a href="./timer.html" class="topnav-link">⏱ Timer</a>
+            <a href="./notes.html" class="topnav-link active">📓 Notes</a>
+            <a href="./resources.html" class="topnav-link">🚀 Resources</a>
+        </div>
+    </div>
+</nav>
+
+<div class="app-content">
+    <div class="app-content-scroll" id="contentArea">
+        <div style="max-width:800px;margin:0 auto;">
+            <div style="text-align:center;margin-bottom:24px;">
+                <div style="font-size:3rem;margin-bottom:8px;">📓</div>
+                <h1 style="font-size:1.8rem;font-weight:800;color:var(--text);margin-bottom:4px;">Personal Notebook</h1>
+                <p style="color:var(--text-muted);font-size:0.92rem;">Write and organize your study notes by subject. All notes are saved on your device.</p>
+            </div>
+
+            <div class="note-editor">
+                <input type="text" id="noteTitle" placeholder="Note title (e.g., 'Binary Search Trees — Key Points')">
+                <textarea id="noteContent" placeholder="Write your notes here... You can use LaTeX math with $...$ or $$...$$ for formulas."></textarea>
+                <div class="note-meta-row">
+                    <select id="noteSubject">
+                        <option value="general">📚 General</option>
+                        <option value="algorithms">⚡ Algorithms</option>
+                        <option value="data-structures">🌳 Data Structures</option>
+                        <option value="discrete-mathematics">∑ Discrete Math</option>
+                        <option value="operating-systems">⚙️ Operating Systems</option>
+                        <option value="database-management-system">🗄️ DBMS</option>
+                        <option value="computer-networks">🌐 Computer Networks</option>
+                        <option value="theory-of-computation">🔤 TOC</option>
+                        <option value="compiler-design">🔧 Compiler Design</option>
+                        <option value="digital-logic">🔌 Digital Logic</option>
+                        <option value="computer-organization">💻 Computer Organization</option>
+                        <option value="general-aptitude">🧮 General Aptitude</option>
+                    </select>
+                    <input type="text" id="noteTags" placeholder="Tags (comma-separated, e.g., revision, important)" style="flex:1;padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:0.85rem;font-family:inherit;background:var(--bg-card);color:var(--text);">
+                    <button class="btn btn-primary btn-sm" onclick="saveNote()">💾 Save Note</button>
+                </div>
+            </div>
+
+            <input type="text" class="search-box" id="searchBox" placeholder="🔍 Search notes..." oninput="renderNotes()" style="margin-bottom:14px;">
+
+            <div class="tab-bar" style="display:flex;gap:4px;background:var(--bg-light);border-radius:var(--r);padding:4px;margin-bottom:18px;overflow-x:auto;">
+                <button class="tab-btn active" onclick="filterNotes('all', this)" style="padding:8px 14px;border:none;background:var(--bg-card);border-radius:var(--r-sm);cursor:pointer;font-size:0.82rem;font-weight:600;color:var(--primary);white-space:nowrap;">All Notes</button>
+                <button class="tab-btn" onclick="filterNotes('algorithms', this)" style="padding:8px 14px;border:none;background:none;border-radius:var(--r-sm);cursor:pointer;font-size:0.82rem;font-weight:600;color:var(--text-muted);white-space:nowrap;">⚡ Algo</button>
+                <button class="tab-btn" onclick="filterNotes('data-structures', this)" style="padding:8px 14px;border:none;background:none;border-radius:var(--r-sm);cursor:pointer;font-size:0.82rem;font-weight:600;color:var(--text-muted);white-space:nowrap;">🌳 DS</button>
+                <button class="tab-btn" onclick="filterNotes('operating-systems', this)" style="padding:8px 14px;border:none;background:none;border-radius:var(--r-sm);cursor:pointer;font-size:0.82rem;font-weight:600;color:var(--text-muted);white-space:nowrap;">⚙️ OS</button>
+                <button class="tab-btn" onclick="filterNotes('database-management-system', this)" style="padding:8px 14px;border:none;background:none;border-radius:var(--r-sm);cursor:pointer;font-size:0.82rem;font-weight:600;color:var(--text-muted);white-space:nowrap;">🗄️ DBMS</button>
+                <button class="tab-btn" onclick="filterNotes('computer-networks', this)" style="padding:8px 14px;border:none;background:none;border-radius:var(--r-sm);cursor:pointer;font-size:0.82rem;font-weight:600;color:var(--text-muted);white-space:nowrap;">🌐 CN</button>
+            </div>
+
+            <div id="notesList"></div>
+        </div>
+    </div>
+</div>
+
+<script src="./chatbot.js"></script>
+<script>
+const NOTES_KEY = 'sohcse_personal_notes';
+let currentFilter = 'all';
+let editingId = null;
+
+function getNotes() { try { return JSON.parse(localStorage.getItem(NOTES_KEY)) || []; } catch { return []; } }
+function setNotes(notes) { localStorage.setItem(NOTES_KEY, JSON.stringify(notes)); }
+
+function saveNote() {
+    const title = document.getElementById('noteTitle').value.trim();
+    const content = document.getElementById('noteContent').value.trim();
+    const subject = document.getElementById('noteSubject').value;
+    const tags = document.getElementById('noteTags').value.trim();
+    if (!title || !content) { alert('Please enter a title and content'); return; }
+    const notes = getNotes();
+    if (editingId) {
+        const note = notes.find(n => n.id === editingId);
+        if (note) {
+            note.title = title;
+            note.content = content;
+            note.subject = subject;
+            note.tags = tags;
+            note.updatedAt = Date.now();
+        }
+        editingId = null;
+    } else {
+        notes.unshift({
+            id: 'note_' + Date.now(),
+            title, content, subject, tags,
+            createdAt: Date.now(),
+            updatedAt: Date.now()
+        });
+    }
+    setNotes(notes);
+    document.getElementById('noteTitle').value = '';
+    document.getElementById('noteContent').value = '';
+    document.getElementById('noteTags').value = '';
+    if (window.showToast) window.showToast('✅ Note saved', 'success');
+    renderNotes();
+}
+
+function editNote(id) {
+    const notes = getNotes();
+    const note = notes.find(n => n.id === id);
+    if (!note) return;
+    document.getElementById('noteTitle').value = note.title;
+    document.getElementById('noteContent').value = note.content;
+    document.getElementById('noteSubject').value = note.subject;
+    document.getElementById('noteTags').value = note.tags || '';
+    editingId = id;
+    document.getElementById('noteTitle').focus();
+    document.getElementById('contentArea').scrollTop = 0;
+}
+
+function deleteNote(id) {
+    if (!confirm('Delete this note?')) return;
+    let notes = getNotes();
+    notes = notes.filter(n => n.id !== id);
+    setNotes(notes);
+    renderNotes();
+}
+
+function filterNotes(subject, btn) {
+    currentFilter = subject;
+    document.querySelectorAll('.tab-btn').forEach(b => {
+        b.style.background = 'none';
+        b.style.color = 'var(--text-muted)';
+    });
+    btn.style.background = 'var(--bg-card)';
+    btn.style.color = 'var(--primary)';
+    renderNotes();
+}
+
+function renderNotes() {
+    const search = document.getElementById('searchBox').value.toLowerCase().trim();
+    let notes = getNotes();
+    if (currentFilter !== 'all') notes = notes.filter(n => n.subject === currentFilter);
+    if (search) notes = notes.filter(n => n.title.toLowerCase().includes(search) || n.content.toLowerCase().includes(search) || (n.tags || '').toLowerCase().includes(search));
+
+    const list = document.getElementById('notesList');
+    if (notes.length === 0) {
+        list.innerHTML = '<div class="empty-state"><div class="empty-icon">📓</div><h3>No notes yet</h3><p>Write your first note using the editor above.</p></div>';
+        return;
+    }
+
+    const subjectLabels = {
+        'general': '📚 General', 'algorithms': '⚡ Algorithms', 'data-structures': '🌳 DS',
+        'discrete-mathematics': '∑ Discrete Math', 'operating-systems': '⚙️ OS',
+        'database-management-system': '🗄️ DBMS', 'computer-networks': '🌐 CN',
+        'theory-of-computation': '🔤 TOC', 'compiler-design': '🔧 CD',
+        'digital-logic': '🔌 Digital Logic', 'computer-organization': '💻 COA',
+        'general-aptitude': '🧮 Aptitude'
+    };
+
+    list.innerHTML = notes.map(n => `
+        <div class="note-item">
+            <div class="note-header">
+                <div class="note-title">${escapeHtml(n.title)}</div>
+                <div class="note-actions">
+                    <button onclick="editNote('${n.id}')">✏️ Edit</button>
+                    <button class="danger" onclick="deleteNote('${n.id}')">🗑 Delete</button>
+                </div>
+            </div>
+            <div class="note-content">${escapeHtml(n.content)}</div>
+            <div class="note-tags">
+                <span class="note-tag">${subjectLabels[n.subject] || n.subject}</span>
+                ${(n.tags || '').split(',').filter(t => t.trim()).map(t => `<span class="note-tag">${escapeHtml(t.trim())}</span>`).join('')}
+            </div>
+            <div class="note-date">📅 ${new Date(n.updatedAt || n.createdAt).toLocaleString()}</div>
+        </div>
+    `).join('');
+
+    _tryRenderMath(0);
+}
+
+function _tryRenderMath(attempt) {
+    if (typeof renderMathInElement === 'function') {
+        document.querySelectorAll('.note-content').forEach(el => {
+            try {
+                renderMathInElement(el, {
+                    delimiters: [
+                        { left: '$$', right: '$$', display: true },
+                        { left: '$', right: '$', display: false },
+                    ],
+                    throwOnError: false
+                });
+            } catch(e) {}
+        });
+    } else if (attempt < 50) {
+        setTimeout(() => _tryRenderMath(attempt + 1), 100);
+    }
+}
+
+function escapeHtml(s) { if (!s) return ''; return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+
+renderNotes();
+</script>
+<script src="./loader.js"></script>
+<script src="./nav.js"></script>
+<script src="./theme.js"></script>
+</body>
+</html>
