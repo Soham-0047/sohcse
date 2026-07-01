@@ -787,3 +787,151 @@ if (document.readyState === 'loading') {
         trackCurrentPage();
     }, 200);
 }
+
+// ============ Ripple Effect on Buttons ============
+function initRippleEffect() {
+    document.addEventListener('click', (e) => {
+        const target = e.target.closest('.btn, .filter-chip, .quiz-type-chip, .mode-btn, .tab-btn, .topnav-link, .mobile-bottom-nav-item');
+        if (!target) return;
+        
+        const rect = target.getBoundingClientRect();
+        const ripple = document.createElement('span');
+        ripple.className = 'ripple';
+        const size = Math.max(rect.width, rect.height);
+        ripple.style.width = ripple.style.height = size + 'px';
+        ripple.style.left = (e.clientX - rect.left - size / 2) + 'px';
+        ripple.style.top = (e.clientY - rect.top - size / 2) + 'px';
+        target.appendChild(ripple);
+        setTimeout(() => ripple.remove(), 600);
+    });
+}
+
+// ============ Onboarding Tour ============
+function initOnboarding() {
+    if (localStorage.getItem('sohcse_onboarded')) return;
+    
+    const steps = [
+        {
+            icon: '👋',
+            title: 'Welcome to SOH CSE!',
+            desc: 'Your complete GATE CSE preparation platform. Everything you need — study materials, PYQs, videos, AI tutor — all in one place.',
+            features: [
+                ['📖', '13 Concept Notes'],
+                ['📝', '2,736 PYQs with Solutions'],
+                ['🎥', 'In-app Video Player'],
+                ['🤖', 'AI Tutor (5 modes)'],
+            ]
+        },
+        {
+            icon: '⌨️',
+            title: 'Powerful Keyboard Shortcuts',
+            desc: 'Navigate instantly without touching your mouse. Press ? anytime to see all shortcuts.',
+            features: [
+                ['Ctrl+K', 'Command Palette'],
+                ['Ctrl+/', 'Global Search'],
+                ['Ctrl+J', 'Dark Mode'],
+                ['Ctrl+H', 'Hide Navbar'],
+            ]
+        },
+        {
+            icon: '🎨',
+            title: 'Premium Features',
+            desc: 'Dark mode, focus mode, progress tracking, flashcards, quizzes, formula book, GATE calculator, and more — all free, all in-app.',
+            features: [
+                ['🌙', 'Dark Mode'],
+                ['🎯', 'Focus Mode'],
+                ['📊', 'Progress Dashboard'],
+                ['🎴', 'Spaced Repetition'],
+            ]
+        },
+    ];
+
+    let currentStep = 0;
+    
+    const overlay = document.createElement('div');
+    overlay.className = 'onboarding-overlay';
+    overlay.id = 'onboardingOverlay';
+    document.body.appendChild(overlay);
+
+    function renderStep() {
+        const step = steps[currentStep];
+        const dots = steps.map((_, i) => `<div class="onboarding-dot ${i === currentStep ? 'active' : ''}"></div>`).join('');
+        
+        overlay.innerHTML = `
+            <div class="onboarding-card">
+                <div class="ob-icon">${step.icon}</div>
+                <div class="onboarding-dots">${dots}</div>
+                <h2>${step.title}</h2>
+                <p>${step.desc}</p>
+                <div class="ob-features">
+                    ${step.features.map(f => `<div class="ob-feature"><span>${f[0]}</span><span>${f[1]}</span></div>`).join('')}
+                </div>
+                <div class="ob-actions">
+                    ${currentStep > 0 ? '<button class="btn btn-ghost btn-sm" onclick="window._obPrev()">← Back</button>' : ''}
+                    ${currentStep < steps.length - 1 
+                        ? `<button class="btn btn-primary btn-sm" onclick="window._obNext()">Next →</button>` 
+                        : `<button class="btn btn-primary btn-sm" onclick="window._obFinish()">🚀 Get Started</button>`}
+                    <button class="btn btn-ghost btn-sm" onclick="window._obSkip()">Skip</button>
+                </div>
+            </div>
+        `;
+    }
+
+    window._obNext = () => { if (currentStep < steps.length - 1) { currentStep++; renderStep(); } };
+    window._obPrev = () => { if (currentStep > 0) { currentStep--; renderStep(); } };
+    window._obSkip = () => { overlay.classList.remove('open'); localStorage.setItem('sohcse_onboarded', '1'); };
+    window._obFinish = () => { 
+        overlay.classList.remove('open'); 
+        localStorage.setItem('sohcse_onboarded', '1');
+        if (window.showToast) window.showToast('🎉 Welcome aboard! Press ? for shortcuts.', 'success', 4000);
+    };
+
+    // Show after 1.5s delay
+    setTimeout(() => {
+        overlay.classList.add('open');
+        renderStep();
+    }, 1500);
+}
+
+// ============ Quick Access FAB ============
+function initQuickFAB() {
+    const fab = document.createElement('button');
+    fab.className = 'quick-fab';
+    fab.title = 'Quick actions (Alt+A for AI, Ctrl+K for commands)';
+    fab.innerHTML = '⚡';
+    fab.onclick = () => {
+        if (window.openCommandPalette) window.openCommandPalette();
+    };
+    document.body.appendChild(fab);
+
+    let lastScroll = 0;
+    const scrollContainer = document.getElementById('contentArea') || window;
+    scrollContainer.addEventListener('scroll', () => {
+        const scrollTop = scrollContainer.scrollTop || window.scrollY;
+        if (scrollTop > 200 && scrollTop < lastScroll) {
+            fab.classList.add('visible');
+        } else if (scrollTop > 600) {
+            fab.classList.add('visible');
+        } else {
+            fab.classList.remove('visible');
+        }
+        lastScroll = scrollTop;
+    });
+}
+
+// ============ Initialize new features ============
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        setTimeout(() => {
+            initRippleEffect();
+            initOnboarding();
+            initQuickFAB();
+        }, 300);
+    });
+} else {
+    setTimeout(() => {
+        initRippleEffect();
+        initOnboarding();
+        initQuickFAB();
+    }, 300);
+}

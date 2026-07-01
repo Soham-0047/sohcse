@@ -93,7 +93,10 @@ let sidebarCollapsed = false;
 const Q_BOOKMARKS_KEY = 'sohcse_question_bookmarks';
 
 async function init() {
+    // Show skeleton immediately while data parses
+    document.getElementById('mainContent').innerHTML = '<div style="padding:20px;"><div class="skeleton-card"><div class="skeleton-line w-50 h-20"></div><div class="skeleton-line w-100"></div><div class="skeleton-line w-75"></div></div><div class="skeleton-card"><div class="skeleton-line w-50 h-20"></div><div class="skeleton-line w-100"></div><div class="skeleton-line w-75"></div></div></div>';
     try {
+        // Data is loaded synchronously via script tag — just use it
         if (typeof window.GATE_DATA !== 'undefined' && window.GATE_DATA) {
             data = window.GATE_DATA;
         } else {
@@ -340,7 +343,7 @@ function renderChapterView() {
         </div>
         ${totalPages > 1 ? renderPagination(totalPages) : ''}
     `;
-    document.querySelectorAll('.q-content').forEach(renderMathIn);
+    if (typeof window.renderMathOptimized === 'function') { window.renderMathOptimized(document.querySelectorAll('.q-content')); } else { document.querySelectorAll('.q-content').forEach(renderMathIn); }
     if (state.practiceMode) updatePracticeScore();
 }
 
@@ -548,7 +551,7 @@ function renderPapers() {
             `}
         </div>
     `;
-    document.querySelectorAll('.q-content').forEach(renderMathIn);
+    if (typeof window.renderMathOptimized === 'function') { window.renderMathOptimized(document.querySelectorAll('.q-content')); } else { document.querySelectorAll('.q-content').forEach(renderMathIn); }
 }
 
 function renderPaperYearDetail(papers) {
@@ -640,7 +643,7 @@ function renderSearchResults() {
         </div>
         ${totalPages > 1 ? renderPagination(totalPages) : ''}
     `;
-    document.querySelectorAll('.q-content').forEach(renderMathIn);
+    if (typeof window.renderMathOptimized === 'function') { window.renderMathOptimized(document.querySelectorAll('.q-content')); } else { document.querySelectorAll('.q-content').forEach(renderMathIn); }
 }
 
 function setYearFilter(y) { state.yearFilter = y; state.page = 1; renderChapterView(); scrollTop(); }
@@ -734,6 +737,7 @@ function typeLabel(t) { return { mcq: 'MCQ', msq: 'MSQ', nat: 'NAT', subjective:
 
 init();
 </script>
+<script src="./loader.js"></script>
 <script src="./nav.js"></script>
 <script src="./theme.js"></script>
 </body>

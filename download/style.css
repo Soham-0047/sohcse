@@ -2620,3 +2620,245 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
     border-radius: 0 0 3px 3px;
 }
 .mobile-bottom-nav-item { position: relative; }
+
+/* ==========================================================================
+   PREMIUM UI v4 — Glassmorphism, Glow Effects, Micro-interactions
+   ========================================================================== */
+
+/* ============ Glassmorphism Cards ============ */
+.glass-card {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: var(--r-lg);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+[data-theme="dark"] .glass-card {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+/* ============ Gradient Border Effect ============ */
+.gradient-border {
+    position: relative;
+    background: var(--bg-card);
+    border-radius: var(--r-lg);
+}
+.gradient-border::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark), var(--primary));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+.gradient-border:hover::before { opacity: 1; }
+
+/* ============ Glow Effects ============ */
+.glow-primary { box-shadow: 0 0 20px rgba(102, 126, 234, 0.3); }
+.glow-success { box-shadow: 0 0 20px rgba(16, 185, 129, 0.3); }
+.glow-warning { box-shadow: 0 0 20px rgba(245, 158, 11, 0.3); }
+.glow-danger { box-shadow: 0 0 20px rgba(239, 68, 68, 0.3); }
+
+/* ============ Button Ripple Effect ============ */
+.btn, .filter-chip, .quiz-type-chip, .mode-btn, .tab-btn {
+    position: relative;
+    overflow: hidden;
+}
+.ripple {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.4);
+    transform: scale(0);
+    animation: ripple-animation 0.6s ease-out;
+    pointer-events: none;
+}
+@keyframes ripple-animation {
+    to { transform: scale(4); opacity: 0; }
+}
+
+/* ============ Card Tilt on Hover (subtle 3D) ============ */
+.tilt-card {
+    transform-style: preserve-3d;
+    transition: transform 0.3s var(--ease-out);
+}
+.tilt-card:hover {
+    transform: perspective(800px) rotateX(2deg) rotateY(-2deg) translateY(-4px);
+}
+
+/* ============ Shimmer Loading Bar ============ */
+.shimmer-bar {
+    height: 3px;
+    background: var(--border-soft);
+    border-radius: var(--r-full);
+    overflow: hidden;
+    position: relative;
+}
+.shimmer-bar::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--grad-brand);
+    border-radius: inherit;
+    animation: shimmer-slide 1.2s infinite;
+}
+@keyframes shimmer-slide {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+/* ============ Number Counter Animation ============ */
+.counter {
+    display: inline-block;
+    font-variant-numeric: tabular-nums;
+}
+
+/* ============ Premium Card with Top Glow ============ */
+.premium-card {
+    position: relative;
+    overflow: hidden;
+}
+.premium-card::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(102, 126, 234, 0.06) 0%, transparent 50%);
+    opacity: 0;
+    transition: opacity 0.4s;
+    pointer-events: none;
+}
+.premium-card:hover::after { opacity: 1; }
+
+/* ============ Animated Gradient Text ============ */
+.animated-gradient-text {
+    background: linear-gradient(135deg, #667eea, #764ba2, #f093fb, #667eea);
+    background-size: 300% 300%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: gradient-shift 5s ease infinite;
+}
+@keyframes gradient-shift {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+}
+
+/* ============ Onboarding Tour ============ */
+.onboarding-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 6000;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+.onboarding-overlay.open { display: flex; animation: fadeIn 0.3s; }
+.onboarding-card {
+    background: var(--bg-card);
+    border-radius: var(--r-2xl);
+    padding: 32px;
+    max-width: 480px;
+    width: 100%;
+    text-align: center;
+    box-shadow: var(--shadow-xl);
+    animation: onboardingIn 0.4s var(--ease-spring);
+}
+@keyframes onboardingIn {
+    from { opacity: 0; transform: scale(0.85) translateY(20px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
+.onboarding-card .ob-icon { font-size: 3rem; margin-bottom: 14px; }
+.onboarding-card h2 { font-size: 1.4rem; color: var(--text); margin-bottom: 8px; }
+.onboarding-card p { font-size: 0.9rem; color: var(--text-muted); line-height: 1.6; margin-bottom: 20px; }
+.onboarding-card .ob-features {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 24px;
+    text-align: left;
+}
+.onboarding-card .ob-feature {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.82rem;
+    color: var(--text-2);
+    padding: 8px 12px;
+    background: var(--bg-light);
+    border-radius: var(--r-sm);
+}
+.onboarding-card .ob-feature span:first-child { font-size: 1.2rem; }
+.onboarding-card .ob-actions { display: flex; gap: 10px; justify-content: center; }
+.onboarding-dots { display: flex; gap: 6px; justify-content: center; margin-bottom: 16px; }
+.onboarding-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--border);
+    transition: all 0.3s;
+}
+.onboarding-dot.active { background: var(--primary); width: 24px; border-radius: 4px; }
+
+/* ============ Quick Access FAB (Floating Action Button) ============ */
+.quick-fab {
+    position: fixed;
+    bottom: 90px;
+    left: 24px;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--grad-brand);
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-size: 1.3rem;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow-brand);
+    z-index: 100;
+    transition: all 0.3s var(--ease-spring);
+}
+.quick-fab:hover { transform: scale(1.1) rotate(90deg); }
+.quick-fab.visible { display: flex; animation: fabIn 0.3s var(--ease-spring); }
+@keyframes fabIn {
+    from { opacity: 0; transform: scale(0); }
+    to { opacity: 1; transform: scale(1); }
+}
+@media (max-width: 768px) {
+    .quick-fab { bottom: 72px; left: 16px; }
+}
+
+/* ============ Smooth content area transition ============ */
+#mainContent, .app-content-scroll {
+    transition: opacity 0.2s ease;
+}
+.content-fade-out { opacity: 0; }
+.content-fade-in { opacity: 1; }
+
+/* ============ Premium scrollbar ============ */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+
+/* ============ Stagger animation for grids ============ */
+.stagger-item { opacity: 0; transform: translateY(10px); animation: staggerIn 0.4s var(--ease-out) forwards; }
+@keyframes staggerIn {
+    to { opacity: 1; transform: translateY(0); }
+}
