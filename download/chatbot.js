@@ -276,6 +276,7 @@ RULES:
                             <option value="openai">🤖 OpenAI (GPT-4o-mini, best quality)</option>
                             <option value="together">🤝 Together AI (Free, Llama 3.3 70B)</option>
                             <option value="cohere">💫 Cohere (Free tier)</option>
+                            <option value="gemini">✨ Google Gemini (Free, 1500/day)</option>
                             <option value="huggingface">🤗 HuggingFace (Free)</option>
                         </select>
                     </div>
@@ -283,7 +284,7 @@ RULES:
                     <div class="config-status">
                         <div class="dot" id="aiKeyDot"></div>
                         <span id="aiKeyStatus">No API key saved</span>
-                        <a href="https://console.groq.com/keys" target="_blank" rel="noopener" style="margin-left:auto;font-size:0.72rem;color:var(--primary);text-decoration:none;">Get free Groq key ↗</a>
+                        <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener" style="margin-left:auto;font-size:0.72rem;color:var(--primary);text-decoration:none;">Get free Gemini key ↗</a>
                     </div>
                 </div>
 
@@ -770,6 +771,7 @@ RULES:
 
         switch (provider) {
             case 'groq': return callGroq(messages, apiKey);
+            case 'gemini': return callGemini(messages, apiKey);
             case 'huggingface': return callHuggingFace(messages, apiKey);
             case 'cohere': return callCohere(messages, apiKey);
             case 'together': return callTogether(messages, apiKey);
@@ -796,6 +798,44 @@ RULES:
         }
         const data = await res.json();
         return data.choices[0]?.message?.content || 'No response.';
+    }
+
+    async function callGemini(messages, apiKey) {
+        if (!apiKey) throw new Error('Google AI Studio API key is required. Get one free at aistudio.google.com/apikey');
+        
+        // Convert OpenAI-style messages to Gemini format
+        const contents = messages.filter(m => m.role !== 'system').map(m => ({
+            role: m.role === 'assistant' ? 'model' : 'user',
+            parts: [{ text: m.content }]
+        }));
+        
+        // Extract system prompt
+        const systemMsg = messages.find(m => m.role === 'system');
+        const systemInstruction = systemMsg ? { parts: [{ text: systemMsg.content }] } : undefined;
+        
+        const body = {
+            contents,
+            generationConfig: {
+                maxOutputTokens: 2500,
+                temperature: 0.5,
+                topP: 0.9,
+            },
+        };
+        if (systemInstruction) body.systemInstruction = systemInstruction;
+        
+        const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + apiKey, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+        });
+        
+        if (!res.ok) {
+            const e = await res.json().catch(() => ({}));
+            throw new Error(`Gemini: ${e.error?.message || res.status}`);
+        }
+        
+        const data = await res.json();
+        return data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response from Gemini.';
     }
 
     async function callHuggingFace(messages, apiKey) {

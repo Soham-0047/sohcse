@@ -428,6 +428,26 @@ function togglePracticeMode() { state.practiceMode = !state.practiceMode; state.
 function selectPracticeOption(qid, identifier, isMSQ) {
     if (isMSQ) { if (!state.practiceAnswers[qid]) state.practiceAnswers[qid] = []; const arr = state.practiceAnswers[qid]; if (arr.includes(identifier)) arr.splice(arr.indexOf(identifier), 1); else arr.push(identifier); }
     else state.practiceAnswers[qid] = [identifier];
+    // Track the attempt
+    const subj = data.subjects.find(s => s.subject === state.subject);
+    const chap = subj?.chapters.find(c => c.chapter === state.chapter);
+    const q = chap?.questions.find(x => x.question_id === qid);
+    if (q && typeof window.logAttempt === 'function') {
+        const userAns = state.practiceAnswers[qid];
+        const isCorrect = checkAnswer(q, userAns);
+        window.logAttempt({
+            source: 'practice',
+            subject: q.subject || state.subject,
+            chapter: q.chapter || state.chapter,
+            question_id: qid,
+            type: q.normalized_type,
+            correct: isCorrect,
+        });
+        // Add wrong answers to error notebook
+        if (!isCorrect && typeof window.addToErrorNotebook === 'function') {
+            window.addToErrorNotebook(q);
+        }
+    }
     renderChapterView();
 }
 function submitNATAnswer(qid, correctAnswer) {
@@ -436,6 +456,24 @@ function submitNATAnswer(qid, correctAnswer) {
     const val = input.value.trim();
     if (!val) return;
     state.practiceAnswers[qid] = val;
+    // Track the attempt
+    const subj = data.subjects.find(s => s.subject === state.subject);
+    const chap = subj?.chapters.find(c => c.chapter === state.chapter);
+    const q = chap?.questions.find(x => x.question_id === qid);
+    if (q && typeof window.logAttempt === 'function') {
+        const isCorrect = checkAnswer(q, val);
+        window.logAttempt({
+            source: 'practice',
+            subject: q.subject || state.subject,
+            chapter: q.chapter || state.chapter,
+            question_id: qid,
+            type: q.normalized_type,
+            correct: isCorrect,
+        });
+        if (!isCorrect && typeof window.addToErrorNotebook === 'function') {
+            window.addToErrorNotebook(q);
+        }
+    }
     renderChapterView();
 }
 function updatePracticeScore() {
@@ -737,6 +775,7 @@ function typeLabel(t) { return { mcq: 'MCQ', msq: 'MSQ', nat: 'NAT', subjective:
 
 init();
 </script>
+<script src="./tracker.js"></script>
 <script src="./loader.js"></script>
 <script src="./nav.js"></script>
 <script src="./theme.js"></script>

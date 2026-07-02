@@ -17,6 +17,7 @@
         'materials.html':     { label: '📚 Materials',   group: 'study' },
         'formulas.html':      { label: '📐 Formulas',    group: 'study' },
         'pyq.html':           { label: '📝 PYQs',        group: 'practice' },
+        'mocktest.html':      { label: '🎯 Mock Test',   group: 'practice' },
         'quiz.html':          { label: '🎯 Quiz',        group: 'practice' },
         'flashcards.html':    { label: '🎴 Flashcards',  group: 'practice' },
         'videos.html':        { label: '🎥 Videos',      group: 'practice' },
@@ -31,7 +32,7 @@
     const GROUPS = {
         'main':     { label: '🏠 Home',         pages: ['index.html'] },
         'study':    { label: '📖 Study',        pages: ['learn.html', 'syllabus.html', 'materials.html', 'formulas.html'] },
-        'practice': { label: '🎯 Practice',     pages: ['pyq.html', 'quiz.html', 'flashcards.html', 'videos.html'] },
+        'practice': { label: '🎯 Practice',     pages: ['pyq.html', 'mocktest.html', 'quiz.html', 'flashcards.html', 'videos.html'] },
         'tools':    { label: '🛠 Tools',        pages: ['calculator.html', 'timer.html', 'notes.html', 'planner.html'] },
         'track':    { label: '📊 Track',        pages: ['progress.html', 'resources.html'] },
     };

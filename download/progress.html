@@ -25,6 +25,7 @@
             <a href="./syllabus.html" class="topnav-link">📋 Syllabus</a>
             <a href="./materials.html" class="topnav-link">📚 Materials</a>
             <a href="./pyq.html" class="topnav-link">📝 PYQs</a>
+            <a href="./mocktest.html" class="topnav-link">🎯 Mock Test</a>
             <a href="./flashcards.html" class="topnav-link">🎴 Flashcards</a>
             <a href="./quiz.html" class="topnav-link">🎯 Quiz</a>
             <a href="./progress.html" class="topnav-link active">📊 Progress</a>
@@ -168,9 +169,9 @@ function renderDashboard() {
             </div>
             <div class="metric-card" style="--metric-grad: var(--grad-cyan);">
                 <div class="metric-icon">📝</div>
-                <div class="metric-value">${practiceTotal}</div>
+                <div class="metric-value">${(typeof window.getTotalStats === 'function' ? window.getTotalStats().totalAttempts : practiceTotal)}</div>
                 <div class="metric-label">PYQs Practiced</div>
-                <div class="metric-sub">Accuracy: ${practiceAccuracy}%</div>
+                <div class="metric-sub">Accuracy: ${(typeof window.getTotalStats === 'function' ? window.getTotalStats().accuracy : practiceAccuracy)}%</div>
             </div>
             <div class="metric-card" style="--metric-grad: var(--grad-gold);">
                 <div class="metric-icon">🎴</div>
@@ -209,7 +210,7 @@ function renderDashboard() {
         <!-- Subject Performance -->
         <div class="subject-performance">
             <h3>📚 Subject-wise Performance</h3>
-            <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:14px;">Based on your quiz scores and practice attempts. Aim for 70%+ in high-weight subjects.</p>
+            <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:14px;">Real accuracy from your practice attempts. <strong>Red < 40%</strong>, <strong>Amber 40-60%</strong>, <strong>Green > 60%</strong>. Practice more weak areas!</p>
             ${subjectPerf.map(s => `
                 <div class="subject-row">
                     <div class="subj-name">${s.icon} ${s.label}</div>
@@ -273,10 +274,43 @@ function renderDashboard() {
                 <a href="./flashcards.html" class="btn btn-ghost btn-sm">🎴 Review Flashcards</a>
                 <a href="./planner.html" class="btn btn-ghost btn-sm">📅 Plan Study</a>
                 <a href="./pyq.html?view=bookmarked" class="btn btn-ghost btn-sm">🔖 Review Bookmarks</a>
-                <button class="btn btn-ghost btn-sm" onclick="if(confirm('Clear all progress data? This cannot be undone.')) { ['sohcse_quiz_results','sohcse_practice_state_v1','sohcse_flashcard_state_v1','sohcse_study_log_v1','sohcse_streak_v1'].forEach(k=>localStorage.removeItem(k)); location.reload(); }">🗑 Reset Progress</button>
+                <button class="btn btn-ghost btn-sm" onclick="exportProgressData()">⬇ Export Data</button>
+                <button class="btn btn-ghost btn-sm" onclick="document.getElementById('importFileInput').click()">⬆ Import Data</button>
+                <input type="file" id="importFileInput" accept=".json" style="display:none;" onchange="importProgressData(event)">
+                <button class="btn btn-ghost btn-sm" onclick="if(confirm('Clear ALL progress data? This cannot be undone.')) { if (typeof window.clearAllProgress === 'function') window.clearAllProgress(); ['sohcse_quiz_results','sohcse_practice_state_v1','sohcse_flashcard_state_v1','sohcse_study_log_v1','sohcse_streak_v1','sohcse_question_bookmarks'].forEach(k=>localStorage.removeItem(k)); location.reload(); }">🗑 Reset All</button>
             </div>
         </div>
     `;
+}
+
+function exportProgressData() {
+    if (typeof window.exportProgress !== 'function') { alert('Tracker not loaded'); return; }
+    const json = window.exportProgress();
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'sohcse_progress_' + new Date().toISOString().slice(0, 10) + '.json';
+    a.click();
+    URL.revokeObjectURL(url);
+    if (window.showToast) window.showToast('⬇ Progress exported', 'success');
+}
+
+function importProgressData(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        if (confirm('Import progress data? This will overwrite current data.')) {
+            if (typeof window.importProgress === 'function' && window.importProgress(e.target.result)) {
+                if (window.showToast) window.showToast('✅ Progress imported', 'success');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                alert('Import failed — invalid file format');
+            }
+        }
+    };
+    reader.readAsText(file);
 }
 
 function generateHeatmapData(studyLog, days) {
@@ -298,31 +332,39 @@ function generateHeatmapData(studyLog, days) {
 }
 
 function generateSubjectPerformance(quizResults, practice) {
-    // Since we don't track per-subject yet, derive from bookmarks + quiz count
+    // Use real tracking data from tracker.js
+    const realPerf = (typeof window.getSubjectPerformance === 'function') ? window.getSubjectPerformance() : {};
+    
     const subjects = [
-        { key: 'algorithms', label: 'Algorithms', icon: '⚡', color: 'var(--grad-blue)', pct: 0 },
-        { key: 'data-structures', label: 'Data Structures', icon: '🌳', color: 'var(--grad-purple)', pct: 0 },
-        { key: 'discrete-mathematics', label: 'Discrete Math', icon: '∑', color: 'var(--grad-orange)', pct: 0 },
-        { key: 'operating-systems', label: 'Operating Systems', icon: '⚙️', color: 'var(--grad-red)', pct: 0 },
-        { key: 'database-management-system', label: 'DBMS', icon: '🗄️', color: 'var(--grad-cyan)', pct: 0 },
-        { key: 'computer-networks', label: 'Computer Networks', icon: '🌐', color: 'var(--grad-blue)', pct: 0 },
-        { key: 'theory-of-computation', label: 'TOC', icon: '🔤', color: 'var(--grad-purple)', pct: 0 },
-        { key: 'compiler-design', label: 'Compiler Design', icon: '🔧', color: 'var(--grad-orange)', pct: 0 },
-        { key: 'digital-logic', label: 'Digital Logic', icon: '🔌', color: 'var(--grad-red)', pct: 0 },
-        { key: 'computer-organization', label: 'Computer Org.', icon: '💻', color: 'var(--grad-cyan)', pct: 0 },
-        { key: 'general-aptitude', label: 'General Aptitude', icon: '🧮', color: 'var(--grad-gold)', pct: 0 }
+        { key: 'algorithms', label: 'Algorithms', icon: '⚡', color: 'var(--grad-blue)', pct: 0, total: 0, correct: 0 },
+        { key: 'data-structures', label: 'Data Structures', icon: '🌳', color: 'var(--grad-purple)', pct: 0, total: 0, correct: 0 },
+        { key: 'discrete-mathematics', label: 'Discrete Math', icon: '∑', color: 'var(--grad-orange)', pct: 0, total: 0, correct: 0 },
+        { key: 'operating-systems', label: 'Operating Systems', icon: '⚙️', color: 'var(--grad-red)', pct: 0, total: 0, correct: 0 },
+        { key: 'database-management-system', label: 'DBMS', icon: '🗄️', color: 'var(--grad-cyan)', pct: 0, total: 0, correct: 0 },
+        { key: 'computer-networks', label: 'Computer Networks', icon: '🌐', color: 'var(--grad-blue)', pct: 0, total: 0, correct: 0 },
+        { key: 'theory-of-computation', label: 'TOC', icon: '🔤', color: 'var(--grad-purple)', pct: 0, total: 0, correct: 0 },
+        { key: 'compiler-design', label: 'Compiler Design', icon: '🔧', color: 'var(--grad-orange)', pct: 0, total: 0, correct: 0 },
+        { key: 'digital-logic', label: 'Digital Logic', icon: '🔌', color: 'var(--grad-red)', pct: 0, total: 0, correct: 0 },
+        { key: 'computer-organization', label: 'Computer Org.', icon: '💻', color: 'var(--grad-cyan)', pct: 0, total: 0, correct: 0 },
+        { key: 'general-aptitude', label: 'General Aptitude', icon: '🧮', color: 'var(--grad-gold)', pct: 0, total: 0, correct: 0 }
     ];
-    // Mock some data based on total quiz count (since built-in quizzes are limited)
-    const quizBoost = Math.min(quizResults.length * 8, 50);
-    subjects.forEach((s, i) => {
-        // Give some variation - subjects closer to quiz count get higher
-        s.pct = Math.max(0, Math.min(100, quizBoost + (i % 3) * 5 - i));
+    
+    // Merge real data
+    subjects.forEach(s => {
+        const real = realPerf[s.key];
+        if (real) {
+            s.pct = real.accuracy;
+            s.total = real.total;
+            s.correct = real.correct;
+        }
     });
+    
     return subjects;
 }
 
 init();
 </script>
+<script src="./tracker.js"></script>
 <script src="./loader.js"></script>
 <script src="./nav.js"></script>
 <script src="./theme.js"></script>
