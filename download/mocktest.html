@@ -482,12 +482,14 @@ function sanitize(html) { if (!html) return ''; return DOMPurify.sanitize(html, 
 function typeLabel(t) { return { mcq:'MCQ', msq:'MSQ', nat:'NAT', subjective:'Subjective', fill_blanks:'Fill', true_false:'T/F' }[t] || t; }
 
 function renderMath() {
-    if (typeof window.renderMathOptimized === 'function') {
-        window.renderMathOptimized(document.querySelectorAll('.q-content'));
-    } else if (typeof renderMathInElement === 'function') {
-        document.querySelectorAll('.q-content').forEach(el => { try { renderMathInElement(el, { delimiters: [{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}], throwOnError: false }); } catch{} });
+    // Direct render for immediate effect
+    if (typeof renderMathInElement === 'function') {
+        document.querySelectorAll('.q-content').forEach(el => {
+            try { renderMathInElement(el, { delimiters: [{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}], throwOnError: false }); } catch(e) {}
+        });
     } else {
-        setTimeout(renderMath, 100);
+        // KaTeX not loaded yet — retry
+        setTimeout(renderMath, 150);
     }
 }
 
