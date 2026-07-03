@@ -2862,3 +2862,224 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 @keyframes staggerIn {
     to { opacity: 1; transform: translateY(0); }
 }
+
+/* ============ Confetti Animation ============ */
+.confetti-container {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 9999;
+    overflow: hidden;
+}
+.confetti-piece {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    top: -10px;
+    opacity: 0;
+    animation: confetti-fall linear forwards;
+}
+@keyframes confetti-fall {
+    0% { opacity: 1; transform: translateY(0) rotateZ(0deg); }
+    100% { opacity: 0; transform: translateY(100vh) rotateZ(720deg); }
+}
+
+/* ============ Difficulty Indicator ============ */
+.difficulty-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-left: 4px;
+    vertical-align: middle;
+}
+.difficulty-easy { background: #10b981; }
+.difficulty-medium { background: #f59e0b; }
+.difficulty-hard { background: #ef4444; }
+.difficulty-legend {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    margin-left: 6px;
+}
+
+/* ============ Smart Revision Reminder ============ */
+.revision-reminder {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.08), rgba(245, 158, 11, 0.08));
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    border-radius: 14px;
+    padding: 16px 20px;
+    margin: 20px auto;
+    max-width: 600px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    animation: fadeInUp 0.5s var(--ease-out);
+}
+.revision-reminder-icon {
+    font-size: 1.8rem;
+    flex-shrink: 0;
+    animation: pulse 2s infinite;
+}
+.revision-reminder-content { flex: 1; }
+.revision-reminder-title {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 2px;
+}
+.revision-reminder-desc {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+}
+.revision-reminder-action {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 8px;
+    background: var(--grad-brand);
+    color: white;
+    font-weight: 600;
+    font-size: 0.8rem;
+    cursor: pointer;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: all 0.2s;
+}
+.revision-reminder-action:hover { transform: translateY(-1px); box-shadow: var(--shadow-brand); }
+
+/* ============ Weekly Goal Tracker ============ */
+.weekly-goals {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+    margin-top: 14px;
+}
+.weekly-goals-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+.weekly-goals-title { font-size: 0.92rem; font-weight: 700; color: var(--text); }
+.weekly-goals-progress {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 10px;
+}
+.weekly-goal-day {
+    flex: 1;
+    text-align: center;
+    padding: 8px 4px;
+    border-radius: 8px;
+    font-size: 0.68rem;
+    font-weight: 600;
+    background: var(--bg-light);
+    color: var(--text-muted);
+    transition: all 0.2s;
+}
+.weekly-goal-day.completed {
+    background: var(--grad-brand);
+    color: white;
+}
+.weekly-goal-day.today {
+    border: 2px solid var(--primary);
+}
+.weekly-goal-stats {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.76rem;
+    color: var(--text-muted);
+}
+
+/* ============ Recently Viewed (Learn) ============ */
+.recently-viewed-bar {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 8px 0;
+    margin-bottom: 14px;
+    scrollbar-width: none;
+}
+.recently-viewed-bar::-webkit-scrollbar { display: none; }
+.recently-viewed-chip {
+    flex-shrink: 0;
+    padding: 6px 14px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: var(--text-2);
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: inherit;
+}
+.recently-viewed-chip:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    transform: translateY(-1px);
+}
+
+/* ============ AI Weak Area Card ============ */
+.weak-area-card {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.06), rgba(245, 158, 11, 0.06));
+    border: 1px solid rgba(239, 68, 68, 0.15);
+    border-radius: 14px;
+    padding: 18px;
+    margin-top: 18px;
+}
+.weak-area-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+.weak-area-title { font-size: 1rem; font-weight: 700; color: var(--text); }
+.weak-area-list { display: flex; flex-direction: column; gap: 8px; }
+.weak-area-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    transition: all 0.2s;
+}
+.weak-area-item:hover { border-color: var(--primary); transform: translateX(4px); }
+.weak-area-info { flex: 1; }
+.weak-area-name { font-size: 0.85rem; font-weight: 600; color: var(--text); }
+.weak-area-stats { font-size: 0.72rem; color: var(--text-muted); }
+.weak-area-accuracy {
+    font-size: 0.82rem;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 6px;
+}
+.weak-area-actions { display: flex; gap: 4px; }
+.weak-area-btn {
+    padding: 5px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg-card);
+    color: var(--text-2);
+    cursor: pointer;
+    font-size: 0.74rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s;
+    font-family: inherit;
+}
+.weak-area-btn:hover { border-color: var(--primary); color: var(--primary); }
+.weak-area-btn.ai-btn {
+    background: var(--grad-brand);
+    color: white;
+    border-color: transparent;
+}
+.weak-area-btn.ai-btn:hover { transform: translateY(-1px); box-shadow: var(--shadow-brand); }

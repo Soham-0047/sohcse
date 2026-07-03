@@ -572,8 +572,8 @@ function renderResults(results, score, correct, wrong, unattempted) {
     const totalMarks = state.quiz.reduce((s, q) => s + q.marks, 0);
     const pct = totalMarks > 0 ? (score / totalMarks) * 100 : 0;
     let grade, gradeClass;
-    if (pct >= 80) { grade = '🏆 Excellent'; gradeClass = 'grade-excellent'; }
-    else if (pct >= 60) { grade = '✅ Good'; gradeClass = 'grade-good'; }
+    if (pct >= 80) { grade = '🏆 Excellent'; gradeClass = 'grade-excellent'; if (typeof window.fireConfetti === 'function') window.fireConfetti(); }
+    else if (pct >= 60) { grade = '✅ Good'; gradeClass = 'grade-good'; if (typeof window.fireConfetti === 'function') window.fireConfetti(2000); }
     else if (pct >= 40) { grade = '📈 Average'; gradeClass = 'grade-average'; }
     else { grade = '💪 Needs Work'; gradeClass = 'grade-poor'; }
 

@@ -183,7 +183,7 @@
         const weak = [];
 
         for (const [subj, stats] of Object.entries(subjPerf)) {
-            if (stats.total >= 3 && stats.accuracy < threshold) {
+            if (stats.total >= 2 && stats.accuracy < threshold) {
                 weak.push({ subject: subj, ...stats });
             }
         }
@@ -200,7 +200,7 @@
         }
 
         for (const [key, stats] of Object.entries(chapterStats)) {
-            if (stats.total >= 3) {
+            if (stats.total >= 2) {
                 const acc = Math.round((stats.correct / stats.total) * 100);
                 if (acc < threshold) {
                     weak.push({ ...stats, accuracy: acc });

@@ -417,8 +417,8 @@ function submitMockTest() {
 function renderResults(score, correct, wrong, unattempted, subjectBreakdown, duration) {
     const pct = (score / TOTAL_MARKS) * 100;
     let grade, gradeClass;
-    if (pct >= 80) { grade = '🏆 Excellent'; gradeClass = 'grade-excellent'; }
-    else if (pct >= 60) { grade = '✅ Good'; gradeClass = 'grade-good'; }
+    if (pct >= 80) { grade = '🏆 Excellent'; gradeClass = 'grade-excellent'; if (typeof window.fireConfetti === 'function') window.fireConfetti(4000); }
+    else if (pct >= 60) { grade = '✅ Good'; gradeClass = 'grade-good'; if (typeof window.fireConfetti === 'function') window.fireConfetti(3000); }
     else if (pct >= 40) { grade = '📈 Average'; gradeClass = 'grade-average'; }
     else { grade = '💪 Needs Work'; gradeClass = 'grade-poor'; }
 

@@ -935,3 +935,75 @@ if (document.readyState === 'loading') {
         initQuickFAB();
     }, 300);
 }
+
+// ============ Confetti Animation ============
+window.fireConfetti = function (duration = 3000) {
+    const colors = ['#667eea', '#764ba2', '#f093fb', '#4ade80', '#fbbf24', '#ef4444', '#06b6d4'];
+    const container = document.createElement('div');
+    container.className = 'confetti-container';
+    document.body.appendChild(container);
+
+    const pieceCount = 80;
+    for (let i = 0; i < pieceCount; i++) {
+        const piece = document.createElement('div');
+        piece.className = 'confetti-piece';
+        piece.style.left = Math.random() * 100 + '%';
+        piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+        piece.style.animationDuration = (2 + Math.random() * 2) + 's';
+        piece.style.animationDelay = (Math.random() * 0.5) + 's';
+        piece.style.width = (6 + Math.random() * 8) + 'px';
+        piece.style.height = (6 + Math.random() * 8) + 'px';
+        if (Math.random() > 0.5) piece.style.borderRadius = '50%';
+        container.appendChild(piece);
+    }
+
+    setTimeout(() => container.remove(), duration);
+};
+
+// ============ Smart Revision Reminder (on homepage) ============
+window.initRevisionReminder = function () {
+    // Only on homepage
+    if (!window.location.pathname.endsWith('index.html') && window.location.pathname !== '/') return;
+
+    const errorNotebook = (typeof window.getErrorNotebookDue === 'function') ? window.getErrorNotebookDue() : [];
+    const flashcardDue = (() => {
+        try {
+            const state = JSON.parse(localStorage.getItem('sohcse_flashcard_state_v1') || '{}');
+            const stats = state.stats || {};
+            let due = 0;
+            for (const [id, s] of Object.entries(stats)) {
+                if (s.dueDate && Date.now() >= s.dueDate) due++;
+            }
+            return due;
+        } catch { return 0; }
+    })();
+
+    const totalDue = errorNotebook.length + flashcardDue;
+    if (totalDue === 0) return;
+
+    // Find hero section
+    const hero = document.querySelector('.hero');
+    if (!hero || document.getElementById('revisionReminder')) return;
+
+    const reminder = document.createElement('div');
+    reminder.id = 'revisionReminder';
+    reminder.className = 'revision-reminder';
+    reminder.innerHTML = `
+        <div class="revision-reminder-icon">⏰</div>
+        <div class="revision-reminder-content">
+            <div class="revision-reminder-title">${totalDue} card${totalDue !== 1 ? 's' : ''} due for review</div>
+            <div class="revision-reminder-desc">${errorNotebook.length > 0 ? `${errorNotebook.length} error notebook card${errorNotebook.length !== 1 ? 's' : ''}` : ''}${errorNotebook.length > 0 && flashcardDue > 0 ? ' • ' : ''}${flashcardDue > 0 ? `${flashcardDue} flashcard${flashcardDue !== 1 ? 's' : ''}` : ''} — review now to improve retention</div>
+        </div>
+        <a href="./flashcards.html" class="revision-reminder-action">Review Now →</a>
+    `;
+    hero.appendChild(reminder);
+};
+
+// Call revision reminder after page loads
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        setTimeout(window.initRevisionReminder, 500);
+    });
+} else {
+    setTimeout(window.initRevisionReminder, 500);
+}
