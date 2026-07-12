@@ -265,7 +265,7 @@ RULES:
                 </div>
 
                 <div class="ai-chat-messages" id="aiChatMessages">
-                    <div class="message system">👋 Hi! I'm <strong>SOH AI v3</strong> — your GATE CSE tutor with 5 specialist modes. Switch modes above. I can solve PYQs, explain concepts, write C code, plan your study, and generate quizzes!</div>
+                    <div class="message system">👋 Hi! I'm <strong>SOH AI v3</strong> — your GATE CSE tutor with 5 specialist modes. Switch modes above. I can solve PYQs, explain concepts, write C code, plan your study, and generate quizzes!${(typeof window.isAdminServiceConfigured === 'function' && window.isAdminServiceConfigured()) ? '<br><small style="opacity:0.7;">✅ Connected to admin-service — smart AI routing with automatic failover.</small>' : ''}</div>
                 </div>
 
                 <div class="ai-suggestions" id="aiSuggestions">
@@ -541,6 +541,14 @@ RULES:
     }
 
     function updateKeyStatus() {
+        // Check if admin-service is configured
+        const adminOk = (typeof window.isAdminServiceConfigured === 'function' && window.isAdminServiceConfigured());
+        if (adminOk) {
+            document.getElementById('aiKeyDot').className = 'dot ok';
+            document.getElementById('aiKeyStatus').textContent = '✅ Admin service connected — smart routing active';
+            return;
+        }
+        
         const provider = document.getElementById('aiProvider').value;
         const has = !!getKey(provider);
         const dot = document.getElementById('aiKeyDot');
@@ -727,10 +735,15 @@ RULES:
         const question = overridePrompt || input.value.trim();
         if (!question) return;
 
+        // Check if admin-service is configured (primary method)
+        const adminConfigured = (typeof window.isAdminServiceConfigured === 'function' && window.isAdminServiceConfigured());
+        
+        // Check API key (fallback method)
         const provider = document.getElementById('aiProvider').value;
         const apiKey = getKey(provider);
-        if (!apiKey) {
-            addMessage('error', `⚠ No API key for ${provider}. Click ⚙ to add your key (saved locally). Get a free Groq key at console.groq.com/keys`);
+        
+        if (!adminConfigured && !apiKey) {
+            addMessage('error', '⚠ No AI key configured. Either:\n1. Set up admin-service in config.js (recommended)\n2. Or add a direct API key — click ⚙ below.\nFree: Gemini at aistudio.google.com/apikey or Groq at console.groq.com/keys');
             toggleConfig();
             return;
         }
@@ -757,16 +770,46 @@ RULES:
         try {
             const context = window.getAIContext();
             const conversation = getConversationHistory();
-            const fullResponse = await callProvider(provider, question, apiKey, conversation, context);
+            let fullResponse;
+            
+            // Try admin-service first (if configured)
+            if (adminConfigured) {
+                try {
+                    const messages = [
+                        { role: 'system', content: getSystemPrompt() },
+                    ];
+                    if (context) {
+                        messages.push({ role: 'system', content: 'Context: ' + context.substring(0, 2000) });
+                    }
+                    const history = conversation.slice(0, -1);
+                    for (const m of history) {
+                        if (m.role === 'user' || m.role === 'assistant') {
+                            messages.push({ role: m.role === 'assistant' ? 'assistant' : 'user', content: m.content });
+                        }
+                    }
+                    messages.push({ role: 'user', content: question });
+                    
+                    fullResponse = await window.adminGenerate(messages);
+                } catch (adminErr) {
+                    console.warn('Admin service failed, falling back to direct:', adminErr.message);
+                    if (!apiKey) {
+                        throw new Error(`Admin service: ${adminErr.message}. No fallback key configured — click ⚙ to add one.`);
+                    }
+                    fullResponse = await callProvider(provider, question, apiKey, conversation, context);
+                }
+            } else {
+                // No admin-service — use direct provider
+                fullResponse = await callProvider(provider, question, apiKey, conversation, context);
+            }
+            
             removeLoading();
-
             addMessage('ai', fullResponse);
             appendHistory('ai', fullResponse);
             document.getElementById('aiStatusText').textContent = `Ready • ${MODES[currentMode].label}`;
         } catch (err) {
             removeLoading();
             addMessage('error', `❌ ${err.message}`);
-            document.getElementById('aiStatusText').textContent = 'Error — check API key';
+            document.getElementById('aiStatusText').textContent = 'Error — check configuration';
         } finally {
             isSending = false;
             document.getElementById('aiSendBtn').disabled = false;
