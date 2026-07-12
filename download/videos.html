@@ -1009,6 +1009,7 @@
 <!-- Mini Player Container -->
 <div id="miniPlayer" class="mini-player"></div>
 
+<script src="./config.js"></script>
 <script src="./chatbot.js"></script>
 <script src="./videos_data.js"></script>
 <script src="./tracker.js"></script>
@@ -1175,6 +1176,10 @@ const YT_API_KEY_STORAGE = 'sohcse_youtube_api_key';
 const TRENDING_SEARCHES = ['binary search', 'deadlock', 'normalization', 'dijkstra algorithm', 'page replacement', 'context free grammar', 'tcp congestion control', 'avl tree rotation'];
 
 function getYTApiKey() {
+    // Check config.js built-in key first, then user-saved key
+    if (typeof SOH_CONFIG !== 'undefined' && SOH_CONFIG.YOUTUBE_API_KEY) {
+        return SOH_CONFIG.YOUTUBE_API_KEY;
+    }
     return localStorage.getItem(YT_API_KEY_STORAGE) || '';
 }
 function setYTApiKey(key) {
@@ -1465,8 +1470,8 @@ function renderBrowse() {
             </div>
             ${getYTApiKey() ? `
                 <div style="display:flex;align-items:center;gap:6px;margin-top:6px;font-size:0.72rem;color:var(--correct);">
-                    ✅ YouTube API connected — search will return embeddable videos
-                    <button onclick="if(confirm('Remove YouTube API key?')) { localStorage.removeItem('sohcse_youtube_api_key'); renderBrowse(); }" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:0.72rem;text-decoration:underline;">Remove</button>
+                    ✅ YouTube API connected — search returns embeddable videos
+                    ${(!SOH_CONFIG?.YOUTUBE_API_KEY) ? `<button onclick="if(confirm('Remove YouTube API key?')) { localStorage.removeItem('sohcse_youtube_api_key'); renderBrowse(); }" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:0.72rem;text-decoration:underline;">Remove</button>` : '<span style="font-size:0.68rem;opacity:0.7;">(built-in)</span>'}
                 </div>
             ` : `
                 <div style="display:flex;align-items:center;gap:6px;margin-top:6px;font-size:0.72rem;color:var(--text-muted);">

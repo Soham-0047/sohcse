@@ -158,7 +158,15 @@ RULES:
         else delete keys[provider];
         localStorage.setItem(STORAGE_KEY, JSON.stringify(keys));
     }
-    function getKey(provider) { return loadKeys()[provider] || ''; }
+    function getKey(provider) {
+        // Check config.js built-in keys first
+        if (typeof SOH_CONFIG !== 'undefined') {
+            if (provider === 'gemini' && SOH_CONFIG.GEMINI_API_KEY) return SOH_CONFIG.GEMINI_API_KEY;
+            if (provider === 'groq' && SOH_CONFIG.GROQ_API_KEY) return SOH_CONFIG.GROQ_API_KEY;
+        }
+        // Then check user-saved keys
+        return loadKeys()[provider] || '';
+    }
 
     function loadHistory() {
         try { return JSON.parse(localStorage.getItem(CHAT_HISTORY_KEY) || '[]'); } catch { return []; }
@@ -272,11 +280,11 @@ RULES:
                 <div class="ai-chat-config" id="aiChatConfig">
                     <div class="config-row">
                         <select id="aiProvider" aria-label="AI provider">
+                            <option value="gemini">✨ Google Gemini (Free, 1500/day, recommended)</option>
                             <option value="groq">⚡ Groq (Free, fast, Llama 3.3 70B)</option>
                             <option value="openai">🤖 OpenAI (GPT-4o-mini, best quality)</option>
                             <option value="together">🤝 Together AI (Free, Llama 3.3 70B)</option>
                             <option value="cohere">💫 Cohere (Free tier)</option>
-                            <option value="gemini">✨ Google Gemini (Free, 1500/day)</option>
                             <option value="huggingface">🤗 HuggingFace (Free)</option>
                         </select>
                     </div>
@@ -520,6 +528,13 @@ RULES:
     }
 
     function loadSavedKey() {
+        // If config.js has a default provider, use it
+        if (typeof SOH_CONFIG !== 'undefined' && SOH_CONFIG.DEFAULT_AI_PROVIDER) {
+            const select = document.getElementById('aiProvider');
+            if (select && select.value !== SOH_CONFIG.DEFAULT_AI_PROVIDER) {
+                select.value = SOH_CONFIG.DEFAULT_AI_PROVIDER;
+            }
+        }
         const provider = document.getElementById('aiProvider').value;
         document.getElementById('aiApiKey').value = getKey(provider);
         updateKeyStatus();
@@ -532,10 +547,14 @@ RULES:
         const status = document.getElementById('aiKeyStatus');
         if (has) {
             dot.className = 'dot ok';
-            status.textContent = `✓ Key saved for ${provider}`;
+            // Check if key is from config.js
+            const isBuiltin = (typeof SOH_CONFIG !== 'undefined' && 
+                ((provider === 'gemini' && SOH_CONFIG.GEMINI_API_KEY) ||
+                 (provider === 'groq' && SOH_CONFIG.GROQ_API_KEY)));
+            status.textContent = `✓ ${isBuiltin ? 'Built-in key active' : 'Key saved'} for ${provider}`;
         } else {
             dot.className = 'dot warn';
-            status.textContent = `⚠ No key for ${provider}`;
+            status.textContent = `⚠ No key for ${provider} — click ⚙ to add`;
         }
     }
 
