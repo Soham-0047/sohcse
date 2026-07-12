@@ -61,7 +61,7 @@
                 const activePage = group.pages.find(p => p === current);
                 const triggerLabel = activePage ? PAGES[activePage].label : group.label;
                 html += `<div class="topnav-dropdown ${isActive ? 'open' : ''}" data-group="${groupKey}">`;
-                html += `<button class="topnav-dropdown-trigger ${isActive ? 'active' : ''}" onclick="this.parentElement.classList.toggle('open')">`;
+                html += `<button class="topnav-dropdown-trigger ${isActive ? 'active' : ''}" onclick="toggleDropdown(this.parentElement)">`;
                 html += `${triggerLabel} <span class="caret">▼</span></button>`;
                 html += `<div class="topnav-dropdown-menu">`;
                 for (const page of group.pages) {
@@ -92,6 +92,15 @@
         return html;
     }
 
+    // ============ Toggle dropdown (close others when opening new one) ============
+    window.toggleDropdown = function (dropdown) {
+        const isOpen = dropdown.classList.contains('open');
+        // Close ALL dropdowns first
+        document.querySelectorAll('.topnav-dropdown.open').forEach(d => d.classList.remove('open'));
+        // Open this one if it was closed
+        if (!isOpen) dropdown.classList.add('open');
+    };
+
     // ============ Inject navigation ============
     function injectNav() {
         // Replace topnav links with grouped dropdowns
@@ -110,13 +119,11 @@
             document.body.appendChild(bottomNav);
         }
 
-        // Close dropdowns when clicking outside
+        // Close dropdowns when clicking outside — close ALL dropdowns
         document.addEventListener('click', (e) => {
             if (!e.target.closest('.topnav-dropdown')) {
                 document.querySelectorAll('.topnav-dropdown.open').forEach(d => {
-                    // Only close if not the active group
-                    const activePage = d.querySelector('.topnav-dropdown-trigger.active');
-                    if (!activePage) d.classList.remove('open');
+                    d.classList.remove('open');
                 });
             }
         });
