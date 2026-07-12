@@ -30,6 +30,7 @@
             <a href="./syllabus.html" class="topnav-link">📋 Syllabus</a>
             <a href="./materials.html" class="topnav-link">📚 Materials</a>
             <a href="./pyq.html" class="topnav-link">📝 PYQs</a>
+            <a href="./mocktest.html" class="topnav-link">🎯 Mock Test</a>
             <a href="./flashcards.html" class="topnav-link active">🎴 Flashcards</a>
             <a href="./quiz.html" class="topnav-link">🎯 Quiz</a>
             <a href="./progress.html" class="topnav-link">📊 Progress</a>
@@ -54,6 +55,8 @@
 </div>
 
 <script src="./chatbot.js"></script>
+<script src="./tracker.js"></script>
+<script src="./loader.js"></script>
 <script src="./flashcards_data.js"></script>
 <script>
 // ============ State ============
@@ -133,12 +136,20 @@ function renderHome() {
         return s && s.reviews > 0 && !isCardDue(c.id);
     }).length;
 
+    const errorCount = (typeof window.getErrorNotebook === 'function') ? window.getErrorNotebook().length : 0;
+    const errorDue = (typeof window.getErrorNotebookDue === 'function') ? window.getErrorNotebookDue().length : 0;
+
     document.getElementById('flashcardView').innerHTML = `
         <div class="stats-grid">
             <div class="metric-card" style="--metric-grad: var(--grad-brand);">
                 <div class="metric-icon">📚</div>
                 <div class="metric-value">${totalCards}</div>
                 <div class="metric-label">Total Cards</div>
+            </div>
+            <div class="metric-card" style="--metric-grad: var(--grad-red); cursor:pointer;" onclick="startErrorNotebook()">
+                <div class="metric-icon">❌</div>
+                <div class="metric-value">${errorCount}</div>
+                <div class="metric-label">Error Notebook${errorDue > 0 ? ` (${errorDue} due)` : ''}</div>
             </div>
             <div class="metric-card" style="--metric-grad: var(--grad-orange);">
                 <div class="metric-icon">🎯</div>
@@ -350,9 +361,106 @@ function renderSessionComplete() {
     `;
 }
 
+// ============ Error Notebook Mode ============
+let errorMode = false;
+let errorQueue = [];
+let errorIdx = 0;
+
+function startErrorNotebook() {
+    const errors = (typeof window.getErrorNotebook === 'function') ? window.getErrorNotebook() : [];
+    if (errors.length === 0) {
+        alert('No errors yet! Wrong answers from practice mode and mock tests will appear here automatically.');
+        return;
+    }
+    errorMode = true;
+    errorQueue = errors;
+    errorIdx = 0;
+    renderErrorCard();
+}
+
+function renderErrorCard() {
+    if (errorIdx >= errorQueue.length) {
+        document.getElementById('flashcardView').innerHTML = `
+            <div class="quiz-results">
+                <div style="font-size:4rem;margin-bottom:14px;">✅</div>
+                <h2 style="font-size:1.4rem;margin-bottom:8px;">Error Review Complete!</h2>
+                <p style="color:var(--text-muted);margin-bottom:14px;">You reviewed ${errorQueue.length} error card${errorQueue.length !== 1 ? 's' : ''}.</p>
+                <button class="btn btn-primary btn-sm" onclick="errorMode=false; renderHome();">🏠 Back to Flashcards</button>
+            </div>
+        `;
+        return;
+    }
+
+    const card = errorQueue[errorIdx];
+    const total = errorQueue.length;
+    const subj = FLASHCARD_SUBJECTS[card.subject] || { label: card.subject_label || card.subject, icon: '📖', color: 'var(--grad-brand)' };
+
+    document.getElementById('flashcardView').innerHTML = `
+        <div class="quiz-progress">
+            <div><strong>${errorIdx + 1} / ${total}</strong> error cards</div>
+            <div class="quiz-progress-bar"><div class="fill" style="width: ${(errorIdx / total) * 100}%;"></div></div>
+            <button class="btn btn-ghost btn-sm" onclick="errorMode=false; renderHome();">✕ Exit</button>
+        </div>
+
+        <div style="text-align:center;margin-bottom:14px;">
+            <span class="q-badge" style="background:${subj.color};color:white;font-size:0.78rem;padding:4px 12px;">
+                ❌ ${subj.icon} ${subj.label} — Error Notebook
+            </span>
+        </div>
+
+        <div class="flashcard-container">
+            <div class="flashcard" id="flashcard" onclick="flipCard()">
+                <div class="flashcard-face flashcard-front">
+                    <div class="card-label">Question (from your wrong answers)</div>
+                    <div class="card-content" id="frontContent">${sanitizeHtml(card.question_text || '')}</div>
+                    ${card.options && card.options.length > 0 ? `<div style="margin-top:12px;font-size:0.82rem;opacity:0.8;">${card.options.map(o => `<div><strong>${o.identifier}:</strong> ${sanitizeHtml(o.content).slice(0,60)}...</div>`).join('')}</div>` : ''}
+                    <div class="card-hint">Tap to reveal answer</div>
+                </div>
+                <div class="flashcard-face flashcard-back">
+                    <div class="card-label">Correct Answer</div>
+                    <div class="card-content" id="backContent">
+                        ${card.correct_options && card.correct_options.length > 0 ? `✅ Answer: ${card.correct_options.join(', ')}` : ''}
+                        ${card.answer ? `<br>Answer: ${sanitizeHtml(card.answer)}` : ''}
+                        ${card.explanation ? `<br><br><div style="font-size:0.82rem;opacity:0.8;">${sanitizeHtml(card.explanation).slice(0, 300)}...</div>` : ''}
+                    </div>
+                    <div class="card-hint">How well did you remember?</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="flashcard-rating" id="ratingButtons" style="display:none;">
+            <button class="rating-btn again" onclick="rateErrorAndNext(0)">🎯 Again</button>
+            <button class="rating-btn hard" onclick="rateErrorAndNext(1)">💪 Hard</button>
+            <button class="rating-btn good" onclick="rateErrorAndNext(2)">✅ Good</button>
+            <button class="rating-btn easy" onclick="rateErrorAndNext(3)">🚀 Easy</button>
+        </div>
+
+        <div style="text-align:center;margin-top:14px;">
+            <a href="${card.url || '#'}" target="_blank" class="btn btn-ghost btn-sm">↗ View on ExamSIDE</a>
+            <button class="btn btn-ghost btn-sm" onclick="removeFromErrorNotebook('${card.question_id}'); errorQueue.splice(errorIdx,1); renderErrorCard();">🗑 Remove</button>
+        </div>
+    `;
+
+    setTimeout(() => {
+        document.querySelectorAll('.flashcard-face .card-content').forEach(el => {
+            if (typeof renderMathInElement === 'function') {
+                try { renderMathInElement(el, { delimiters: [{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}], throwOnError:false }); } catch{}
+            }
+        });
+    }, 50);
+}
+
+function rateErrorAndNext(quality) {
+    const card = errorQueue[errorIdx];
+    if (card && typeof window.rateErrorCard === 'function') {
+        window.rateErrorCard(card.question_id, quality);
+    }
+    errorIdx++;
+    renderErrorCard();
+}
+
 init();
 </script>
-<script src="./loader.js"></script>
 <script src="./nav.js"></script>
 <script src="./theme.js"></script>
 </body>

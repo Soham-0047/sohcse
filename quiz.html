@@ -29,6 +29,7 @@
             <a href="./syllabus.html" class="topnav-link">📋 Syllabus</a>
             <a href="./materials.html" class="topnav-link">📚 Materials</a>
             <a href="./pyq.html" class="topnav-link">📝 PYQs</a>
+            <a href="./mocktest.html" class="topnav-link">🎯 Mock Test</a>
             <a href="./flashcards.html" class="topnav-link">🎴 Flashcards</a>
             <a href="./quiz.html" class="topnav-link active">🎯 Quiz</a>
             <a href="./progress.html" class="topnav-link">📊 Progress</a>
@@ -53,6 +54,8 @@
 </div>
 
 <script src="./chatbot.js"></script>
+<script src="./tracker.js"></script>
+<script src="./loader.js"></script>
 <script>
 // ============ State ============
 let state = {
@@ -530,25 +533,38 @@ function submitQuiz() {
     });
 
     // Save to progress tracking
-    saveQuizResult(score, state.quiz.length, correctCount, wrongCount, unattempted);
+    saveQuizResult(score, state.quiz.length, correctCount, wrongCount, unattempted, { 'mixed': { correct: correctCount, wrong: wrongCount } });
 
     renderResults(results, score, correctCount, wrongCount, unattempted);
 }
 
-function saveQuizResult(score, total, correct, wrong, unattempted) {
+function saveQuizResult(score, total, correct, wrong, unattempted, subjectBreakdown) {
     const key = 'sohcse_quiz_results';
     let results = [];
     try { results = JSON.parse(localStorage.getItem(key) || '[]'); } catch {}
+    const maxScore = total * 1.5; // approx
     results.push({
         date: Date.now(),
         score: score.toFixed(2),
         total,
         correct, wrong, unattempted,
-        percentage: ((score / (total * 1.5)) * 100).toFixed(1) // approx % (assume avg 1.5 marks/Q)
+        percentage: ((score / maxScore) * 100).toFixed(1),
+        subject_breakdown: subjectBreakdown || {},
     });
-    // Keep last 50
     results = results.slice(-50);
     try { localStorage.setItem(key, JSON.stringify(results)); } catch {}
+
+    // Also log to tracker for real per-subject tracking
+    if (typeof window.logQuizResult === 'function') {
+        window.logQuizResult({
+            source: 'quiz',
+            total, correct, wrong, unattempted,
+            score: parseFloat(score.toFixed(2)),
+            max_score: maxScore,
+            duration_sec: state.startTime ? Math.floor((Date.now() - state.startTime) / 1000) : 0,
+            subject_breakdown: subjectBreakdown || {},
+        });
+    }
 }
 
 function renderResults(results, score, correct, wrong, unattempted) {
@@ -556,8 +572,8 @@ function renderResults(results, score, correct, wrong, unattempted) {
     const totalMarks = state.quiz.reduce((s, q) => s + q.marks, 0);
     const pct = totalMarks > 0 ? (score / totalMarks) * 100 : 0;
     let grade, gradeClass;
-    if (pct >= 80) { grade = '🏆 Excellent'; gradeClass = 'grade-excellent'; }
-    else if (pct >= 60) { grade = '✅ Good'; gradeClass = 'grade-good'; }
+    if (pct >= 80) { grade = '🏆 Excellent'; gradeClass = 'grade-excellent'; if (typeof window.fireConfetti === 'function') window.fireConfetti(); }
+    else if (pct >= 60) { grade = '✅ Good'; gradeClass = 'grade-good'; if (typeof window.fireConfetti === 'function') window.fireConfetti(2000); }
     else if (pct >= 40) { grade = '📈 Average'; gradeClass = 'grade-average'; }
     else { grade = '💪 Needs Work'; gradeClass = 'grade-poor'; }
 
@@ -679,7 +695,6 @@ function renderResultCard(r, idx) {
 
 init();
 </script>
-<script src="./loader.js"></script>
 <script src="./nav.js"></script>
 <script src="./theme.js"></script>
 </body>

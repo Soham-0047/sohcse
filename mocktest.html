@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mock Test — GATE CSE Exam Simulator | SOH CSE</title>
+<meta name="description" content="Real GATE CSE exam simulator. 65 questions, 100 marks, 3 hours, real negative marking. Full post-test report with subject-wise breakdown.">
+<link rel="stylesheet" href="./style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
+<script src="./gate_cse_data.js"></script>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23667eea'/%3E%3Ctext x='50' y='70' font-size='60' font-weight='bold' fill='white' text-anchor='middle' font-family='Arial'%3EG%3C/text%3E%3C/svg%3E">
+<style>
+.mock-timer {
+    position: fixed; top: 64px; left: 50%; transform: translateX(-50%);
+    background: var(--grad-brand); color: white; padding: 8px 24px;
+    border-radius: 0 0 14px 14px; font-size: 1.2rem; font-weight: 800;
+    font-variant-numeric: tabular-nums; z-index: 40;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15); transition: all 0.3s;
+}
+.mock-timer.warning { background: var(--grad-orange); animation: pulse 1s infinite; }
+.mock-timer.danger { background: var(--grad-red); animation: pulse 0.5s infinite; }
+.mock-nav-grid {
+    display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px;
+    margin-bottom: 16px; max-width: 100%; overflow-x: auto;
+}
+.mock-nav-cell {
+    aspect-ratio: 1; border: 1.5px solid var(--border); border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.72rem; font-weight: 700; cursor: pointer;
+    transition: all 0.15s; background: var(--bg-card); color: var(--text-2);
+    min-width: 32px;
+}
+.mock-nav-cell:hover { border-color: var(--primary); transform: scale(1.05); }
+.mock-nav-cell.answered { background: var(--correct); color: white; border-color: transparent; }
+.mock-nav-cell.visited { background: var(--bg-light); border-color: var(--primary); }
+.mock-nav-cell.current { box-shadow: 0 0 0 2px var(--primary); }
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+    <div class="topnav-inner">
+        <a href="./index.html" class="topnav-brand">
+            <div class="brand-mark">G</div>
+            <div class="brand-text">SOH CSE <small>GATE Preparation Hub</small></div>
+        </a>
+        <button class="topnav-menu-btn" onclick="document.querySelector('.topnav-links').classList.toggle('open')" aria-label="Toggle menu">
+            <span></span><span></span><span></span>
+        </button>
+        <div class="topnav-links">
+            <a href="./index.html" class="topnav-link">🏠 Home</a>
+            <a href="./learn.html" class="topnav-link">📖 Learn</a>
+            <a href="./pyq.html" class="topnav-link">📝 PYQs</a>
+            <a href="./mocktest.html" class="topnav-link active">🎯 Mock Test</a>
+            <a href="./videos.html" class="topnav-link">🎥 Videos</a>
+            <a href="./calculator.html" class="topnav-link">🧮 Calculator</a>
+            <a href="./formulas.html" class="topnav-link">📐 Formulas</a>
+            <a href="./progress.html" class="topnav-link">📊 Progress</a>
+            <a href="./resources.html" class="topnav-link">🚀 Resources</a>
+        </div>
+    </div>
+</nav>
+
+<div class="app-content">
+    <div class="app-content-scroll" id="contentArea">
+        <div id="mainContent" style="max-width: 900px; margin: 0 auto;"></div>
+    </div>
+</div>
+
+<script src="./chatbot.js"></script>
+<script src="./tracker.js"></script>
+<script src="./loader.js"></script>
+<script src="./nav.js"></script>
+<script>
+const TIME_LIMIT = 3 * 60 * 60; // 3 hours in seconds
+const TOTAL_QUESTIONS = 65;
+const TOTAL_MARKS = 100;
+
+let mockState = {
+    phase: 'setup', // 'setup' | 'active' | 'results'
+    questions: [],
+    answers: {}, // qIdx -> answer
+    visited: new Set(),
+    currentQ: 0,
+    timeLeft: TIME_LIMIT,
+    startTime: null,
+    timerInterval: null,
+};
+
+function init() {
+    renderSetup();
+}
+
+function renderSetup() {
+    mockState.phase = 'setup';
+    document.getElementById('mainContent').innerHTML = `
+        <div style="text-align:center;margin-bottom:24px;">
+            <div style="font-size:3rem;margin-bottom:8px;">🎯</div>
+            <h1 style="font-size:1.8rem;font-weight:800;color:var(--text);margin-bottom:4px;">GATE CSE Mock Test</h1>
+            <p style="color:var(--text-muted);font-size:0.92rem;">Real exam simulation — 65 questions, 100 marks, 3 hours, negative marking.</p>
+        </div>
+
+        <div class="section-card">
+            <div class="stats-grid" style="margin-bottom:20px;">
+                <div class="stat-card"><div class="stat-value">65</div><div class="stat-label">Questions</div></div>
+                <div class="stat-card" style="--card-grad:var(--grad-blue);"><div class="stat-value">100</div><div class="stat-label">Total Marks</div></div>
+                <div class="stat-card" style="--card-grad:var(--grad-orange);"><div class="stat-value">3 hrs</div><div class="stat-label">Duration</div></div>
+                <div class="stat-card" style="--card-grad:var(--grad-red);"><div class="stat-value">−1/3</div><div class="stat-label">Neg. (1-mark)</div></div>
+            </div>
+
+            <h3 style="font-size:1rem;margin-bottom:10px;">📋 Exam Pattern</h3>
+            <table class="cutoff-table" style="margin-bottom:16px;">
+                <thead><tr><th>Section</th><th>Questions</th><th>Marks</th><th>Negative</th></tr></thead>
+                <tbody>
+                    <tr><td>15 × 1-mark MCQ</td><td>15</td><td>15</td><td>−1/3 each</td></tr>
+                    <tr><td>20 × 2-mark MCQ</td><td>20</td><td>40</td><td>−2/3 each</td></tr>
+                    <tr><td>15 × 1-mark MSQ/NAT</td><td>15</td><td>15</td><td>No negative</td></tr>
+                    <tr><td>15 × 2-mark MSQ/NAT</td><td>15</td><td>30</td><td>No negative</td></tr>
+                    <tr><td><strong>Total</strong></td><td><strong>65</strong></td><td><strong>100</strong></td><td>—</td></tr>
+                </tbody>
+            </table>
+
+            <h3 style="font-size:1rem;margin-bottom:10px;">⚙️ Settings</h3>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+                <div>
+                    <label style="font-size:0.78rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;display:block;margin-bottom:6px;">Question Source</label>
+                    <select id="mockSource" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-size:0.88rem;font-family:inherit;background:var(--bg-card);color:var(--text);">
+                        <option value="mixed">🎲 Mixed (all years)</option>
+                        <option value="recent">📅 Recent 5 years</option>
+                        <option value="2025">2025 Papers</option>
+                        <option value="2024">2024 Papers</option>
+                        <option value="2023">2023 Papers</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size:0.78rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;display:block;margin-bottom:6px;">Duration</label>
+                    <select id="mockDuration" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-size:0.88rem;font-family:inherit;background:var(--bg-card);color:var(--text);">
+                        <option value="${TIME_LIMIT}">3 hours (Full)</option>
+                        <option value="3600">1 hour (Quick)</option>
+                        <option value="1800">30 min (Mini)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="background:var(--bg-light);border-radius:10px;padding:14px;margin-bottom:16px;font-size:0.82rem;color:var(--text-muted);line-height:1.6;">
+                <strong>📌 Instructions:</strong><br>
+                • Questions are randomly selected from real GATE PYQs based on your chosen source<br>
+                • Each question shows marks and type (MCQ/MSQ/NAT)<br>
+                • MCQ: single correct, negative marking (−1/3 for 1-mark, −2/3 for 2-mark)<br>
+                • MSQ: multiple correct, no negative marking<br>
+                • NAT: numerical answer, no negative marking<br>
+                • You can navigate between questions using the grid at top<br>
+                • Timer auto-submits when time runs out
+            </div>
+
+            <button class="btn btn-primary btn-lg" style="width:100%;" onclick="startMockTest()">🚀 Start Mock Test</button>
+        </div>
+    `;
+}
+
+function startMockTest() {
+    const source = document.getElementById('mockSource').value;
+    const duration = parseInt(document.getElementById('mockDuration').value);
+    mockState.timeLeft = duration;
+    mockState.startTime = Date.now();
+
+    // Collect all questions from GATE_DATA
+    const allQuestions = [];
+    if (typeof window.GATE_DATA !== 'undefined') {
+        for (const subj of window.GATE_DATA.subjects) {
+            for (const chap of subj.chapters) {
+                for (const q of chap.questions) {
+                    // Filter by source
+                    if (source === 'recent' && q.year < 2021) continue;
+                    if (source === '2025' && q.year !== 2025) continue;
+                    if (source === '2024' && q.year !== 2024) continue;
+                    if (source === '2023' && q.year !== 2023) continue;
+                    allQuestions.push(q);
+                }
+            }
+        }
+    }
+
+    if (allQuestions.length < TOTAL_QUESTIONS) {
+        alert('Not enough questions in selected source. Try "Mixed".');
+        return;
+    }
+
+    // Shuffle and pick 65
+    const shuffled = allQuestions.sort(() => Math.random() - 0.5);
+    mockState.questions = shuffled.slice(0, TOTAL_QUESTIONS);
+    mockState.answers = {};
+    mockState.visited = new Set([0]);
+    mockState.currentQ = 0;
+    mockState.phase = 'active';
+
+    // Start timer
+    mockState.timerInterval = setInterval(tickTimer, 1000);
+
+    renderQuestion();
+}
+
+function tickTimer() {
+    mockState.timeLeft--;
+    updateTimerDisplay();
+    if (mockState.timeLeft <= 0) {
+        submitMockTest();
+    }
+}
+
+function updateTimerDisplay() {
+    const timerEl = document.getElementById('mockTimer');
+    if (!timerEl) return;
+    const h = Math.floor(mockState.timeLeft / 3600);
+    const m = Math.floor((mockState.timeLeft % 3600) / 60);
+    const s = mockState.timeLeft % 60;
+    timerEl.textContent = `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    timerEl.classList.remove('warning', 'danger');
+    if (mockState.timeLeft < 300) timerEl.classList.add('danger');
+    else if (mockState.timeLeft < 600) timerEl.classList.add('warning');
+}
+
+function renderQuestion() {
+    const q = mockState.questions[mockState.currentQ];
+    if (!q) return;
+    mockState.visited.add(mockState.currentQ);
+
+    document.getElementById('mainContent').innerHTML = `
+        <div class="mock-timer" id="mockTimer"></div>
+        
+        <!-- Question navigation grid -->
+        <div style="margin-top:50px;margin-bottom:16px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <span style="font-size:0.82rem;font-weight:600;color:var(--text-muted);">Question Navigator</span>
+                <button class="btn btn-primary btn-sm" onclick="if(confirm('Submit mock test?')) submitMockTest()">✓ Submit Test</button>
+            </div>
+            <div class="mock-nav-grid">
+                ${mockState.questions.map((_, i) => {
+                    let cls = 'mock-nav-cell';
+                    if (mockState.answers[i] !== undefined) cls += ' answered';
+                    if (mockState.visited.has(i) && i !== mockState.currentQ) cls += ' visited';
+                    if (i === mockState.currentQ) cls += ' current';
+                    return `<div class="${cls}" onclick="goToQuestion(${i})">${i + 1}</div>`;
+                }).join('')}
+            </div>
+            <div style="display:flex;gap:12px;font-size:0.72rem;color:var(--text-muted);margin-top:6px;">
+                <span>🟢 Answered: ${Object.keys(mockState.answers).length}</span>
+                <span>⚪ Visited: ${mockState.visited.size}</span>
+                <span>⚪ Unvisited: ${TOTAL_QUESTIONS - mockState.visited.size}</span>
+            </div>
+        </div>
+
+        <!-- Question card -->
+        <div class="question-card">
+            <div class="q-header">
+                <span class="q-number">Q${mockState.currentQ + 1} / ${TOTAL_QUESTIONS}</span>
+                <span class="q-badge badge-${q.normalized_type}">${typeLabel(q.normalized_type)}</span>
+                <span class="q-marks">+${q.marks} ${q.negative_marks ? `/ -${q.negative_marks}` : '(no neg.)'}</span>
+                ${q.paper_title ? `<span class="q-paper">${q.paper_title}</span>` : ''}
+            </div>
+            <div class="q-content">${sanitize(q.question_text)}</div>
+            ${q.options && q.options.length > 0 ? `
+                <div class="options-list">
+                    ${q.options.map(opt => {
+                        const userAns = mockState.answers[mockState.currentQ];
+                        const isSelected = Array.isArray(userAns) ? userAns.includes(opt.identifier) : userAns === opt.identifier;
+                        const isMSQ = q.normalized_type === 'msq';
+                        return `<div class="option-row ${isSelected ? 'selected' : ''}" onclick="selectMockAnswer(${mockState.currentQ}, '${opt.identifier}', ${isMSQ})">
+                            <div class="option-identifier">${opt.identifier}</div>
+                            <div class="option-content q-content">${sanitize(opt.content)}</div>
+                        </div>`;
+                    }).join('')}
+                </div>
+            ` : `
+                <div style="margin-top:12px;">
+                    <input type="text" placeholder="Enter your numerical answer..." 
+                        value="${mockState.answers[mockState.currentQ] || ''}"
+                        oninput="setMockNatAnswer(${mockState.currentQ}, this.value)"
+                        style="padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:0.95rem;width:240px;font-family:inherit;background:var(--bg-card);color:var(--text);">
+                </div>
+            `}
+        </div>
+
+        <!-- Navigation buttons -->
+        <div style="display:flex;justify-content:space-between;margin:16px 0;">
+            <button class="btn btn-ghost btn-sm" onclick="goToQuestion(${mockState.currentQ - 1})" ${mockState.currentQ === 0 ? 'disabled' : ''}>← Previous</button>
+            <button class="btn btn-ghost btn-sm" onclick="if(confirm('Mark for review and skip?')) goToQuestion(${mockState.currentQ + 1})">📎 Mark & Skip</button>
+            ${mockState.currentQ < TOTAL_QUESTIONS - 1 
+                ? `<button class="btn btn-primary btn-sm" onclick="goToQuestion(${mockState.currentQ + 1})">Save & Next →</button>`
+                : `<button class="btn btn-primary btn-sm" onclick="if(confirm('Submit mock test?')) submitMockTest()">✓ Submit Test</button>`}
+        </div>
+    `;
+    updateTimerDisplay();
+    renderMath();
+}
+
+function selectMockAnswer(qIdx, identifier, isMSQ) {
+    if (isMSQ) {
+        if (!Array.isArray(mockState.answers[qIdx])) mockState.answers[qIdx] = [];
+        const arr = mockState.answers[qIdx];
+        if (arr.includes(identifier)) arr.splice(arr.indexOf(identifier), 1);
+        else arr.push(identifier);
+    } else {
+        mockState.answers[qIdx] = identifier;
+    }
+    renderQuestion();
+}
+
+function setMockNatAnswer(qIdx, val) {
+    mockState.answers[qIdx] = val.trim();
+}
+
+function goToQuestion(idx) {
+    if (idx < 0 || idx >= TOTAL_QUESTIONS) return;
+    mockState.currentQ = idx;
+    renderQuestion();
+    document.getElementById('contentArea').scrollTop = 0;
+}
+
+function submitMockTest() {
+    clearInterval(mockState.timerInterval);
+    mockState.phase = 'results';
+
+    // Calculate score
+    let score = 0, correct = 0, wrong = 0, unattempted = 0;
+    const subjectBreakdown = {};
+
+    mockState.questions.forEach((q, i) => {
+        const userAns = mockState.answers[i];
+        const subj = q.subject || 'unknown';
+        if (!subjectBreakdown[subj]) subjectBreakdown[subj] = { correct: 0, wrong: 0, unattempted: 0, total: 0, score: 0 };
+        subjectBreakdown[subj].total++;
+
+        if (userAns === undefined || userAns === '' || (Array.isArray(userAns) && userAns.length === 0)) {
+            unattempted++;
+            subjectBreakdown[subj].unattempted++;
+            return;
+        }
+
+        let isCorrect = false;
+        if (q.normalized_type === 'nat') {
+            if (q.answer) {
+                const rangeMatch = q.answer.match(/^(-?\d+(?:\.\d+)?)\s*to\s*(-?\d+(?:\.\d+)?)$/);
+                if (rangeMatch) {
+                    const v = parseFloat(userAns);
+                    isCorrect = v >= parseFloat(rangeMatch[1]) - 0.01 && v <= parseFloat(rangeMatch[2]) + 0.01;
+                } else {
+                    const e = parseFloat(q.answer);
+                    const a = parseFloat(userAns);
+                    if (!isNaN(e) && !isNaN(a)) isCorrect = Math.abs(e - a) < 0.01;
+                }
+            }
+        } else if (q.normalized_type === 'msq') {
+            const userSet = new Set(Array.isArray(userAns) ? userAns : []);
+            const correctSet = new Set(q.correct_options || []);
+            isCorrect = userSet.size === correctSet.size && [...userSet].every(x => correctSet.has(x));
+        } else {
+            isCorrect = userAns === (q.correct_options && q.correct_options[0]);
+        }
+
+        if (isCorrect) {
+            score += q.marks;
+            correct++;
+            subjectBreakdown[subj].correct++;
+            subjectBreakdown[subj].score += q.marks;
+        } else {
+            // Negative marking only for MCQ
+            if (q.normalized_type === 'mcq' || q.normalized_type === 'true_false') {
+                score -= q.marks === 1 ? 1/3 : 2/3;
+            }
+            wrong++;
+            subjectBreakdown[subj].wrong++;
+            // Add to error notebook
+            if (typeof window.addToErrorNotebook === 'function') {
+                window.addToErrorNotebook(q);
+            }
+        }
+    });
+
+    // Log to tracker
+    const duration = mockState.startTime ? Math.floor((Date.now() - mockState.startTime) / 1000) : 0;
+    if (typeof window.logQuizResult === 'function') {
+        window.logQuizResult({
+            source: 'mocktest',
+            total: TOTAL_QUESTIONS, correct, wrong, unattempted,
+            score: parseFloat(score.toFixed(2)), max_score: TOTAL_MARKS,
+            duration_sec: duration, subject_breakdown: subjectBreakdown,
+        });
+    }
+
+    // Also log individual attempts
+    mockState.questions.forEach((q, i) => {
+        const userAns = mockState.answers[i];
+        if (userAns === undefined || userAns === '' || (Array.isArray(userAns) && userAns.length === 0)) return;
+        let isCorrect = false;
+        if (q.normalized_type === 'nat') {
+            if (q.answer) {
+                const rangeMatch = q.answer.match(/^(-?\d+(?:\.\d+)?)\s*to\s*(-?\d+(?:\.\d+)?)$/);
+                if (rangeMatch) { const v = parseFloat(userAns); isCorrect = v >= parseFloat(rangeMatch[1])-0.01 && v <= parseFloat(rangeMatch[2])+0.01; }
+                else { const e = parseFloat(q.answer); const a = parseFloat(userAns); if (!isNaN(e)&&!isNaN(a)) isCorrect = Math.abs(e-a)<0.01; }
+            }
+        } else if (q.normalized_type === 'msq') {
+            const userSet = new Set(Array.isArray(userAns)?userAns:[]); const correctSet = new Set(q.correct_options||[]);
+            isCorrect = userSet.size === correctSet.size && [...userSet].every(x => correctSet.has(x));
+        } else { isCorrect = userAns === (q.correct_options&&q.correct_options[0]); }
+        if (typeof window.logAttempt === 'function') {
+            window.logAttempt({ source: 'mocktest', subject: q.subject, chapter: q.chapter, question_id: q.question_id, type: q.normalized_type, correct: isCorrect });
+        }
+    });
+
+    renderResults(score, correct, wrong, unattempted, subjectBreakdown, duration);
+}
+
+function renderResults(score, correct, wrong, unattempted, subjectBreakdown, duration) {
+    const pct = (score / TOTAL_MARKS) * 100;
+    let grade, gradeClass;
+    if (pct >= 80) { grade = '🏆 Excellent'; gradeClass = 'grade-excellent'; if (typeof window.fireConfetti === 'function') window.fireConfetti(4000); }
+    else if (pct >= 60) { grade = '✅ Good'; gradeClass = 'grade-good'; if (typeof window.fireConfetti === 'function') window.fireConfetti(3000); }
+    else if (pct >= 40) { grade = '📈 Average'; gradeClass = 'grade-average'; }
+    else { grade = '💪 Needs Work'; gradeClass = 'grade-poor'; }
+
+    const hrs = Math.floor(duration / 3600);
+    const mins = Math.floor((duration % 3600) / 60);
+    const subjIcons = { 'algorithms':'⚡','data-structures':'🌳','discrete-mathematics':'∑','operating-systems':'⚙️','database-management-system':'🗄️','computer-networks':'🌐','theory-of-computation':'🔤','compiler-design':'🔧','digital-logic':'🔌','computer-organization':'💻','programming-languages':'👨‍💻','general-aptitude':'🧮' };
+
+    document.getElementById('mainContent').innerHTML = `
+        <div style="text-align:center;margin-bottom:24px;">
+            <div style="font-size:3rem;margin-bottom:8px;">${pct >= 60 ? '🎉' : '📚'}</div>
+            <h1 style="font-size:1.6rem;font-weight:800;color:var(--text);margin-bottom:4px;">Mock Test Complete!</h1>
+        </div>
+
+        <div class="quiz-results">
+            <div class="quiz-results-score">${score.toFixed(2)} / ${TOTAL_MARKS}</div>
+            <div class="quiz-results-grade ${gradeClass}">${grade} • ${pct.toFixed(1)}%</div>
+            <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:14px;font-size:0.88rem;">
+                <div>✅ <strong>${correct}</strong> correct</div>
+                <div>❌ <strong>${wrong}</strong> wrong</div>
+                <div>⏭️ <strong>${unattempted}</strong> skipped</div>
+                <div>⏱️ <strong>${hrs}h ${mins}m</strong></div>
+            </div>
+            <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:20px;">
+                <button class="btn btn-primary btn-sm" onclick="init()">🔄 New Test</button>
+                <a href="./progress.html" class="btn btn-ghost btn-sm">📊 View Progress</a>
+                <a href="./flashcards.html" class="btn btn-ghost btn-sm">🎴 Review Errors</a>
+            </div>
+        </div>
+
+        <!-- Subject-wise breakdown -->
+        <div class="section-card" style="margin-top:18px;">
+            <h3 style="font-size:1rem;margin-bottom:14px;">📊 Subject-wise Breakdown</h3>
+            <table class="cutoff-table">
+                <thead><tr><th>Subject</th><th>Total</th><th>Correct</th><th>Wrong</th><th>Skipped</th><th>Score</th><th>Accuracy</th></tr></thead>
+                <tbody>
+                    ${Object.entries(subjectBreakdown).sort((a,b) => b[1].total - a[1].total).map(([subj, s]) => {
+                        const acc = s.correct + s.wrong > 0 ? Math.round((s.correct / (s.correct + s.wrong)) * 100) : 0;
+                        const accColor = acc >= 60 ? '#10b981' : (acc >= 40 ? '#f59e0b' : '#ef4444');
+                        return `<tr>
+                            <td class="category-col">${subjIcons[subj] || '📖'} ${subj.replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase())}</td>
+                            <td>${s.total}</td>
+                            <td style="color:#10b981;">${s.correct}</td>
+                            <td style="color:#ef4444;">${s.wrong}</td>
+                            <td>${s.unattempted}</td>
+                            <td>${s.score.toFixed(2)}</td>
+                            <td style="color:${accColor};font-weight:700;">${s.correct + s.wrong > 0 ? acc + '%' : '—'}</td>
+                        </tr>`;
+                    }).join('')}
+                </tbody>
+            </table>
+        </div>
+
+        <div style="background:linear-gradient(135deg,rgba(102,126,234,0.06),rgba(118,75,162,0.06));border-radius:14px;padding:16px;margin-top:18px;font-size:0.85rem;color:var(--text-muted);text-align:center;">
+            💡 <strong>Wrong answers have been added to your Error Notebook.</strong> Visit <a href="./flashcards.html" style="color:var(--primary);">Flashcards</a> to review them with spaced repetition.
+        </div>
+    `;
+    renderMath();
+}
+
+function sanitize(html) { if (!html) return ''; return DOMPurify.sanitize(html, { ADD_TAGS: ['sup','sub','u','s'], ADD_ATTR: ['target'] }); }
+function typeLabel(t) { return { mcq:'MCQ', msq:'MSQ', nat:'NAT', subjective:'Subjective', fill_blanks:'Fill', true_false:'T/F' }[t] || t; }
+
+function renderMath() {
+    // Direct render for immediate effect
+    if (typeof renderMathInElement === 'function') {
+        document.querySelectorAll('.q-content').forEach(el => {
+            try { renderMathInElement(el, { delimiters: [{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}], throwOnError: false }); } catch(e) {}
+        });
+    } else {
+        // KaTeX not loaded yet — retry
+        setTimeout(renderMath, 150);
+    }
+}
+
+init();
+</script>
+<script src="./theme.js"></script>
+</body>
+</html>

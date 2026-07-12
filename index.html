@@ -25,6 +25,7 @@
             <a href="./syllabus.html" class="topnav-link">📋 Syllabus</a>
             <a href="./materials.html" class="topnav-link">📚 Materials</a>
             <a href="./pyq.html" class="topnav-link">📝 PYQs</a>
+            <a href="./mocktest.html" class="topnav-link">🎯 Mock Test</a>
             <a href="./flashcards.html" class="topnav-link">🎴 Flashcards</a>
             <a href="./quiz.html" class="topnav-link">🎯 Quiz</a>
             <a href="./progress.html" class="topnav-link">📊 Progress</a>
@@ -91,6 +92,12 @@
                 <div class="feature-title">Previous Year Questions</div>
                 <div class="feature-desc">2,736 GATE CSE PYQs (1987–2026) chapter-wise with correct options, numerical answers, and step-by-step explanations. Filter by year, type, and more.</div>
                 <div class="feature-arrow">Start practicing →</div>
+            </a>
+            <a href="./mocktest.html" class="feature-card" style="--card-grad: var(--grad-red);">
+                <div class="feature-icon">🎯</div>
+                <div class="feature-title">Mock Test Simulator</div>
+                <div class="feature-desc">Real GATE exam simulation — 65 questions, 100 marks, 3-hour timer, negative marking. Full post-test report with subject-wise accuracy breakdown.</div>
+                <div class="feature-arrow">Take a mock test →</div>
             </a>
             <div class="feature-card" style="--card-grad: var(--grad-orange); cursor: pointer;" onclick="SOH_AI && SOH_AI.open()">
                 <div class="feature-icon">🤖</div>
@@ -225,6 +232,8 @@
 </footer>
 
 <script src="./chatbot.js"></script>
+<script src="./tracker.js"></script>
+<script src="./loader.js"></script>
 <script>
 function animateCounters() {
     document.querySelectorAll('[data-count]').forEach(el => {
@@ -280,7 +289,6 @@ window.addEventListener('load', () => {
     setTimeout(animateCounters, 300);
 });
 </script>
-<script src="./loader.js"></script>
 <script src="./nav.js"></script>
 <script src="./theme.js"></script>
 </body>

@@ -25,6 +25,7 @@
             <a href="./syllabus.html" class="topnav-link">📋 Syllabus</a>
             <a href="./materials.html" class="topnav-link">📚 Materials</a>
             <a href="./pyq.html" class="topnav-link">📝 PYQs</a>
+            <a href="./mocktest.html" class="topnav-link">🎯 Mock Test</a>
             <a href="./flashcards.html" class="topnav-link">🎴 Flashcards</a>
             <a href="./quiz.html" class="topnav-link">🎯 Quiz</a>
             <a href="./progress.html" class="topnav-link">📊 Progress</a>
@@ -49,6 +50,8 @@
 </div>
 
 <script src="./chatbot.js"></script>
+<script src="./tracker.js"></script>
+<script src="./loader.js"></script>
 <script>
 const TASKS_KEY = 'sohcse_planner_tasks_v1';
 
@@ -63,6 +66,48 @@ let state = {
     currentDate: new Date(),
     selectedDate: new Date().toISOString().slice(0, 10)
 };
+
+function renderWeeklyGoals() {
+    const section = document.getElementById('weeklyGoalsSection');
+    if (!section) return;
+    
+    const tasks = getTasks();
+    const today = new Date();
+    const dayOfWeek = today.getDay(); // 0=Sun, 6=Sat
+    const weekStart = new Date(today);
+    weekStart.setDate(today.getDate() - dayOfWeek);
+    
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    let completedDays = 0;
+    
+    const dayCells = days.map((day, i) => {
+        const date = new Date(weekStart);
+        date.setDate(weekStart.getDate() + i);
+        const dateStr = date.toISOString().slice(0, 10);
+        const dayTasks = tasks.filter(t => t.date === dateStr);
+        const completed = dayTasks.length > 0 && dayTasks.every(t => t.completed);
+        const isToday = dateStr === today.toISOString().slice(0, 10);
+        if (completed) completedDays++;
+        return `<div class="weekly-goal-day ${completed ? 'completed' : ''} ${isToday ? 'today' : ''}">${day}</div>`;
+    }).join('');
+    
+    const goalTarget = 5; // 5 days per week
+    const pct = Math.round((completedDays / goalTarget) * 100);
+    
+    section.innerHTML = `
+        <div class="weekly-goals">
+            <div class="weekly-goals-header">
+                <span class="weekly-goals-title">🎯 Weekly Goal</span>
+                <span style="font-size:0.78rem;font-weight:700;color:var(--primary);">${completedDays}/${goalTarget} days</span>
+            </div>
+            <div class="weekly-goals-progress">${dayCells}</div>
+            <div class="weekly-goals-stats">
+                <span>${pct}% of weekly goal</span>
+                <span>${completedDays >= goalTarget ? '🎉 Goal reached!' : `${goalTarget - completedDays} more day${goalTarget - completedDays !== 1 ? 's' : ''} to go`}</span>
+            </div>
+        </div>
+    `;
+}
 
 function init() {
     // Seed with sample tasks on first visit
@@ -81,9 +126,11 @@ function init() {
         saveTasks(sample);
     }
     renderPlanner();
+    renderWeeklyGoals();
 }
 
 function renderPlanner() {
+    renderWeeklyGoals();
     const tasks = getTasks();
     const today = new Date().toISOString().slice(0, 10);
     const todaysTasks = tasks.filter(t => t.date === state.selectedDate);
@@ -137,6 +184,7 @@ function renderPlanner() {
                     </div>
                 `).join('')}
 
+                <div id="weeklyGoalsSection"></div>
                 <h3 style="margin-top:18px;">🤖 AI Study Plan</h3>
                 <p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:8px;">Let AI generate a personalized plan based on your goals.</p>
                 <button class="btn btn-primary btn-sm" style="width:100%;" onclick="generateAIPlan()">✨ Generate AI Plan</button>
@@ -282,6 +330,7 @@ function deleteTask(id) {
     tasks = tasks.filter(t => t.id !== id);
     saveTasks(tasks);
     renderPlanner();
+    renderWeeklyGoals();
 }
 
 function addTask() {
@@ -304,12 +353,14 @@ function addTask() {
     saveTasks(tasks);
     document.getElementById('newTaskTitle').value = '';
     renderPlanner();
+    renderWeeklyGoals();
 }
 
 function selectDate(dateStr) {
     state.selectedDate = dateStr;
     state.currentDate = new Date(dateStr);
     renderPlanner();
+    renderWeeklyGoals();
 }
 
 function changeDay(delta) {
@@ -318,6 +369,7 @@ function changeDay(delta) {
     state.selectedDate = d.toISOString().slice(0, 10);
     state.currentDate = new Date(state.selectedDate);
     renderPlanner();
+    renderWeeklyGoals();
 }
 
 function generateAIPlan() {
@@ -343,7 +395,6 @@ function escapeHtml(s) {
 
 init();
 </script>
-<script src="./loader.js"></script>
 <script src="./nav.js"></script>
 <script src="./theme.js"></script>
 </body>

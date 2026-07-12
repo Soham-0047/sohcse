@@ -28,6 +28,7 @@
             <a href="./learn.html" class="topnav-link active">📖 Learn</a>
             <a href="./syllabus.html" class="topnav-link">📋 Syllabus</a>
             <a href="./pyq.html" class="topnav-link">📝 PYQs</a>
+            <a href="./mocktest.html" class="topnav-link">🎯 Mock Test</a>
             <a href="./videos.html" class="topnav-link">🎥 Videos</a>
             <a href="./calculator.html" class="topnav-link">🧮 Calculator</a>
             <a href="./formulas.html" class="topnav-link">📐 Formulas</a>
@@ -69,6 +70,8 @@
 </div>
 
 <script src="./chatbot.js"></script>
+<script src="./tracker.js"></script>
+<script src="./loader.js"></script>
 <script>
 // ============ Concept Notes Database ============
 const NOTES = {
@@ -957,7 +960,30 @@ let state = {
 };
 
 // ============ Init ============
+function renderRecentlyViewed() {
+    const bar = document.getElementById('recentlyViewedBar');
+    if (!bar) return;
+    try {
+        const viewed = JSON.parse(localStorage.getItem('sohcse_learn_recently_viewed') || '[]');
+        if (viewed.length === 0) { bar.innerHTML = ''; return; }
+        bar.innerHTML = '<div style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);padding:10px 4px 6px;">🕐 Recently Viewed</div><div class="recently-viewed-bar">' +
+            viewed.slice(0, 6).map(v => `<button class="recently-viewed-chip" onclick="selectTopic('${v.subj}', '${v.topic}')">${v.title}</button>`).join('') +
+            '</div>';
+    } catch {}
+}
+
+function trackLearnView(subj, topic, title) {
+    try {
+        let viewed = JSON.parse(localStorage.getItem('sohcse_learn_recently_viewed') || '[]');
+        viewed = viewed.filter(v => !(v.subj === subj && v.topic === topic));
+        viewed.unshift({ subj, topic, title, time: Date.now() });
+        viewed = viewed.slice(0, 10);
+        localStorage.setItem('sohcse_learn_recently_viewed', JSON.stringify(viewed));
+    } catch {}
+}
+
 function init() {
+    renderRecentlyViewed();
     const params = new URLSearchParams(location.search);
     const subj = params.get('subject');
     if (subj && NOTES[subj]) {
@@ -997,6 +1023,7 @@ function renderHome() {
                 </p>
             </div>
 
+            <div id="recentlyViewedBar"></div>
             <div class="section-eyebrow">Browse by Subject</div>
             <div class="subjects-grid">
                 ${Object.entries(NOTES).map(([key, subj]) => {
@@ -1040,6 +1067,9 @@ function selectSubject(key) {
 }
 
 function selectTopic(subjKey, topicKey) {
+    const subj = NOTES[subjKey];
+    const topic = subj?.topics[topicKey];
+    if (subj && topic) trackLearnView(subjKey, topicKey, topic.title);
     if (typeof window.trackStudyActivity === 'function') {
         const subj = NOTES[subjKey];
         const topic = subj?.topics[topicKey];
@@ -1142,6 +1172,7 @@ function goHome() {
     state.topic = null;
     renderSidebar();
     renderHome();
+    renderRecentlyViewed();
 }
 
 function toggleSidebar() {
@@ -1165,7 +1196,6 @@ function onSearch() {
 
 init();
 </script>
-<script src="./loader.js"></script>
 <script src="./nav.js"></script>
 <script src="./theme.js"></script>
 </body>

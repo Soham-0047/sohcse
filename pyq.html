@@ -30,6 +30,7 @@
             <a href="./syllabus.html" class="topnav-link">📋 Syllabus</a>
             <a href="./materials.html" class="topnav-link">📚 Materials</a>
             <a href="./pyq.html" class="topnav-link active">📝 PYQs</a>
+            <a href="./mocktest.html" class="topnav-link">🎯 Mock Test</a>
             <a href="./videos.html" class="topnav-link">🎥 Videos</a>
             <a href="./calculator.html" class="topnav-link">🧮 Calculator</a>
             <a href="./formulas.html" class="topnav-link">📐 Formulas</a>
@@ -80,6 +81,8 @@
 </div>
 
 <script src="./chatbot.js"></script>
+<script src="./tracker.js"></script>
+<script src="./loader.js"></script>
 <script>
 let data = null;
 const state = {
@@ -364,6 +367,7 @@ function renderQuestionCard(q, idx) {
                 <span class="q-marks">+${q.marks}${q.negative_marks ? ` / -${q.negative_marks}` : ''}</span>
                 ${q.is_bonus ? '<span class="q-bonus">BONUS</span>' : ''}
                 ${q.is_out_of_syllabus ? '<span class="q-oos">OUT OF SYLLABUS</span>' : ''}
+                <span class="difficulty-dot difficulty-${q.marks === 1 ? 'easy' : (q.normalized_type === 'mcq' || q.normalized_type === 'true_false' ? 'medium' : 'hard')}" title="Difficulty: ${q.marks === 1 ? 'Easy' : (q.normalized_type === 'mcq' || q.normalized_type === 'true_false' ? 'Medium' : 'Hard')}"></span>
                 <button class="q-action-btn ${isQuestionBookmarked(q.question_id) ? 'bookmarked' : ''}" onclick="toggleQuestionBookmark('${q.question_id}')" title="Bookmark this question">${isQuestionBookmarked(q.question_id) ? '🔖' : '📑'}</button>
                 <button class="q-action-btn" onclick='askAIAboutQuestion(${qJson})' title="Ask AI to solve this question">🤖 Ask AI</button>
                 <a class="q-source" href="${q.url}" target="_blank" rel="noopener" title="Open on ExamSIDE">Source ↗</a>
@@ -428,6 +432,26 @@ function togglePracticeMode() { state.practiceMode = !state.practiceMode; state.
 function selectPracticeOption(qid, identifier, isMSQ) {
     if (isMSQ) { if (!state.practiceAnswers[qid]) state.practiceAnswers[qid] = []; const arr = state.practiceAnswers[qid]; if (arr.includes(identifier)) arr.splice(arr.indexOf(identifier), 1); else arr.push(identifier); }
     else state.practiceAnswers[qid] = [identifier];
+    // Track the attempt
+    const subj = data.subjects.find(s => s.subject === state.subject);
+    const chap = subj?.chapters.find(c => c.chapter === state.chapter);
+    const q = chap?.questions.find(x => x.question_id === qid);
+    if (q && typeof window.logAttempt === 'function') {
+        const userAns = state.practiceAnswers[qid];
+        const isCorrect = checkAnswer(q, userAns);
+        window.logAttempt({
+            source: 'practice',
+            subject: q.subject || state.subject,
+            chapter: q.chapter || state.chapter,
+            question_id: qid,
+            type: q.normalized_type,
+            correct: isCorrect,
+        });
+        // Add wrong answers to error notebook
+        if (!isCorrect && typeof window.addToErrorNotebook === 'function') {
+            window.addToErrorNotebook(q);
+        }
+    }
     renderChapterView();
 }
 function submitNATAnswer(qid, correctAnswer) {
@@ -436,6 +460,24 @@ function submitNATAnswer(qid, correctAnswer) {
     const val = input.value.trim();
     if (!val) return;
     state.practiceAnswers[qid] = val;
+    // Track the attempt
+    const subj = data.subjects.find(s => s.subject === state.subject);
+    const chap = subj?.chapters.find(c => c.chapter === state.chapter);
+    const q = chap?.questions.find(x => x.question_id === qid);
+    if (q && typeof window.logAttempt === 'function') {
+        const isCorrect = checkAnswer(q, val);
+        window.logAttempt({
+            source: 'practice',
+            subject: q.subject || state.subject,
+            chapter: q.chapter || state.chapter,
+            question_id: qid,
+            type: q.normalized_type,
+            correct: isCorrect,
+        });
+        if (!isCorrect && typeof window.addToErrorNotebook === 'function') {
+            window.addToErrorNotebook(q);
+        }
+    }
     renderChapterView();
 }
 function updatePracticeScore() {
@@ -737,7 +779,6 @@ function typeLabel(t) { return { mcq: 'MCQ', msq: 'MSQ', nat: 'NAT', subjective:
 
 init();
 </script>
-<script src="./loader.js"></script>
 <script src="./nav.js"></script>
 <script src="./theme.js"></script>
 </body>

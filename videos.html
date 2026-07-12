@@ -987,6 +987,7 @@
             <a href="./index.html" class="topnav-link">🏠 Home</a>
             <a href="./learn.html" class="topnav-link">📖 Learn</a>
             <a href="./pyq.html" class="topnav-link">📝 PYQs</a>
+            <a href="./mocktest.html" class="topnav-link">🎯 Mock Test</a>
             <a href="./videos.html" class="topnav-link active">🎥 Videos</a>
             <a href="./calculator.html" class="topnav-link">🧮 Calculator</a>
             <a href="./formulas.html" class="topnav-link">📐 Formulas</a>
@@ -1010,6 +1011,7 @@
 
 <script src="./chatbot.js"></script>
 <script src="./videos_data.js"></script>
+<script src="./tracker.js"></script>
 <script src="./loader.js"></script>
 <script src="./nav.js"></script>
 <script>
@@ -1150,10 +1152,12 @@ function buildEmbedUrl(p, speed) {
         modestbranding: '1',
         playsinline: '1',
     });
-    if (speed && speed !== 1) params.set('playsinline', '1');
-    if (p.type === 'search' && p.searchQuery) return `https://www.youtube.com/embed?listType=search&list=${encodeURIComponent(p.searchQuery)}&${params}`;
+    // For individual videos (from YouTube Data API search)
     if (p.type === 'video') return `https://www.youtube.com/embed/${p.id}?${params}`;
-    return `https://www.youtube.com/embed/videoseries?list=${p.id}&${params}`;
+    // For playlists — use the correct embed format
+    if (p.type === 'playlist') return `https://www.youtube.com/embed/videoseries?list=${p.id}&${params}`;
+    // For search-type items without API key — can't embed, return null
+    return null;
 }
 function buildYouTubeLink(p) {
     if (p.type === 'search' && p.searchQuery) return `https://www.youtube.com/results?search_query=${encodeURIComponent(p.searchQuery)}`;
@@ -1166,10 +1170,18 @@ function getThumbUrl(p) {
     return null;
 }
 
-// ============ Search ============
+// ============ YouTube Data API v3 Search ============
+const YT_API_KEY_STORAGE = 'sohcse_youtube_api_key';
 const TRENDING_SEARCHES = ['binary search', 'deadlock', 'normalization', 'dijkstra algorithm', 'page replacement', 'context free grammar', 'tcp congestion control', 'avl tree rotation'];
 
-function performSearch(query) {
+function getYTApiKey() {
+    return localStorage.getItem(YT_API_KEY_STORAGE) || '';
+}
+function setYTApiKey(key) {
+    localStorage.setItem(YT_API_KEY_STORAGE, key.trim());
+}
+
+async function performSearch(query) {
     if (!query || query.trim().length < 2) return;
     query = query.trim();
     state.searchQuery = query;
@@ -1179,18 +1191,156 @@ function performSearch(query) {
     addSearchHistory(query);
     renderBrowse();
 
-    // Generate smart search results
-    setTimeout(() => {
-        const results = [
-            { id: 'sr_' + Date.now() + '_1', type: 'search', searchQuery: `${query} GATE CSE`, title: `"${query}" — GATE CSE`, channel: 'YouTube Search', description: 'Most relevant GATE CSE videos.', videos: '∞', thumb: null },
-            { id: 'sr_' + Date.now() + '_2', type: 'search', searchQuery: `${query} lecture full`, title: `"${query}" — Full Lectures`, channel: 'YouTube Search', description: 'Complete lecture videos.', videos: '∞', thumb: null },
-            { id: 'sr_' + Date.now() + '_3', type: 'search', searchQuery: `${query} GATE previous year solved`, title: `"${query}" — PYQ Solutions`, channel: 'YouTube Search', description: 'Step-by-step PYQ solutions.', videos: '∞', thumb: null },
-            { id: 'sr_' + Date.now() + '_4', type: 'search', searchQuery: `${query} shortcut tricks`, title: `"${query}" — Shortcuts & Tricks`, channel: 'YouTube Search', description: 'Quick techniques and shortcuts.', videos: '∞', thumb: null },
-        ];
-        state.searchResults = results;
+    const apiKey = getYTApiKey();
+
+    if (!apiKey) {
+        // No API key — show message with link to YouTube and instructions
+        state.searchLoading = false;
+        state.searchResults = [];
+        renderBrowse();
+        // Show the no-API-key message
+        setTimeout(() => {
+            const tabContent = document.getElementById('tabContent');
+            if (tabContent) {
+                tabContent.innerHTML = `
+                    <div style="text-align:center;padding:40px 20px;">
+                        <div style="font-size:3rem;margin-bottom:12px;">🔑</div>
+                        <h3 style="font-size:1.1rem;font-weight:700;color:var(--text);margin-bottom:8px;">YouTube API Key Needed for In-App Search</h3>
+                        <p style="font-size:0.86rem;color:var(--text-muted);max-width:500px;margin:0 auto 16px;line-height:1.6;">
+                            To search and watch YouTube videos directly inside the app, you need a free YouTube Data API v3 key.
+                            It's <strong>100% free</strong> (10,000 requests/day) and takes 2 minutes to set up.
+                        </p>
+                        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:16px;max-width:500px;margin:0 auto 16px;text-align:left;">
+                            <p style="font-size:0.82rem;font-weight:700;color:var(--text);margin-bottom:8px;">📋 How to get a free API key:</p>
+                            <ol style="font-size:0.78rem;color:var(--text-muted);line-height:1.8;padding-left:18px;">
+                                <li>Go to <a href="https://console.cloud.google.com/" target="_blank" style="color:var(--primary);">Google Cloud Console</a></li>
+                                <li>Create a new project (or select existing)</li>
+                                <li>Enable "YouTube Data API v3"</li>
+                                <li>Go to Credentials → Create API Key</li>
+                                <li>Copy the key and paste it below</li>
+                            </ol>
+                        </div>
+                        <div style="display:flex;gap:8px;justify-content:center;margin-bottom:16px;">
+                            <input type="text" id="ytApiKeyInput" placeholder="Paste your YouTube API key here..." 
+                                style="flex:1;max-width:350px;padding:10px 14px;border:2px solid var(--border);border-radius:10px;font-size:0.86rem;font-family:inherit;background:var(--bg-card);color:var(--text);">
+                            <button class="btn btn-primary btn-sm" onclick="saveYTKeyAndSearch()">Save & Search</button>
+                        </div>
+                        <p style="font-size:0.78rem;color:var(--text-muted);">
+                            Or <a href="https://www.youtube.com/results?search_query=${encodeURIComponent(query + ' GATE CSE')}" target="_blank" style="color:var(--primary);">search on YouTube directly ↗</a>
+                        </p>
+                    </div>
+                `;
+            }
+        }, 100);
+        return;
+    }
+
+    // With API key — fetch real video results from YouTube Data API v3
+    try {
+        const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query + ' GATE CSE')}&type=video&maxResults=12&relevanceLanguage=en&videoEmbeddable=true&key=${apiKey}`;
+        const response = await fetch(searchUrl);
+        const data = await response.json();
+
+        if (data.error) {
+            throw new Error(data.error.message || 'API Error');
+        }
+
+        if (!data.items || data.items.length === 0) {
+            state.searchResults = [];
+            state.searchLoading = false;
+            renderBrowse();
+            return;
+        }
+
+        // Fetch video details (duration, view count) in batch
+        const videoIds = data.items.map(item => item.id.videoId).join(',');
+        const detailsUrl = `https://www.googleapis.com/youtube/v3/videos?part=contentDetails,statistics&id=${videoIds}&key=${apiKey}`;
+        const detailsResponse = await fetch(detailsUrl);
+        const detailsData = await detailsResponse.json();
+
+        // Merge search results with details
+        const detailsMap = {};
+        if (detailsData.items) {
+            detailsData.items.forEach(item => {
+                detailsMap[item.id] = item;
+            });
+        }
+
+        state.searchResults = data.items.map(item => {
+            const videoId = item.id.videoId;
+            const details = detailsMap[videoId] || {};
+            const duration = details.contentDetails?.duration || '';
+            const views = details.statistics?.viewCount || 0;
+            
+            // Parse ISO 8601 duration (PT1H2M3S → 1:02:03)
+            let durationStr = '';
+            if (duration) {
+                const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+                if (match) {
+                    const h = match[1] ? parseInt(match[1]) : 0;
+                    const m = match[2] ? parseInt(match[2]) : 0;
+                    const s = match[3] ? parseInt(match[3]) : 0;
+                    durationStr = h > 0 ? `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}` : `${m}:${String(s).padStart(2,'0')}`;
+                }
+            }
+
+            // Format views
+            let viewsStr = '';
+            if (views > 0) {
+                if (views >= 1000000) viewsStr = (views / 1000000).toFixed(1) + 'M views';
+                else if (views >= 1000) viewsStr = (views / 1000).toFixed(1) + 'K views';
+                else viewsStr = views + ' views';
+            }
+
+            return {
+                id: videoId,
+                type: 'video',
+                title: item.snippet.title.replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;/g, "'"),
+                channel: item.snippet.channelTitle,
+                description: item.snippet.description ? item.snippet.description.slice(0, 120) + '...' : '',
+                thumb: item.snippet.thumbnails?.medium?.url || `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`,
+                duration: durationStr,
+                views: viewsStr,
+                publishedAt: item.snippet.publishedAt,
+            };
+        });
+
         state.searchLoading = false;
         renderBrowse();
-    }, 400);
+    } catch (error) {
+        state.searchLoading = false;
+        state.searchResults = [];
+        renderBrowse();
+        // Show error
+        setTimeout(() => {
+            const tabContent = document.getElementById('tabContent');
+            if (tabContent) {
+                tabContent.innerHTML = `
+                    <div style="text-align:center;padding:40px 20px;">
+                        <div style="font-size:3rem;margin-bottom:12px;">⚠️</div>
+                        <h3 style="font-size:1.1rem;font-weight:700;color:var(--text);margin-bottom:8px;">Search Error</h3>
+                        <p style="font-size:0.86rem;color:var(--text-muted);margin-bottom:16px;">${error.message}</p>
+                        <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:12px;">Your API key might be invalid or rate-limited. Try again or search on YouTube directly.</p>
+                        <div style="display:flex;gap:8px;justify-content:center;">
+                            <button class="btn btn-ghost btn-sm" onclick="performSearch('${query.replace(/'/g, "\\'")}')">🔄 Retry</button>
+                            <a href="https://www.youtube.com/results?search_query=${encodeURIComponent(query + ' GATE CSE')}" target="_blank" class="btn btn-primary btn-sm">↗ Search on YouTube</a>
+                        </div>
+                    </div>
+                `;
+            }
+        }, 100);
+    }
+}
+
+function saveYTKeyAndSearch() {
+    const input = document.getElementById('ytApiKeyInput');
+    if (!input || !input.value.trim()) {
+        alert('Please paste your API key');
+        return;
+    }
+    setYTApiKey(input.value.trim());
+    if (window.showToast) window.showToast('✅ YouTube API key saved!', 'success');
+    performSearch(state.searchQuery);
 }
 
 // ============ Init ============
@@ -1229,6 +1379,16 @@ function renderBrowse() {
                     oninput="onSearchInput(this.value)">
                 <span class="search-icon-premium">🔍</span>
             </div>
+            ${getYTApiKey() ? `
+                <div style="display:flex;align-items:center;gap:6px;margin-top:6px;font-size:0.72rem;color:var(--correct);">
+                    ✅ YouTube API connected — search will return embeddable videos
+                    <button onclick="if(confirm('Remove YouTube API key?')) { localStorage.removeItem('sohcse_youtube_api_key'); renderBrowse(); }" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:0.72rem;text-decoration:underline;">Remove</button>
+                </div>
+            ` : `
+                <div style="display:flex;align-items:center;gap:6px;margin-top:6px;font-size:0.72rem;color:var(--text-muted);">
+                    💡 For in-app video search, add a free <a href="https://console.cloud.google.com/" target="_blank" style="color:var(--primary);">YouTube API key</a> (2 min setup, 10K requests/day free)
+                </div>
+            `}
             ${searchHistory.length > 0 ? `
                 <div class="search-history">
                     <span class="search-history-label">🕐 Recent:</span>
@@ -1373,6 +1533,7 @@ function renderVideoCard(p) {
     const isBm = isBookmarked(p.id);
     const inPlaylist = isVideoInAnyPlaylist(p.id);
     const isSearch = p.type === 'search';
+    const isVideo = p.type === 'video';
     const pJson = JSON.stringify(p).replace(/'/g, "&#39;");
     const thumb = getThumbUrl(p);
 
@@ -1382,14 +1543,16 @@ function renderVideoCard(p) {
                 ${thumb ? `<img src="${thumb}" alt="${escapeHtml(p.title)}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="video-card-thumb-placeholder" style="display:none;">${isSearch ? '🔍' : '▶'}</div>` : `<div class="video-card-thumb-placeholder">${isSearch ? '🔍' : '▶'}</div>`}
                 <div class="video-card-play-overlay"><div class="video-card-play-btn">▶</div></div>
                 ${isSearch ? '<div class="video-card-badge">SEARCH</div>' : ''}
+                ${p.duration ? `<div class="video-card-duration">${p.duration}</div>` : ''}
                 ${p.videos && p.videos !== '∞' ? `<div class="video-card-duration">${p.videos} videos</div>` : ''}
             </div>
             <div class="video-card-info">
                 <div class="video-card-title">${escapeHtml(p.title)}</div>
                 <div class="video-card-channel">📺 ${escapeHtml(p.channel || 'YouTube')}</div>
+                ${p.views ? `<div class="video-card-channel" style="font-size:0.72rem;color:var(--text-light);">👁 ${p.views}</div>` : ''}
                 ${p.description ? `<div class="video-card-desc">${escapeHtml(p.description)}</div>` : ''}
                 <div class="video-card-actions">
-                    <button class="video-card-action" onclick='event.stopPropagation(); playPlaylist(${pJson})'>▶ Play</button>
+                    <button class="video-card-action" onclick='event.stopPropagation(); playPlaylist(${pJson})'>${isVideo ? '▶ Play' : (isSearch ? '🔍 Search' : '▶ Play')}</button>
                     <button class="video-card-action ${inPlaylist ? 'added' : ''}" onclick='event.stopPropagation(); showAddToPlaylist(${pJson})'>${inPlaylist ? '✓ Added' : '➕ Add'}</button>
                     <button class="video-card-action ${isBm ? 'saved' : ''}" onclick='event.stopPropagation(); toggleBookmarkUI(${pJson})'>${isBm ? '❤' : '🤍'}</button>
                 </div>
@@ -1497,6 +1660,19 @@ function renderPlayer() {
     const ytLink = buildYouTubeLink(p);
     const pJson = JSON.stringify(p).replace(/'/g, "&#39;");
 
+    // If no embed URL (e.g., search item without API key), show fallback
+    const playerFrameHtml = embedUrl 
+        ? `<iframe src="${embedUrl}" title="${escapeHtml(p.title)}"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowfullscreen referrerpolicy="strict-origin-when-cross-origin"
+                onload="document.getElementById('playerLoading').classList.add('hidden')"></iframe>`
+        : `<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--player-bg);color:white;text-align:center;padding:30px;">
+            <div style="font-size:3rem;margin-bottom:14px;">📺</div>
+            <h3 style="color:white;margin-bottom:8px;">Cannot embed this video type</h3>
+            <p style="color:rgba(255,255,255,0.6);font-size:0.86rem;margin-bottom:18px;max-width:400px;">This is a YouTube search result. Add a YouTube API key in the search tab to get embeddable individual videos, or open on YouTube.</p>
+            <a href="${ytLink}" target="_blank" class="btn btn-primary btn-sm">↗ Open on YouTube</a>
+           </div>`;
+
     document.getElementById('mainContent').innerHTML = `
         <button class="btn btn-ghost btn-sm" style="margin-bottom:12px;" onclick="renderBrowse()">← Back</button>
 
@@ -1505,14 +1681,11 @@ function renderPlayer() {
                 <!-- Player Shell -->
                 <div class="player-shell ${state.theaterMode ? 'theater' : ''}" id="playerShell">
                     <div class="player-frame-wrap" id="playerFrameWrap">
-                        <div class="player-loading" id="playerLoading">
+                        <div class="player-loading" id="playerLoading" style="${embedUrl ? '' : 'display:none;'}">
                             <div class="player-loading-spinner"></div>
                             <div class="player-loading-text">Loading video...</div>
                         </div>
-                        <iframe src="${embedUrl}" title="${escapeHtml(p.title)}"
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                            allowfullscreen referrerpolicy="strict-origin-when-cross-origin"
-                            onload="document.getElementById('playerLoading').classList.add('hidden')"></iframe>
+                        ${playerFrameHtml}
                     </div>
                 </div>
 
