@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Study Dashboard — Your Daily Hub | SOH CSE</title>
+<meta name="description" content="Personalized daily study dashboard with smart recommendations, quick stats, and goal tracking.">
+<link rel="stylesheet" href="./style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23667eea'/%3E%3Ctext x='50' y='70' font-size='60' font-weight='bold' fill='white' text-anchor='middle' font-family='Arial'%3EG%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+
+<nav class="topnav">
+    <div class="topnav-inner">
+        <a href="./index.html" class="topnav-brand">
+            <div class="brand-mark">G</div>
+            <div class="brand-text">SOH CSE <small>GATE Preparation Hub</small></div>
+        </a>
+        <button class="topnav-menu-btn" onclick="document.querySelector('.topnav-links').classList.toggle('open')" aria-label="Toggle menu">
+            <span></span><span></span><span></span>
+        </button>
+        <div class="topnav-links">
+            <a href="./index.html" class="topnav-link">🏠 Home</a>
+            <a href="./dashboard.html" class="topnav-link active">📊 Dashboard</a>
+            <a href="./learn.html" class="topnav-link">📖 Learn</a>
+            <a href="./materials.html" class="topnav-link">📚 Materials</a>
+            <a href="./pyq.html" class="topnav-link">📝 PYQs</a>
+            <a href="./mocktest.html" class="topnav-link">🎯 Mock Test</a>
+            <a href="./revision.html" class="topnav-link">🔁 Revision</a>
+            <a href="./flashcards.html" class="topnav-link">🎴 Flashcards</a>
+            <a href="./quiz.html" class="topnav-link">🎯 Quiz</a>
+            <a href="./progress.html" class="topnav-link">📈 Progress</a>
+            <a href="./planner.html" class="topnav-link">📅 Planner</a>
+            <a href="./resources.html" class="topnav-link">🚀 Resources</a>
+        </div>
+    </div>
+</nav>
+
+<div class="app-content">
+    <div class="app-content-scroll" id="contentArea">
+        <div id="mainContent" style="max-width: 1200px; margin: 0 auto;">
+            <div id="dashboardContent"></div>
+        </div>
+    </div>
+</div>
+
+<script src="./config.js"></script>
+<script src="./admin-client.js"></script>
+<script src="./chatbot.js"></script>
+<script src="./tracker.js"></script>
+<script src="./gamification.js"></script>
+<script src="./loader.js"></script>
+<script>
+// ============ Helpers ============
+function getJSON(key, def) {
+    try { return JSON.parse(localStorage.getItem(key)) || def; } catch { return def; }
+}
+function setJSON(key, val) {
+    try { localStorage.setItem(key, JSON.stringify(val)); } catch {}
+}
+
+// ============ Days until GATE 2027 ============
+function daysUntilGate() {
+    const gateDate = new Date('2027-02-13'); // GATE 2027 expected
+    const now = new Date();
+    return Math.max(0, Math.ceil((gateDate - now) / (1000 * 60 * 60 * 24)));
+}
+
+// ============ Smart Recommendations ============
+function getRecommendations() {
+    const recs = [];
+    const now = Date.now();
+    const perf = (typeof window.getSubjectPerformance === 'function') ? window.getSubjectPerformance() : {};
+    const weakChapters = (typeof window.getWeakChapters === 'function') ? window.getWeakChapters(60) : [];
+    const errors = (typeof window.getErrorNotebook === 'function') ? window.getErrorNotebook() : [];
+    const errorDue = (typeof window.getErrorNotebookDue === 'function') ? window.getErrorNotebookDue() : [];
+
+    // 1. If error notebook has due reviews → review them
+    if (errorDue.length > 0) {
+        recs.push({
+            priority: 1,
+            icon: '🔁',
+            title: `Review ${errorDue.length} due card${errorDue.length !== 1 ? 's' : ''}`,
+            desc: 'Spaced repetition time! Your error notebook has cards due for review.',
+            cta: 'Review Now',
+            href: './revision.html',
+            color: 'var(--grad-red)',
+        });
+    }
+
+    // 2. If weak chapters exist → drill them
+    if (weakChapters.length > 0) {
+        const top = weakChapters[0];
+        const subjLabel = top.subject ? top.subject.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : '';
+        recs.push({
+            priority: 2,
+            icon: '🎯',
+            title: `Drill weak area: ${subjLabel}`,
+            desc: `Your accuracy is ${top.accuracy}%. Practice 10+ questions to improve.`,
+            cta: 'Practice',
+            href: `./pyq.html?subject=${top.subject}`,
+            color: 'var(--grad-orange)',
+        });
+    }
+
+    // 3. If no quizzes today → take one
+    const today = new Date().toISOString().slice(0, 10);
+    const quizzes = getJSON('sohcse_quiz_results', []);
+    const quizzesToday = quizzes.filter(q => new Date(q.date).toISOString().slice(0, 10) === today).length;
+    if (quizzesToday === 0) {
+        recs.push({
+            priority: 3,
+            icon: '🎯',
+            title: 'Daily Quiz',
+            desc: "You haven't taken a quiz today. A quick 10-question quiz takes ~15 minutes.",
+            cta: 'Take Quiz',
+            href: './quiz.html',
+            color: 'var(--grad-purple)',
+        });
+    }
+
+    // 4. Mock test recommendation (if none in last 7 days)
+    const lastMock = quizzes.filter(q => q.source === 'mocktest').slice(-1)[0];
+    const weekAgo = now - 7 * 24 * 60 * 60 * 1000;
+    if (!lastMock || new Date(lastMock.date).getTime() < weekAgo) {
+        recs.push({
+            priority: 4,
+            icon: '⚔️',
+            title: 'Weekly Mock Test',
+            desc: 'Take a full 3-hour mock to simulate exam conditions and track readiness.',
+            cta: 'Start Mock',
+            href: './mocktest.html',
+            color: 'var(--grad-blue)',
+        });
+    }
+
+    // 5. Flashcard review
+    const fcState = getJSON('sohcse_flashcard_state_v1', { stats: {} });
+    const fcDue = Object.values(fcState.stats || {}).filter(s => s.nextReview && s.nextReview <= now).length;
+    if (fcDue > 0) {
+        recs.push({
+            priority: 5,
+            icon: '🎴',
+            title: `${fcDue} flashcard${fcDue !== 1 ? 's' : ''} due`,
+            desc: 'Quick spaced-repetition review to lock concepts into long-term memory.',
+            cta: 'Review Cards',
+            href: './flashcards.html',
+            color: 'var(--grad-gold)',
+        });
+    }
+
+    // 6. Study planner tasks for today
+    const tasks = getJSON('sohcse_planner_tasks_v1', []);
+    const tasksToday = tasks.filter(t => {
+        if (t.completed) return false;
+        if (!t.date) return true;
+        return t.date === today;
+    });
+    if (tasksToday.length > 0) {
+        recs.push({
+            priority: 6,
+            icon: '📋',
+            title: `${tasksToday.length} task${tasksToday.length !== 1 ? 's' : ''} planned today`,
+            desc: `"${tasksToday[0].title || 'Study session'}" — stay on track with your plan.`,
+            cta: 'View Planner',
+            href: './planner.html',
+            color: 'var(--grad-cyan)',
+        });
+    }
+
+    // 7. If no PYQs today → suggest practice
+    if (typeof window.getTotalStats === 'function') {
+        const trackerData = JSON.parse(localStorage.getItem('sohcse_progress_tracker') || '{}');
+        const todayAttempts = (trackerData.attempts || []).filter(a => {
+            const d = new Date(a.timestamp);
+            return d.toISOString().slice(0, 10) === today;
+        }).length;
+        if (todayAttempts === 0) {
+            recs.push({
+                priority: 7,
+                icon: '📝',
+                title: 'Daily PYQ Practice',
+                desc: "You haven't practiced any PYQs today. Even 10 questions keeps momentum.",
+                cta: 'Practice PYQs',
+                href: './pyq.html',
+                color: 'var(--grad-blue)',
+            });
+        }
+    }
+
+    return recs.sort((a, b) => a.priority - b.priority).slice(0, 5);
+}
+
+// ============ Performance Predictor ============
+function predictGateScore() {
+    const perf = (typeof window.getSubjectPerformance === 'function') ? window.getSubjectPerformance() : {};
+    const quizzes = getJSON('sohcse_quiz_results', []);
+
+    // Subject weightage (GATE CSE 2027 pattern)
+    const weights = {
+        'algorithms': 12,
+        'data-structures': 10.5,
+        'discrete-mathematics': 11.5,
+        'operating-systems': 9,
+        'database-management-system': 8,
+        'computer-networks': 8,
+        'theory-of-computation': 9,
+        'compiler-design': 6,
+        'digital-logic': 5.5,
+        'computer-organization': 9,
+        'programming-languages': 8,
+        'general-aptitude': 15,
+    };
+
+    let weightedScore = 0;
+    let totalWeight = 0;
+    let coverage = 0;
+    let subjectCount = 0;
+
+    for (const [subj, weight] of Object.entries(weights)) {
+        const p = perf[subj];
+        if (p && p.total >= 3) {
+            // Convert accuracy (0-100) to GATE marks (out of 85, GA handled separately)
+            // Adjust: penalty for low attempts, boost for high
+            const confidence = Math.min(1, p.total / 20);
+            const adjustedAccuracy = p.accuracy * (0.5 + 0.5 * confidence);
+            weightedScore += (adjustedAccuracy / 100) * weight;
+            totalWeight += weight;
+            coverage++;
+            if (p.accuracy >= 50) subjectCount++;
+        }
+    }
+
+    // Add GA from quizzes if no direct GA data
+    const gaPerf = perf['general-aptitude'];
+    if ((!gaPerf || gaPerf.total < 3) && quizzes.length > 0) {
+        const recentQuizzes = quizzes.slice(-5);
+        const avgQuiz = recentQuizzes.reduce((s, q) => s + parseFloat(q.percentage), 0) / recentQuizzes.length;
+        weightedScore += (avgQuiz / 100) * 15;
+        totalWeight += 15;
+    }
+
+    if (totalWeight === 0) return null;
+
+    const projectedScore = (weightedScore / totalWeight) * 100; // Out of 100
+    // Convert to GATE score (out of 1000, assuming avg paper difficulty)
+    const gateScore = Math.round(Math.max(0, (projectedScore - 25) * 13.33));
+
+    // Rank estimation (rough)
+    let rankRange;
+    if (projectedScore >= 85) rankRange = 'Top 100';
+    else if (projectedScore >= 75) rankRange = 'Top 500';
+    else if (projectedScore >= 65) rankRange = 'Top 1000-2000';
+    else if (projectedScore >= 55) rankRange = 'Top 3000-5000';
+    else if (projectedScore >= 45) rankRange = 'Top 8000-12000';
+    else if (projectedScore >= 35) rankRange = 'Top 15000-25000';
+    else rankRange = 'Below qualifying (work harder!)';
+
+    // Confidence based on coverage
+    const confidencePct = (coverage / 12) * 100;
+
+    return {
+        projectedScore: projectedScore.toFixed(1),
+        gateScore: Math.max(0, gateScore),
+        rankRange,
+        coverage: Math.round((coverage / 12) * 100),
+        subjectsTracked: coverage,
+        confidencePct: Math.round(confidencePct),
+        subjectCount,
+    };
+}
+
+// ============ Render Dashboard ============
+function renderDashboard() {
+    const days = daysUntilGate();
+    const totalStats = (typeof window.getTotalStats === 'function') ? window.getTotalStats() : { totalAttempts: 0, accuracy: 0, totalQuizzes: 0 };
+    const streak = getJSON('sohcse_streak_v1', { count: 0 });
+    const recs = getRecommendations();
+    const prediction = predictGateScore();
+    const game = (typeof window.SOH_Game !== 'undefined') ? window.SOH_Game : null;
+    const gameData = game ? game.getData() : { xp: 0, unlocked: [] };
+    const level = game ? game.getLevelProgress(gameData.xp) : null;
+    const achievements = game ? game.getAllAchievements() : [];
+    const unlockedAch = achievements.filter(a => a.unlocked).length;
+
+    document.getElementById('dashboardContent').innerHTML = `
+        <!-- Greeting & Days until GATE -->
+        <div class="dashboard-hero">
+            <div class="dashboard-greeting">
+                <div class="greeting-icon">${getGreetingIcon()}</div>
+                <div>
+                    <h1 style="font-size:1.6rem;font-weight:800;margin-bottom:2px;">${getGreeting()}, Future GATE Topper!</h1>
+                    <p style="color:var(--text-muted);font-size:0.9rem;">${getDailyQuote()}</p>
+                </div>
+            </div>
+            <div class="days-until-gate">
+                <div class="dug-number">${days}</div>
+                <div class="dug-label">days until<br>GATE 2027</div>
+            </div>
+        </div>
+
+        <!-- Top Stats Row -->
+        <div class="dashboard-grid">
+            ${level ? `
+            <div class="metric-card" style="--metric-grad: var(--grad-brand);">
+                <div class="metric-icon">${level.current.icon}</div>
+                <div class="metric-value" style="font-size:1.1rem;">${level.current.name}</div>
+                <div class="metric-label">Rank • ${gameData.xp.toLocaleString()} XP</div>
+                <div class="metric-sub">${level.next ? `${level.neededXP - level.currentXP} XP to ${level.next.name}` : 'Max rank!'}</div>
+                <div class="level-progress-bar"><div class="level-fill" style="width:${level.pct}%;"></div></div>
+            </div>` : ''}
+            <div class="metric-card" style="--metric-grad: var(--grad-orange);">
+                <div class="metric-icon">🔥</div>
+                <div class="metric-value">${streak.count || 0}</div>
+                <div class="metric-label">Day Streak</div>
+                <div class="metric-sub">${streak.lastDay ? 'Last active: ' + streak.lastDay : 'Start today!'}</div>
+            </div>
+            <div class="metric-card" style="--metric-grad: var(--grad-blue);">
+                <div class="metric-icon">📝</div>
+                <div class="metric-value">${totalStats.totalAttempts}</div>
+                <div class="metric-label">PYQs Attempted</div>
+                <div class="metric-sub">${totalStats.accuracy}% accuracy</div>
+            </div>
+            <div class="metric-card" style="--metric-grad: var(--grad-purple);">
+                <div class="metric-icon">🎯</div>
+                <div class="metric-value">${totalStats.totalQuizzes}</div>
+                <div class="metric-label">Quizzes & Mocks</div>
+                <div class="metric-sub">${totalStats.avgScore}% avg score</div>
+            </div>
+            <div class="metric-card" style="--metric-grad: var(--grad-gold);">
+                <div class="metric-icon">🏆</div>
+                <div class="metric-value">${unlockedAch}/${achievements.length}</div>
+                <div class="metric-label">Achievements</div>
+                <div class="metric-sub">Keep unlocking!</div>
+            </div>
+        </div>
+
+        <!-- Today's Recommendations -->
+        <div class="section-card" style="margin-top:18px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+                <h3 style="margin:0;">🎯 Smart Recommendations for Today</h3>
+                <span style="font-size:0.82rem;color:var(--text-muted);">Personalized based on your activity</span>
+            </div>
+            ${recs.length === 0 ? `
+                <div style="text-align:center;padding:24px;color:var(--text-muted);">
+                    <div style="font-size:2rem;margin-bottom:6px;">✨</div>
+                    <div>You're all caught up! Browse freely.</div>
+                </div>
+            ` : `
+                <div class="rec-list">
+                    ${recs.map((r, i) => `
+                        <a href="${r.href}" class="rec-card" style="--rec-grad: ${r.color};">
+                            <div class="rec-rank">#${i + 1}</div>
+                            <div class="rec-icon">${r.icon}</div>
+                            <div class="rec-body">
+                                <div class="rec-title">${r.title}</div>
+                                <div class="rec-desc">${r.desc}</div>
+                            </div>
+                            <div class="rec-cta">${r.cta} →</div>
+                        </a>
+                    `).join('')}
+                </div>
+            `}
+        </div>
+
+        <!-- Performance Predictor -->
+        ${prediction ? `
+        <div class="section-card" style="margin-top:18px;background:linear-gradient(135deg, rgba(102,126,234,0.05), rgba(118,75,162,0.05));">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+                <h3 style="margin:0;">🔮 GATE Score Predictor</h3>
+                <span style="font-size:0.82rem;color:var(--text-muted);">Based on ${prediction.subjectsTracked} subjects tracked</span>
+            </div>
+            <div class="prediction-grid">
+                <div class="prediction-gauge-container">
+                    <svg viewBox="0 0 200 120" style="width:100%;max-width:280px;">
+                        <defs>
+                            <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stop-color="#ef4444"/>
+                                <stop offset="50%" stop-color="#f59e0b"/>
+                                <stop offset="100%" stop-color="#10b981"/>
+                            </linearGradient>
+                        </defs>
+                        <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="rgba(148,163,184,0.2)" stroke-width="14" stroke-linecap="round"/>
+                        <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="url(#gaugeGrad)" stroke-width="14" stroke-linecap="round" stroke-dasharray="${(prediction.projectedScore / 100) * 251} 251"/>
+                        <text x="100" y="80" text-anchor="middle" font-size="28" font-weight="800" fill="var(--text)">${prediction.projectedScore}</text>
+                        <text x="100" y="100" text-anchor="middle" font-size="10" fill="var(--text-muted)">/ 100 marks</text>
+                    </svg>
+                    <div class="prediction-rank">Estimated Rank: <strong>${prediction.rankRange}</strong></div>
+                </div>
+                <div class="prediction-stats">
+                    <div class="pred-stat">
+                        <div class="pred-stat-label">GATE Score (est.)</div>
+                        <div class="pred-stat-value">${prediction.gateScore}</div>
+                        <div class="pred-stat-hint">out of 1000</div>
+                    </div>
+                    <div class="pred-stat">
+                        <div class="pred-stat-label">Subject Coverage</div>
+                        <div class="pred-stat-value">${prediction.coverage}%</div>
+                        <div class="pred-stat-hint">${prediction.subjectsTracked}/12 subjects tracked</div>
+                    </div>
+                    <div class="pred-stat">
+                        <div class="pred-stat-label">Subjects ≥50% Acc</div>
+                        <div class="pred-stat-value">${prediction.subjectCount}/12</div>
+                        <div class="pred-stat-hint">${prediction.subjectCount >= 8 ? 'On track!' : 'Need more practice'}</div>
+                    </div>
+                    <div class="pred-stat">
+                        <div class="pred-stat-label">Confidence</div>
+                        <div class="pred-stat-value">${prediction.confidencePct}%</div>
+                        <div class="pred-stat-hint">${prediction.confidencePct >= 70 ? 'High' : (prediction.confidencePct >= 40 ? 'Medium' : 'Low — practice more')}</div>
+                    </div>
+                </div>
+            </div>
+            <div style="font-size:0.78rem;color:var(--text-muted);margin-top:12px;text-align:center;">
+                ⚠️ Estimate only — based on your PYQ practice accuracy weighted by GATE subject weightage. Real GATE score depends on exam difficulty, negative marking, and timing.
+            </div>
+        </div>
+        ` : `
+        <div class="section-card" style="margin-top:18px;text-align:center;">
+            <div style="font-size:2rem;margin-bottom:8px;">🔮</div>
+            <h3 style="margin-bottom:6px;">GATE Score Predictor</h3>
+            <p style="color:var(--text-muted);margin-bottom:14px;font-size:0.9rem;">Answer at least 3 PYQs per subject to unlock your personalized GATE score prediction.</p>
+            <a href="./pyq.html" class="btn btn-primary btn-sm">Start Practicing →</a>
+        </div>
+        `}
+
+        <!-- Recent Activity Timeline -->
+        <div class="section-card" style="margin-top:18px;">
+            <h3 style="margin-bottom:14px;">📅 Recent Activity</h3>
+            ${renderActivityTimeline()}
+        </div>
+
+        <!-- Quick Actions Grid -->
+        <div class="section-card" style="margin-top:18px;">
+            <h3 style="margin-bottom:14px;">⚡ Quick Actions</h3>
+            <div class="quick-actions-grid">
+                <a href="./pyq.html" class="qa-card"><div class="qa-icon">📝</div><div class="qa-label">Practice PYQs</div></a>
+                <a href="./quiz.html" class="qa-card"><div class="qa-icon">🎯</div><div class="qa-label">Take a Quiz</div></a>
+                <a href="./mocktest.html" class="qa-card"><div class="qa-icon">⚔️</div><div class="qa-label">Mock Test</div></a>
+                <a href="./revision.html" class="qa-card"><div class="qa-icon">🔁</div><div class="qa-label">Review</div></a>
+                <a href="./flashcards.html" class="qa-card"><div class="qa-icon">🎴</div><div class="qa-label">Flashcards</div></a>
+                <a href="./videos.html" class="qa-card"><div class="qa-icon">🎥</div><div class="qa-label">Watch Videos</div></a>
+                <a href="./planner.html" class="qa-card"><div class="qa-icon">📅</div><div class="qa-label">Plan Study</div></a>
+                <a href="./progress.html" class="qa-card"><div class="qa-icon">📈</div><div class="qa-label">Full Analytics</div></a>
+                <a href="./calculator.html" class="qa-card"><div class="qa-icon">🧮</div><div class="qa-label">Calculator</div></a>
+                <a href="./formulas.html" class="qa-card"><div class="qa-icon">📐</div><div class="qa-label">Formulas</div></a>
+                <a href="./notes.html" class="qa-card"><div class="qa-icon">📓</div><div class="qa-label">My Notes</div></a>
+                <a href="./resources.html" class="qa-card"><div class="qa-icon">🚀</div><div class="qa-label">Resources</div></a>
+            </div>
+        </div>
+
+        <!-- Recent Achievements -->
+        ${unlockedAch > 0 ? `
+        <div class="section-card" style="margin-top:18px;">
+            <h3 style="margin-bottom:14px;">🏆 Recent Achievements</h3>
+            <div class="achievement-grid">
+                ${achievements.filter(a => a.unlocked).slice(-8).reverse().map(a => `
+                    <div class="achievement-badge unlocked" title="${a.desc}">
+                        <div class="ach-badge-icon">${a.icon}</div>
+                        <div class="ach-badge-name">${a.name}</div>
+                    </div>
+                `).join('')}
+            </div>
+            <a href="./progress.html#achievements" class="btn btn-ghost btn-sm" style="margin-top:12px;">View All →</a>
+        </div>
+        ` : ''}
+    `;
+}
+
+function getGreeting() {
+    const h = new Date().getHours();
+    if (h < 12) return 'Good morning';
+    if (h < 17) return 'Good afternoon';
+    if (h < 21) return 'Good evening';
+    return 'Burning the midnight oil';
+}
+
+function getGreetingIcon() {
+    const h = new Date().getHours();
+    if (h < 12) return '🌅';
+    if (h < 17) return '☀️';
+    if (h < 21) return '🌆';
+    return '🌙';
+}
+
+const QUOTES = [
+    'Small steps every day lead to giant leaps.',
+    "Consistency beats intensity. Show up daily.",
+    'Every PYQ you practice is one step closer to GATE.',
+    "Don't just learn — solve, fail, learn again.",
+    'The expert in anything was once a beginner.',
+    "Focus on progress, not perfection.",
+    'Your future self is watching. Make them proud.',
+    'Master the fundamentals — everything else follows.',
+    "Revision is the mother of retention.",
+    'Solve like it’s the real exam — every time.',
+];
+
+function getDailyQuote() {
+    const day = new Date().getDate();
+    return QUOTES[day % QUOTES.length];
+}
+
+function renderActivityTimeline() {
+    const trackerData = JSON.parse(localStorage.getItem('sohcse_progress_tracker') || '{}');
+    const attempts = trackerData.attempts || [];
+    const quizzes = trackerData.quizzes || [];
+    const today = new Date().toISOString().slice(0, 10);
+
+    // Last 7 days activity summary
+    const last7 = [];
+    for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const dateStr = d.toISOString().slice(0, 10);
+        const dayAttempts = attempts.filter(a => new Date(a.timestamp).toISOString().slice(0, 10) === dateStr);
+        const dayQuizzes = quizzes.filter(q => new Date(q.timestamp).toISOString().slice(0, 10) === dateStr);
+        const correct = dayAttempts.filter(a => a.correct).length;
+        last7.push({
+            date: dateStr,
+            day: d.toLocaleDateString('en-US', { weekday: 'short' }),
+            attempts: dayAttempts.length,
+            correct,
+            quizzes: dayQuizzes.length,
+            isToday: dateStr === today,
+        });
+    }
+
+    const maxAttempts = Math.max(...last7.map(d => d.attempts), 1);
+
+    return `
+        <div class="activity-timeline">
+            ${last7.map(d => `
+                <div class="timeline-day ${d.isToday ? 'today' : ''}">
+                    <div class="timeline-day-label">${d.day}</div>
+                    <div class="timeline-bar-container">
+                        <div class="timeline-bar" style="height:${(d.attempts / maxAttempts) * 100}%;background:${d.attempts > 0 ? 'var(--grad-brand)' : 'var(--border-soft)'};"></div>
+                    </div>
+                    <div class="timeline-count">${d.attempts}</div>
+                    ${d.quizzes > 0 ? `<div class="timeline-quiz-dot" title="${d.quizzes} quiz(zes)">🎯</div>` : ''}
+                </div>
+            `).join('')}
+        </div>
+        <div style="font-size:0.78rem;color:var(--text-muted);margin-top:8px;text-align:center;">Last 7 days PYQ activity • Bar shows relative activity</div>
+    `;
+}
+
+// ============ Init ============
+window.addEventListener('load', renderDashboard);
+</script>
+<script src="./nav.js"></script>
+<script src="./theme.js"></script>
+</body>
+</html>

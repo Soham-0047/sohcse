@@ -735,6 +735,9 @@ RULES:
         const question = overridePrompt || input.value.trim();
         if (!question) return;
 
+        // Award XP for AI query via gamification
+        if (window.SOH_Game) window.SOH_Game.onAIQuery();
+
         // Check if admin-service is configured (primary method)
         const adminConfigured = (typeof window.isAdminServiceConfigured === 'function' && window.isAdminServiceConfigured());
         

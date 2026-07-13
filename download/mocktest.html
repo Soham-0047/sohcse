@@ -419,6 +419,7 @@
 <script src="./admin-client.js"></script>
 <script src="./chatbot.js"></script>
 <script src="./tracker.js"></script>
+<script src="./gamification.js"></script>
 <script src="./loader.js"></script>
 <script src="./nav.js"></script>
 <script>
@@ -909,6 +910,9 @@ function submitMockTest() {
         else ic = ua === (q.correct_options&&q.correct_options[0]);
         if (typeof window.logAttempt === 'function') window.logAttempt({ source:'mocktest', subject:q.subject, chapter:q.chapter, question_id:q.question_id, type:q.normalized_type, correct:ic });
     });
+
+    // Award XP via gamification
+    if (window.SOH_Game) window.SOH_Game.onMockComplete(score, TOTAL_MARKS);
 
     renderResults(score, correct, wrong, unattempted, subjectBreakdown, duration);
 }

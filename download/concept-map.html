@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Concept Map — Subject Relationships | SOH CSE</title>
+<meta name="description" content="Interactive visual map of GATE CSE subject dependencies and your mastery across topics.">
+<link rel="stylesheet" href="./style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23667eea'/%3E%3Ctext x='50' y='70' font-size='60' font-weight='bold' fill='white' text-anchor='middle' font-family='Arial'%3EG%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+
+<nav class="topnav">
+    <div class="topnav-inner">
+        <a href="./index.html" class="topnav-brand">
+            <div class="brand-mark">G</div>
+            <div class="brand-text">SOH CSE <small>GATE Preparation Hub</small></div>
+        </a>
+        <button class="topnav-menu-btn" onclick="document.querySelector('.topnav-links').classList.toggle('open')" aria-label="Toggle menu">
+            <span></span><span></span><span></span>
+        </button>
+        <div class="topnav-links">
+            <a href="./index.html" class="topnav-link">🏠 Home</a>
+            <a href="./learn.html" class="topnav-link">📖 Learn</a>
+            <a href="./syllabus.html" class="topnav-link">📋 Syllabus</a>
+            <a href="./materials.html" class="topnav-link">📚 Materials</a>
+            <a href="./pyq.html" class="topnav-link">📝 PYQs</a>
+            <a href="./mocktest.html" class="topnav-link">🎯 Mock Test</a>
+            <a href="./revision.html" class="topnav-link">🔁 Revision</a>
+            <a href="./flashcards.html" class="topnav-link">🎴 Flashcards</a>
+            <a href="./concept-map.html" class="topnav-link active">🗺️ Map</a>
+            <a href="./quiz.html" class="topnav-link">🎯 Quiz</a>
+            <a href="./progress.html" class="topnav-link">📊 Progress</a>
+            <a href="./planner.html" class="topnav-link">📅 Planner</a>
+            <a href="./resources.html" class="topnav-link">🚀 Resources</a>
+        </div>
+    </div>
+</nav>
+
+<div class="app-content">
+    <div class="app-content-scroll" id="contentArea">
+        <div id="mainContent" style="max-width: 1200px; margin: 0 auto;">
+            <div style="text-align:center;margin-bottom:24px;">
+                <div style="font-size:3rem;margin-bottom:8px;">🗺️</div>
+                <h1 style="font-size:1.8rem;font-weight:800;color:var(--text);margin-bottom:4px;">GATE CSE Concept Map</h1>
+                <p style="color:var(--text-muted);font-size:0.92rem;">Visualize subject relationships and your mastery across topics. Click any node to explore.</p>
+            </div>
+
+            <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:16px;">
+                <button class="btn btn-primary btn-sm" onclick="resetGraphLayout()">🔄 Reset Layout</button>
+                <button class="btn btn-ghost btn-sm" onclick="togglePhysics()" id="physicsToggle">⏸ Pause Physics</button>
+                <button class="btn btn-ghost btn-sm" onclick="centerGraph()">🎯 Center View</button>
+            </div>
+
+            <div class="section-card" style="padding:0;overflow:hidden;position:relative;">
+                <canvas id="conceptMapCanvas" width="1100" height="600" style="width:100%;height:600px;cursor:grab;display:block;"></canvas>
+                <div id="nodeTooltip" class="node-tooltip" style="display:none;position:absolute;pointer-events:none;"></div>
+                <div class="map-legend">
+                    <div class="legend-item"><div class="legend-dot" style="background:#10b981;"></div>Mastered (≥70%)</div>
+                    <div class="legend-item"><div class="legend-dot" style="background:#f59e0b;"></div>Learning (40-70%)</div>
+                    <div class="legend-item"><div class="legend-dot" style="background:#ef4444;"></div>Weak (<40%)</div>
+                    <div class="legend-item"><div class="legend-dot" style="background:#94a3b8;"></div>Not Started</div>
+                </div>
+            </div>
+
+            <div class="section-card" style="margin-top:18px;">
+                <h3 style="margin-bottom:12px;">📊 Subject Relationships</h3>
+                <p style="font-size:0.86rem;color:var(--text-muted);margin-bottom:14px;">Lines between nodes show prerequisite relationships. Master foundational subjects first to make advanced topics easier.</p>
+                <div id="dependencyList" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;"></div>
+            </div>
+
+            <div class="section-card" style="margin-top:18px;">
+                <h3 style="margin-bottom:12px;">🎯 Recommended Learning Path</h3>
+                <p style="font-size:0.86rem;color:var(--text-muted);margin-bottom:14px;">Based on subject dependencies and your current mastery — focus on foundational weak areas first.</p>
+                <div id="recommendedPath"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="./config.js"></script>
+<script src="./admin-client.js"></script>
+<script src="./chatbot.js"></script>
+<script src="./tracker.js"></script>
+<script src="./gamification.js"></script>
+<script src="./loader.js"></script>
+<script>
+// ============ Subject data with dependencies ============
+const SUBJECTS = [
+    { id: 'discrete-mathematics', label: 'Discrete Math', icon: '∑', color: '#f39c12', weight: 11.5, deps: [] },
+    { id: 'digital-logic', label: 'Digital Logic', icon: '🔌', color: '#e74c3c', weight: 5.5, deps: [] },
+    { id: 'programming-languages', label: 'Programming & C', icon: '👨‍💻', color: '#3498db', weight: 8, deps: ['discrete-mathematics'] },
+    { id: 'data-structures', label: 'Data Structures', icon: '🌳', color: '#9b59b6', weight: 10.5, deps: ['programming-languages'] },
+    { id: 'algorithms', label: 'Algorithms', icon: '⚡', color: '#3498db', weight: 12, deps: ['data-structures', 'discrete-mathematics'] },
+    { id: 'theory-of-computation', label: 'TOC', icon: '🔤', color: '#9b59b6', weight: 9, deps: ['discrete-mathematics'] },
+    { id: 'compiler-design', label: 'Compiler Design', icon: '🔧', color: '#f39c12', weight: 6, deps: ['theory-of-computation', 'data-structures'] },
+    { id: 'operating-systems', label: 'Operating Systems', icon: '⚙️', color: '#e74c3c', weight: 9, deps: ['data-structures'] },
+    { id: 'database-management-system', label: 'DBMS', icon: '🗄️', color: '#06b6d4', weight: 8, deps: ['data-structures'] },
+    { id: 'computer-organization', label: 'Computer Org.', icon: '💻', color: '#06b6d4', weight: 9, deps: ['digital-logic'] },
+    { id: 'computer-networks', label: 'Computer Networks', icon: '🌐', color: '#3498db', weight: 8, deps: ['computer-organization'] },
+    { id: 'general-aptitude', label: 'General Aptitude', icon: '🧮', color: '#fbbf24', weight: 15, deps: [] },
+];
+
+// ============ Canvas setup ============
+const canvas = document.getElementById('conceptMapCanvas');
+const ctx = canvas.getContext('2d');
+let nodes = [];
+let edges = [];
+let physicsRunning = true;
+let hoveredNode = null;
+let draggingNode = null;
+let dragOffset = { x: 0, y: 0 };
+
+function setupCanvas() {
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.scale(dpr, dpr);
+    canvas.style.width = rect.width + 'px';
+    canvas.style.height = rect.height + 'px';
+}
+
+// ============ Initialize graph ============
+function initGraph() {
+    const rect = canvas.getBoundingClientRect();
+    const cx = rect.width / 2;
+    const cy = rect.height / 2;
+
+    // Position nodes in a circle initially
+    const radius = Math.min(rect.width, rect.height) * 0.35;
+    nodes = SUBJECTS.map((s, i) => {
+        const angle = (i / SUBJECTS.length) * Math.PI * 2 - Math.PI / 2;
+        return {
+            ...s,
+            x: cx + Math.cos(angle) * radius,
+            y: cy + Math.sin(angle) * radius,
+            vx: 0,
+            vy: 0,
+            radius: 30 + (s.weight / 15) * 8,
+        };
+    });
+
+    // Build edges from dependencies
+    edges = [];
+    SUBJECTS.forEach(s => {
+        if (s.deps) {
+            s.deps.forEach(depId => {
+                const from = nodes.find(n => n.id === depId);
+                const to = nodes.find(n => n.id === s.id);
+                if (from && to) edges.push({ from, to });
+            });
+        }
+    });
+
+    // Get mastery from tracker
+    updateMastery();
+}
+
+function updateMastery() {
+    const perf = (typeof window.getSubjectPerformance === 'function') ? window.getSubjectPerformance() : {};
+    nodes.forEach(n => {
+        const p = perf[n.id];
+        if (p && p.total >= 2) {
+            n.accuracy = p.accuracy;
+            n.attempts = p.total;
+            n.mastery = p.accuracy >= 70 ? 'mastered' : (p.accuracy >= 40 ? 'learning' : 'weak');
+        } else {
+            n.accuracy = 0;
+            n.attempts = 0;
+            n.mastery = 'none';
+        }
+    });
+}
+
+function masteryColor(mastery) {
+    return { mastered: '#10b981', learning: '#f59e0b', weak: '#ef4444', none: '#94a3b8' }[mastery] || '#94a3b8';
+}
+
+// ============ Physics simulation ============
+function simulate() {
+    if (!physicsRunning) return;
+    const rect = canvas.getBoundingClientRect();
+
+    // Repulsion between all nodes
+    for (let i = 0; i < nodes.length; i++) {
+        for (let j = i + 1; j < nodes.length; j++) {
+            const a = nodes[i], b = nodes[j];
+            const dx = b.x - a.x;
+            const dy = b.y - a.y;
+            const dist = Math.max(1, Math.sqrt(dx * dx + dy * dy));
+            const force = 4500 / (dist * dist);
+            const fx = (dx / dist) * force;
+            const fy = (dy / dist) * force;
+            a.vx -= fx; a.vy -= fy;
+            b.vx += fx; b.vy += fy;
+        }
+    }
+
+    // Attraction along edges
+    edges.forEach(e => {
+        const dx = e.to.x - e.from.x;
+        const dy = e.to.y - e.from.y;
+        const dist = Math.max(1, Math.sqrt(dx * dx + dy * dy));
+        const targetDist = 160;
+        const force = (dist - targetDist) * 0.04;
+        const fx = (dx / dist) * force;
+        const fy = (dy / dist) * force;
+        e.from.vx += fx; e.from.vy += fy;
+        e.to.vx -= fx; e.to.vy -= fy;
+    });
+
+    // Center gravity
+    const cx = rect.width / 2;
+    const cy = rect.height / 2;
+    nodes.forEach(n => {
+        n.vx += (cx - n.x) * 0.002;
+        n.vy += (cy - n.y) * 0.002;
+    });
+
+    // Update positions
+    nodes.forEach(n => {
+        if (n === draggingNode) return;
+        n.vx *= 0.85; // damping
+        n.vy *= 0.85;
+        n.x += n.vx;
+        n.y += n.vy;
+
+        // Keep in bounds
+        n.x = Math.max(n.radius + 10, Math.min(rect.width - n.radius - 10, n.x));
+        n.y = Math.max(n.radius + 10, Math.min(rect.height - n.radius - 10, n.y));
+    });
+}
+
+// ============ Draw ============
+function draw() {
+    const rect = canvas.getBoundingClientRect();
+    ctx.clearRect(0, 0, rect.width, rect.height);
+
+    // Draw edges
+    edges.forEach(e => {
+        ctx.strokeStyle = 'rgba(148, 163, 184, 0.4)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(e.from.x, e.from.y);
+        ctx.lineTo(e.to.x, e.to.y);
+        ctx.stroke();
+
+        // Arrowhead
+        const dx = e.to.x - e.from.x;
+        const dy = e.to.y - e.from.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const angle = Math.atan2(dy, dx);
+        const arrowX = e.from.x + dx * (1 - e.to.radius / dist - 0.05);
+        const arrowY = e.from.y + dy * (1 - e.to.radius / dist - 0.05);
+        ctx.fillStyle = 'rgba(148, 163, 184, 0.6)';
+        ctx.beginPath();
+        ctx.moveTo(arrowX, arrowY);
+        ctx.lineTo(arrowX - 8 * Math.cos(angle - 0.4), arrowY - 8 * Math.sin(angle - 0.4));
+        ctx.lineTo(arrowX - 8 * Math.cos(angle + 0.4), arrowY - 8 * Math.sin(angle + 0.4));
+        ctx.closePath();
+        ctx.fill();
+    });
+
+    // Draw nodes
+    nodes.forEach(n => {
+        const color = masteryColor(n.mastery);
+        const isHovered = n === hoveredNode;
+
+        // Glow
+        if (isHovered) {
+            ctx.shadowColor = color;
+            ctx.shadowBlur = 20;
+        }
+
+        // Outer ring (weight indicator)
+        ctx.fillStyle = color + '20';
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, n.radius + 4, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Main circle
+        const gradient = ctx.createRadialGradient(n.x - n.radius * 0.3, n.y - n.radius * 0.3, 0, n.x, n.y, n.radius);
+        gradient.addColorStop(0, color);
+        gradient.addColorStop(1, color + 'CC');
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, n.radius, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.shadowBlur = 0;
+
+        // Border
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, n.radius, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Icon
+        ctx.font = `${n.radius * 0.7}px Segoe UI`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = '#fff';
+        ctx.fillText(n.icon, n.x, n.y - 2);
+
+        // Label
+        ctx.font = '600 12px Segoe UI';
+        ctx.fillStyle = document.documentElement.getAttribute('data-theme') === 'dark' ? '#f1f5f9' : '#1e293b';
+        ctx.fillText(n.label, n.x, n.y + n.radius + 12);
+
+        // Accuracy badge
+        if (n.attempts > 0) {
+            ctx.font = '600 10px Segoe UI';
+            ctx.fillStyle = color;
+            ctx.fillText(`${n.accuracy}%`, n.x, n.y + n.radius + 26);
+        }
+    });
+}
+
+function animate() {
+    simulate();
+    draw();
+    requestAnimationFrame(animate);
+}
+
+// ============ Interactions ============
+function getMousePos(e) {
+    const rect = canvas.getBoundingClientRect();
+    return {
+        x: (e.clientX || e.touches[0].clientX) - rect.left,
+        y: (e.clientY || e.touches[0].clientY) - rect.top,
+    };
+}
+
+function nodeAtPoint(x, y) {
+    for (let i = nodes.length - 1; i >= 0; i--) {
+        const n = nodes[i];
+        const dx = x - n.x;
+        const dy = y - n.y;
+        if (dx * dx + dy * dy <= n.radius * n.radius) return n;
+    }
+    return null;
+}
+
+canvas.addEventListener('mousedown', (e) => {
+    const pos = getMousePos(e);
+    const node = nodeAtPoint(pos.x, pos.y);
+    if (node) {
+        draggingNode = node;
+        dragOffset = { x: pos.x - node.x, y: pos.y - node.y };
+        canvas.style.cursor = 'grabbing';
+    }
+});
+
+canvas.addEventListener('mousemove', (e) => {
+    const pos = getMousePos(e);
+    if (draggingNode) {
+        draggingNode.x = pos.x - dragOffset.x;
+        draggingNode.y = pos.y - dragOffset.y;
+        draggingNode.vx = 0;
+        draggingNode.vy = 0;
+    } else {
+        const node = nodeAtPoint(pos.x, pos.y);
+        if (node !== hoveredNode) {
+            hoveredNode = node;
+            canvas.style.cursor = node ? 'pointer' : 'grab';
+            const tooltip = document.getElementById('nodeTooltip');
+            if (node) {
+                tooltip.style.display = 'block';
+                tooltip.style.left = (pos.x + 12) + 'px';
+                tooltip.style.top = (pos.y + 12) + 'px';
+                tooltip.innerHTML = `
+                    <div class="tooltip-title">${node.icon} ${node.label}</div>
+                    <div class="tooltip-row"><span>Weightage:</span><strong>${node.weight}%</strong></div>
+                    <div class="tooltip-row"><span>Attempts:</span><strong>${node.attempts}</strong></div>
+                    <div class="tooltip-row"><span>Accuracy:</span><strong style="color:${masteryColor(node.mastery)};">${node.attempts > 0 ? node.accuracy + '%' : 'N/A'}</strong></div>
+                    <div class="tooltip-hint">Click to practice →</div>
+                `;
+            } else {
+                tooltip.style.display = 'none';
+            }
+        } else if (hoveredNode) {
+            const tooltip = document.getElementById('nodeTooltip');
+            tooltip.style.left = (pos.x + 12) + 'px';
+            tooltip.style.top = (pos.y + 12) + 'px';
+        }
+    }
+});
+
+canvas.addEventListener('mouseup', (e) => {
+    if (draggingNode) {
+        const pos = getMousePos(e);
+        const node = nodeAtPoint(pos.x, pos.y);
+        if (node === draggingNode) {
+            // It was a click, not a drag
+            window.location.href = `./pyq.html?subject=${node.id}`;
+        }
+        draggingNode = null;
+        canvas.style.cursor = 'grab';
+    }
+});
+
+canvas.addEventListener('mouseleave', () => {
+    draggingNode = null;
+    hoveredNode = null;
+    document.getElementById('nodeTooltip').style.display = 'none';
+    canvas.style.cursor = 'grab';
+});
+
+// Touch support
+canvas.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    const pos = getMousePos(e);
+    const node = nodeAtPoint(pos.x, pos.y);
+    if (node) {
+        draggingNode = node;
+        dragOffset = { x: pos.x - node.x, y: pos.y - node.y };
+    }
+});
+canvas.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    if (draggingNode) {
+        const pos = getMousePos(e);
+        draggingNode.x = pos.x - dragOffset.x;
+        draggingNode.y = pos.y - dragOffset.y;
+        draggingNode.vx = 0;
+        draggingNode.vy = 0;
+    }
+});
+canvas.addEventListener('touchend', () => {
+    draggingNode = null;
+});
+
+// ============ Controls ============
+function resetGraphLayout() {
+    initGraph();
+    if (window.showToast) window.showToast('🔄 Layout reset', 'info');
+}
+
+function togglePhysics() {
+    physicsRunning = !physicsRunning;
+    document.getElementById('physicsToggle').textContent = physicsRunning ? '⏸ Pause Physics' : '▶ Resume Physics';
+}
+
+function centerGraph() {
+    const rect = canvas.getBoundingClientRect();
+    const cx = rect.width / 2;
+    const cy = rect.height / 2;
+    nodes.forEach(n => {
+        n.x = cx + (Math.random() - 0.5) * 100;
+        n.y = cy + (Math.random() - 0.5) * 100;
+        n.vx = 0;
+        n.vy = 0;
+    });
+}
+
+// ============ Dependency list ============
+function renderDependencyList() {
+    document.getElementById('dependencyList').innerHTML = SUBJECTS.map(s => {
+        const deps = s.deps || [];
+        const depLabels = deps.map(d => SUBJECTS.find(x => x.id === d)?.label).filter(Boolean);
+        const dependents = SUBJECTS.filter(x => x.deps && x.deps.includes(s.id)).map(x => x.label);
+        return `
+            <div class="dep-card">
+                <div class="dep-card-header">
+                    <span class="dep-icon">${s.icon}</span>
+                    <span class="dep-title">${s.label}</span>
+                    <span class="dep-weight">${s.weight}%</span>
+                </div>
+                <div class="dep-card-body">
+                    ${depLabels.length ? `<div class="dep-row"><strong>Depends on:</strong> ${depLabels.join(', ')}</div>` : '<div class="dep-row"><strong>Foundation subject</strong> — start here</div>'}
+                    ${dependents.length ? `<div class="dep-row"><strong>Unlocks:</strong> ${dependents.join(', ')}</div>` : ''}
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// ============ Recommended learning path ============
+function renderRecommendedPath() {
+    // Topological sort by dependencies + sort weak subjects first
+    const perf = (typeof window.getSubjectPerformance === 'function') ? window.getSubjectPerformance() : {};
+    const sorted = [...SUBJECTS].sort((a, b) => {
+        const aAcc = perf[a.id]?.accuracy ?? 0;
+        const bAcc = perf[b.id]?.accuracy ?? 0;
+        const aAttempts = perf[a.id]?.total ?? 0;
+        const bAttempts = perf[b.id]?.total ?? 0;
+        // Subjects with 0 attempts first, then low accuracy
+        if (aAttempts === 0 && bAttempts > 0) return -1;
+        if (bAttempts === 0 && aAttempts > 0) return 1;
+        return aAcc - bAcc;
+    });
+
+    document.getElementById('recommendedPath').innerHTML = sorted.slice(0, 6).map((s, i) => {
+        const p = perf[s.id];
+        const accuracy = p?.accuracy ?? 0;
+        const attempts = p?.total ?? 0;
+        const status = attempts === 0 ? 'not-started' : (accuracy >= 70 ? 'mastered' : (accuracy >= 40 ? 'learning' : 'weak'));
+        const statusColor = { mastered: '#10b981', learning: '#f59e0b', weak: '#ef4444', 'not-started': '#94a3b8' }[status];
+        const statusLabel = { mastered: 'Mastered', learning: 'Learning', weak: 'Needs Work', 'not-started': 'Not Started' }[status];
+        return `
+            <a href="./pyq.html?subject=${s.id}" class="path-item">
+                <div class="path-rank">#${i + 1}</div>
+                <div class="path-icon">${s.icon}</div>
+                <div class="path-content">
+                    <div class="path-title">${s.label}</div>
+                    <div class="path-meta">Weightage: ${s.weight}% • ${attempts} attempts • ${accuracy}% accuracy</div>
+                </div>
+                <div class="path-status" style="background:${statusColor}20;color:${statusColor};">${statusLabel}</div>
+            </a>
+        `;
+    }).join('');
+}
+
+// ============ Init ============
+window.addEventListener('load', () => {
+    setupCanvas();
+    initGraph();
+    renderDependencyList();
+    renderRecommendedPath();
+    animate();
+});
+window.addEventListener('resize', () => {
+    setupCanvas();
+    initGraph();
+});
+</script>
+<script src="./nav.js"></script>
+<script src="./theme.js"></script>
+</body>
+</html>

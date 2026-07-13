@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Revision — Spaced Repetition Hub | SOH CSE</title>
+<meta name="description" content="Unified spaced repetition for flashcards, error notebook, and bookmarked PYQs with Ebbinghaus forgetting curve.">
+<link rel="stylesheet" href="./style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23667eea'/%3E%3Ctext x='50' y='70' font-size='60' font-weight='bold' fill='white' text-anchor='middle' font-family='Arial'%3EG%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+
+<nav class="topnav">
+    <div class="topnav-inner">
+        <a href="./index.html" class="topnav-brand">
+            <div class="brand-mark">G</div>
+            <div class="brand-text">SOH CSE <small>GATE Preparation Hub</small></div>
+        </a>
+        <button class="topnav-menu-btn" onclick="document.querySelector('.topnav-links').classList.toggle('open')" aria-label="Toggle menu">
+            <span></span><span></span><span></span>
+        </button>
+        <div class="topnav-links">
+            <a href="./index.html" class="topnav-link">🏠 Home</a>
+            <a href="./learn.html" class="topnav-link">📖 Learn</a>
+            <a href="./syllabus.html" class="topnav-link">📋 Syllabus</a>
+            <a href="./materials.html" class="topnav-link">📚 Materials</a>
+            <a href="./pyq.html" class="topnav-link">📝 PYQs</a>
+            <a href="./mocktest.html" class="topnav-link">🎯 Mock Test</a>
+            <a href="./revision.html" class="topnav-link active">🔁 Revision</a>
+            <a href="./flashcards.html" class="topnav-link">🎴 Flashcards</a>
+            <a href="./quiz.html" class="topnav-link">🎯 Quiz</a>
+            <a href="./progress.html" class="topnav-link">📊 Progress</a>
+            <a href="./planner.html" class="topnav-link">📅 Planner</a>
+            <a href="./resources.html" class="topnav-link">🚀 Resources</a>
+        </div>
+    </div>
+</nav>
+
+<div class="app-content">
+    <div class="app-content-scroll" id="contentArea">
+        <div id="mainContent" style="max-width: 1100px; margin: 0 auto;">
+            <div style="text-align:center;margin-bottom:24px;">
+                <div style="font-size:3rem;margin-bottom:8px;">🔁</div>
+                <h1 style="font-size:1.8rem;font-weight:800;color:var(--text);margin-bottom:4px;">Smart Revision Hub</h1>
+                <p style="color:var(--text-muted);font-size:0.92rem;">Spaced repetition across flashcards, error notebook, and bookmarked PYQs — all in one queue.</p>
+            </div>
+
+            <!-- Today's Review Summary -->
+            <div class="revision-summary-grid" id="summaryGrid"></div>
+
+            <!-- Forgetting Curve Visualization -->
+            <div class="section-card" style="margin-top:18px;">
+                <h3 style="margin-bottom:8px;">📉 Ebbinghaus Forgetting Curve</h3>
+                <p style="font-size:0.84rem;color:var(--text-muted);margin-bottom:16px;">Memory decays exponentially without review. Spaced repetition interrupts this decay — review at the right moment and the curve flattens.</p>
+                <canvas id="forgettingCurve" width="1000" height="220" style="width:100%;height:220px;"></canvas>
+                <div style="display:flex;justify-content:space-around;margin-top:10px;flex-wrap:wrap;gap:8px;">
+                    <div style="text-align:center;"><div style="font-size:1.4rem;font-weight:800;color:#ef4444;">~33%</div><div style="font-size:0.75rem;color:var(--text-muted);">Day 1 (no review)</div></div>
+                    <div style="text-align:center;"><div style="font-size:1.4rem;font-weight:800;color:#f59e0b;">~25%</div><div style="font-size:0.75rem;color:var(--text-muted);">Day 7 (no review)</div></div>
+                    <div style="text-align:center;"><div style="font-size:1.4rem;font-weight:800;color:#10b981;">~85%</div><div style="font-size:0.75rem;color:var(--text-muted);">With spaced repetition</div></div>
+                </div>
+            </div>
+
+            <!-- Review Queue -->
+            <div class="section-card" style="margin-top:18px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
+                    <h3 style="margin:0;">🎯 Today's Review Queue</h3>
+                    <div id="queueStats" style="font-size:0.84rem;color:var(--text-muted);"></div>
+                </div>
+                <div id="reviewQueue"></div>
+            </div>
+
+            <!-- Stats by source -->
+            <div class="section-card" style="margin-top:18px;">
+                <h3 style="margin-bottom:14px;">📊 Revision Breakdown</h3>
+                <div id="breakdownStats"></div>
+            </div>
+
+            <!-- Start Session Button -->
+            <div id="sessionArea" style="margin-top:18px;"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Review Card Modal -->
+<div id="reviewModal" class="review-modal" style="display:none;">
+    <div class="review-modal-content">
+        <div class="review-modal-header">
+            <div class="review-modal-type" id="modalType">Flashcard</div>
+            <button class="review-modal-close" onclick="closeReviewModal()">✕</button>
+        </div>
+        <div class="review-modal-progress">
+            <div id="modalProgressBar"></div>
+        </div>
+        <div class="review-card-container" id="modalCardContainer">
+            <div class="review-card-flipper" id="reviewFlipper">
+                <div class="review-card-face review-card-front" id="cardFront"></div>
+                <div class="review-card-face review-card-back" id="cardBack"></div>
+            </div>
+        </div>
+        <div class="review-modal-actions" id="modalActions"></div>
+    </div>
+</div>
+
+<script src="./config.js"></script>
+<script src="./admin-client.js"></script>
+<script src="./chatbot.js"></script>
+<script src="./tracker.js"></script>
+<script src="./gamification.js"></script>
+<script src="./loader.js"></script>
+<script>
+// ============ Helpers ============
+function getJSON(key, def) {
+    try { return JSON.parse(localStorage.getItem(key)) || def; } catch { return def; }
+}
+function setJSON(key, val) {
+    try { localStorage.setItem(key, JSON.stringify(val)); } catch {}
+}
+
+// ============ Build unified review queue ============
+function buildReviewQueue() {
+    const queue = [];
+
+    // 1. Error notebook (due for review)
+    if (typeof window.getErrorNotebook === 'function') {
+        const errors = window.getErrorNotebook();
+        const now = Date.now();
+        errors.forEach(e => {
+            queue.push({
+                source: 'error_notebook',
+                id: e.question_id,
+                front: e.question_text || '(Question text unavailable)',
+                back: buildErrorBack(e),
+                meta: `${e.subject_label || e.subject || ''} • ${e.year || ''}`,
+                due: e.next_review || 0,
+                qualityOptions: ['Again', 'Hard', 'Good', 'Easy'],
+                data: e,
+            });
+        });
+    }
+
+    // 2. Flashcards due for review
+    if (typeof getFlashcardsData === 'function' || window.FLASHCARDS) {
+        const cards = window.FLASHCARDS || [];
+        const fcState = getJSON('sohcse_flashcard_state_v1', { stats: {} });
+        const now = Date.now();
+        cards.forEach(c => {
+            const state = fcState.stats[c.id] || { nextReview: 0, reviews: 0 };
+            queue.push({
+                source: 'flashcard',
+                id: c.id,
+                front: c.front,
+                back: c.back || c.answer,
+                meta: `${c.subject || 'General'} • ${c.topic || ''}`,
+                due: state.nextReview || 0,
+                qualityOptions: ['Again', 'Hard', 'Good', 'Easy'],
+                data: c,
+            });
+        });
+    }
+
+    // 3. Bookmarked PYQs (always due for re-review)
+    try {
+        const bm = JSON.parse(localStorage.getItem('sohcse_question_bookmarks') || '[]');
+        bm.forEach(q => {
+            queue.push({
+                source: 'bookmark',
+                id: 'bm_' + q.question_id,
+                front: q.question_text || '(Question text unavailable)',
+                back: buildBookmarkBack(q),
+                meta: `${q.subject_label || ''} • ${q.year || ''}`,
+                due: 0,
+                qualityOptions: ['Forgot', 'Hard', 'Good', 'Easy'],
+                data: q,
+            });
+        });
+    } catch {}
+
+    // Sort: due first (oldest first), then by source priority
+    queue.sort((a, b) => a.due - b.due);
+    return queue;
+}
+
+function buildErrorBack(e) {
+    let html = '';
+    if (e.options && e.options.length) {
+        html += '<div class="review-options">';
+        e.options.forEach((opt, i) => {
+            const isCorrect = e.correct_options && e.correct_options.includes(i);
+            html += `<div class="review-option ${isCorrect ? 'correct' : ''}">${String.fromCharCode(65 + i)}. ${opt}</div>`;
+        });
+        html += '</div>';
+    } else if (e.answer) {
+        html += `<div class="review-answer">Answer: <strong>${e.answer}</strong></div>`;
+    }
+    if (e.explanation) {
+        html += `<div class="review-explanation">${e.explanation.substring(0, 400)}${e.explanation.length > 400 ? '...' : ''}</div>`;
+    }
+    return html || '<em>No answer data available</em>';
+}
+
+function buildBookmarkBack(q) {
+    return buildErrorBack(q);
+}
+
+// ============ Render dashboard ============
+function renderDashboard() {
+    const queue = buildReviewQueue();
+    const now = Date.now();
+    const dueCount = queue.filter(q => q.due <= now).length;
+    const newCount = queue.filter(q => q.due === 0).length;
+    const total = queue.length;
+
+    // Count by source
+    const bySource = {
+        flashcard: queue.filter(q => q.source === 'flashcard').length,
+        error_notebook: queue.filter(q => q.source === 'error_notebook').length,
+        bookmark: queue.filter(q => q.source === 'bookmark').length,
+    };
+
+    // Summary cards
+    document.getElementById('summaryGrid').innerHTML = `
+        <div class="metric-card" style="--metric-grad: var(--grad-red);">
+            <div class="metric-icon">⏰</div>
+            <div class="metric-value">${dueCount}</div>
+            <div class="metric-label">Due Now</div>
+            <div class="metric-sub">Review to keep memory fresh</div>
+        </div>
+        <div class="metric-card" style="--metric-grad: var(--grad-blue);">
+            <div class="metric-icon">🎴</div>
+            <div class="metric-value">${bySource.flashcard}</div>
+            <div class="metric-label">Flashcards</div>
+            <div class="metric-sub">In spaced repetition</div>
+        </div>
+        <div class="metric-card" style="--metric-grad: var(--grad-orange);">
+            <div class="metric-icon">❌</div>
+            <div class="metric-value">${bySource.error_notebook}</div>
+            <div class="metric-label">Error Notebook</div>
+            <div class="metric-sub">Previously wrong answers</div>
+        </div>
+        <div class="metric-card" style="--metric-grad: var(--grad-purple);">
+            <div class="metric-icon">🔖</div>
+            <div class="metric-value">${bySource.bookmark}</div>
+            <div class="metric-label">Bookmarked</div>
+            <div class="metric-sub">Saved for later</div>
+        </div>
+    `;
+
+    // Session button
+    if (dueCount > 0) {
+        document.getElementById('sessionArea').innerHTML = `
+            <div class="section-card" style="text-align:center;background:linear-gradient(135deg, rgba(102,126,234,0.08), rgba(118,75,162,0.08));">
+                <div style="font-size:2.5rem;margin-bottom:8px;">🚀</div>
+                <h3 style="margin-bottom:6px;">${dueCount} ${dueCount === 1 ? 'card' : 'cards'} due for review</h3>
+                <p style="color:var(--text-muted);margin-bottom:14px;font-size:0.9rem;">Estimated time: ~${Math.max(2, Math.ceil(dueCount * 0.5))} minutes</p>
+                <button class="btn btn-primary btn-lg" onclick="startReviewSession()">Start Review Session →</button>
+            </div>
+        `;
+    } else if (total > 0) {
+        document.getElementById('sessionArea').innerHTML = `
+            <div class="section-card" style="text-align:center;background:linear-gradient(135deg, rgba(16,185,129,0.08), rgba(34,197,94,0.08));">
+                <div style="font-size:2.5rem;margin-bottom:8px;">✅</div>
+                <h3 style="margin-bottom:6px;">All caught up!</h3>
+                <p style="color:var(--text-muted);margin-bottom:14px;font-size:0.9rem;">No cards due right now. Add more flashcards or practice PYQs to grow your queue.</p>
+                <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+                    <a href="./pyq.html" class="btn btn-ghost btn-sm">📝 Practice PYQs</a>
+                    <a href="./flashcards.html" class="btn btn-ghost btn-sm">🎴 Review Flashcards</a>
+                </div>
+            </div>
+        `;
+    } else {
+        document.getElementById('sessionArea').innerHTML = `
+            <div class="section-card" style="text-align:center;">
+                <div style="font-size:2.5rem;margin-bottom:8px;">🌟</div>
+                <h3 style="margin-bottom:6px;">Build your revision queue</h3>
+                <p style="color:var(--text-muted);margin-bottom:14px;font-size:0.9rem;">As you practice PYQs and review flashcards, your due cards will appear here for spaced repetition.</p>
+                <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+                    <a href="./pyq.html" class="btn btn-primary btn-sm">📝 Practice PYQs</a>
+                    <a href="./flashcards.html" class="btn btn-ghost btn-sm">🎴 Start Flashcards</a>
+                    <a href="./quiz.html" class="btn btn-ghost btn-sm">🎯 Take a Quiz</a>
+                </div>
+            </div>
+        `;
+    }
+
+    // Queue preview (first 5 due items)
+    const queueList = queue.filter(q => q.due <= now).slice(0, 8);
+    document.getElementById('queueStats').textContent = `${dueCount} due • ${total} total in queue`;
+    if (queueList.length === 0) {
+        document.getElementById('reviewQueue').innerHTML = `
+            <div style="text-align:center;padding:24px 10px;color:var(--text-muted);">
+                <div style="font-size:2rem;margin-bottom:6px;">🎉</div>
+                <div>No reviews due right now. Come back later or add more cards.</div>
+            </div>
+        `;
+    } else {
+        document.getElementById('reviewQueue').innerHTML = queueList.map(q => `
+            <div class="review-queue-item">
+                <div class="review-queue-source source-${q.source}">${sourceLabel(q.source)}</div>
+                <div class="review-queue-content">
+                    <div class="review-queue-front">${q.front.substring(0, 100)}${q.front.length > 100 ? '...' : ''}</div>
+                    <div class="review-queue-meta">${q.meta || ''}</div>
+                </div>
+                <button class="btn btn-primary btn-sm" onclick="startReviewSession('${q.id}')">Review</button>
+            </div>
+        `).join('');
+    }
+
+    // Breakdown
+    const mastered = (typeof window.getSubjectPerformance === 'function') ? Object.values(window.getSubjectPerformance()).filter(s => s.total >= 5 && s.accuracy >= 70).length : 0;
+    document.getElementById('breakdownStats').innerHTML = `
+        <div class="revision-breakdown-grid">
+            <div class="breakdown-item">
+                <div class="breakdown-value">${total}</div>
+                <div class="breakdown-label">Total Cards</div>
+            </div>
+            <div class="breakdown-item">
+                <div class="breakdown-value">${dueCount}</div>
+                <div class="breakdown-label">Due Today</div>
+            </div>
+            <div class="breakdown-item">
+                <div class="breakdown-value">${queue.filter(q => q.due > now).length}</div>
+                <div class="breakdown-label">Scheduled (Future)</div>
+            </div>
+            <div class="breakdown-item">
+                <div class="breakdown-value">${mastered}</div>
+                <div class="breakdown-label">Subjects Mastered</div>
+            </div>
+        </div>
+    `;
+
+    drawForgettingCurve();
+}
+
+function sourceLabel(src) {
+    return { flashcard: '🎴 Flashcard', error_notebook: '❌ Error', bookmark: '🔖 Bookmark' }[src] || src;
+}
+
+// ============ Forgetting Curve Canvas ============
+function drawForgettingCurve() {
+    const canvas = document.getElementById('forgettingCurve');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width;
+    const h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const axisColor = isDark ? '#475569' : '#cbd5e1';
+    const textColor = isDark ? '#94a3b8' : '#64748b';
+    const noReviewColor = '#ef4444';
+    const withReviewColor = '#10b981';
+
+    // Axes
+    ctx.strokeStyle = axisColor;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(60, 20);
+    ctx.lineTo(60, h - 30);
+    ctx.lineTo(w - 20, h - 30);
+    ctx.stroke();
+
+    // Y-axis labels
+    ctx.fillStyle = textColor;
+    ctx.font = '11px Segoe UI';
+    ctx.textAlign = 'right';
+    ['100%', '75%', '50%', '25%', '0%'].forEach((label, i) => {
+        const y = 20 + (i * (h - 50) / 4);
+        ctx.fillText(label, 50, y + 4);
+        // Gridline
+        ctx.strokeStyle = axisColor + '40';
+        ctx.beginPath();
+        ctx.moveTo(60, y);
+        ctx.lineTo(w - 20, y);
+        ctx.stroke();
+    });
+
+    // X-axis labels
+    ctx.textAlign = 'center';
+    const days = ['Day 1', 'Day 2', 'Day 7', 'Day 16', 'Day 35'];
+    const xPositions = [80, 220, 400, 620, 850];
+    days.forEach((d, i) => {
+        ctx.fillStyle = textColor;
+        ctx.fillText(d, xPositions[i], h - 14);
+    });
+
+    // No-review forgetting curve (R = e^(-t/S) where S = stability)
+    const points = [];
+    for (let i = 0; i <= 100; i++) {
+        const t = i / 100;
+        const x = 60 + t * (w - 80);
+        // Ebbinghaus: ~33% retention after 24h without review
+        const dayScale = t * 35;
+        const retention = Math.exp(-dayScale / 3) * 100;
+        const y = (h - 30) - (retention / 100) * (h - 50);
+        points.push({ x, y });
+    }
+    ctx.strokeStyle = noReviewColor;
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    points.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+    ctx.stroke();
+
+    // Fill under no-review curve
+    ctx.fillStyle = noReviewColor + '20';
+    ctx.beginPath();
+    ctx.moveTo(points[0].x, h - 30);
+    points.forEach(p => ctx.lineTo(p.x, p.y));
+    ctx.lineTo(points[points.length - 1].x, h - 30);
+    ctx.closePath();
+    ctx.fill();
+
+    // With-review curve — much flatter, stays high
+    const reviewPoints = [];
+    // Reviews at day 1, 3, 7, 14, 21 → each refresh
+    const reviewDays = [1, 3, 7, 14, 21, 35];
+    for (let i = 0; i <= 100; i++) {
+        const t = i / 100;
+        const x = 60 + t * (w - 80);
+        const day = t * 35;
+        // Find last review
+        let lastReview = 0;
+        for (const rd of reviewDays) if (day >= rd) lastReview = rd;
+        const sinceReview = day - lastReview;
+        // After each review, retention jumps back to 100% then decays slower
+        const stability = 3 + (reviewDays.indexOf(lastReview) + 1) * 2;
+        const retention = Math.max(70, 100 * Math.exp(-sinceReview / stability));
+        const y = (h - 30) - (retention / 100) * (h - 50);
+        reviewPoints.push({ x, y });
+    }
+    ctx.strokeStyle = withReviewColor;
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    reviewPoints.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+    ctx.stroke();
+
+    // Mark review points
+    reviewDays.forEach((rd, i) => {
+        const x = 60 + (rd / 35) * (w - 80);
+        const y = (h - 30) - 1 * (h - 50);
+        ctx.fillStyle = withReviewColor;
+        ctx.beginPath();
+        ctx.arc(x, y, 4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.arc(x, y, 2, 0, Math.PI * 2);
+        ctx.fill();
+    });
+
+    // Legend
+    ctx.font = '12px Segoe UI';
+    ctx.textAlign = 'left';
+    ctx.fillStyle = noReviewColor;
+    ctx.fillRect(w - 200, 20, 12, 12);
+    ctx.fillStyle = textColor;
+    ctx.fillText('Without review', w - 182, 30);
+    ctx.fillStyle = withReviewColor;
+    ctx.fillRect(w - 200, 40, 12, 12);
+    ctx.fillStyle = textColor;
+    ctx.fillText('With spaced repetition', w - 182, 50);
+}
+
+// ============ Review Session ============
+let currentQueue = [];
+let currentIndex = 0;
+
+function startReviewSession(specificId) {
+    const allQueue = buildReviewQueue();
+    const now = Date.now();
+    if (specificId) {
+        currentQueue = allQueue.filter(q => q.id === specificId);
+    } else {
+        currentQueue = allQueue.filter(q => q.due <= now);
+    }
+    if (currentQueue.length === 0) {
+        if (window.showToast) window.showToast('No cards due for review!', 'info');
+        return;
+    }
+    currentIndex = 0;
+    openReviewModal();
+}
+
+function openReviewModal() {
+    document.getElementById('reviewModal').style.display = 'flex';
+    renderCurrentCard();
+}
+
+function closeReviewModal() {
+    document.getElementById('reviewModal').style.display = 'none';
+    currentQueue = [];
+    renderDashboard();
+}
+
+function renderCurrentCard() {
+    if (currentIndex >= currentQueue.length) {
+        // Session complete
+        document.getElementById('modalCardContainer').innerHTML = `
+            <div style="text-align:center;padding:40px 20px;">
+                <div style="font-size:3rem;margin-bottom:12px;">🎉</div>
+                <h2 style="margin-bottom:6px;">Review Session Complete!</h2>
+                <p style="color:var(--text-muted);margin-bottom:18px;">You reviewed ${currentQueue.length} card${currentQueue.length !== 1 ? 's' : ''}.</p>
+                <button class="btn btn-primary" onclick="closeReviewModal()">Done</button>
+            </div>
+        `;
+        document.getElementById('modalActions').innerHTML = '';
+        document.getElementById('modalType').textContent = 'Complete';
+        return;
+    }
+
+    const card = currentQueue[currentIndex];
+    document.getElementById('modalType').textContent = sourceLabel(card.source);
+    document.getElementById('modalProgressBar').style.width = `${((currentIndex) / currentQueue.length) * 100}%`;
+
+    // Reset flip
+    document.getElementById('reviewFlipper').classList.remove('flipped');
+
+    // Render front
+    document.getElementById('cardFront').innerHTML = `
+        <div class="card-meta-tag">${card.meta || ''}</div>
+        <div class="card-front-content">${card.front}</div>
+        <div class="card-flip-hint">Click card to reveal answer →</div>
+    `;
+    document.getElementById('cardBack').innerHTML = `
+        <div class="card-meta-tag">${card.meta || ''}</div>
+        <div class="card-back-content">${card.back}</div>
+    `;
+
+    // Show/hide actions
+    document.getElementById('modalActions').innerHTML = `
+        <button class="btn btn-ghost" onclick="flipReviewCard()">👁 Reveal Answer</button>
+    `;
+
+    // Click card to flip
+    document.getElementById('reviewFlipper').onclick = flipReviewCard;
+}
+
+function flipReviewCard() {
+    const flipper = document.getElementById('reviewFlipper');
+    flipper.classList.add('flipped');
+    const card = currentQueue[currentIndex];
+    const actions = document.getElementById('modalActions');
+    actions.innerHTML = `
+        <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:6px;text-align:center;">How well did you remember?</div>
+        <div class="review-quality-buttons">
+            ${card.qualityOptions.map((label, i) => {
+                const colors = ['#ef4444', '#f59e0b', '#10b981', '#3b82f6'];
+                return `<button class="quality-btn" style="--q-color:${colors[i]};" onclick="rateReviewCard(${i})">${label}</button>`;
+            }).join('')}
+        </div>
+    `;
+}
+
+function rateReviewCard(quality) {
+    const card = currentQueue[currentIndex];
+    // Use SM-2 via existing tracker for error notebook / flashcard
+    if (card.source === 'error_notebook' && typeof window.rateErrorCard === 'function') {
+        window.rateErrorCard(card.data.question_id, quality);
+    } else if (card.source === 'flashcard') {
+        // Update flashcard state
+        const fcState = getJSON('sohcse_flashcard_state_v1', { stats: {} });
+        const state = fcState.stats[card.data.id] || { reviews: 0, ease: 2.5, interval: 0 };
+        state.reviews = (state.reviews || 0) + 1;
+        const intervals = [0, 1, 3, 7];
+        state.interval = intervals[quality] || 1;
+        state.ease = Math.max(1.3, (state.ease || 2.5) + (quality - 1) * 0.1);
+        state.nextReview = Date.now() + (state.interval * 86400000);
+        state.lastReview = Date.now();
+        fcState.stats[card.data.id] = state;
+        setJSON('sohcse_flashcard_state_v1', fcState);
+    }
+
+    // Award XP
+    if (window.SOH_Game) window.SOH_Game.onFlashcardReview(quality);
+
+    currentIndex++;
+    renderCurrentCard();
+}
+
+// ============ Init ============
+window.addEventListener('load', renderDashboard);
+window.addEventListener('resize', drawForgettingCurve);
+</script>
+<script src="./flashcards_data.js"></script>
+<script src="./nav.js"></script>
+<script src="./theme.js"></script>
+</body>
+</html>
