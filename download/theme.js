@@ -251,6 +251,7 @@
         { icon: '📐', title: 'Formula Book', desc: 'Quick formula reference', url: './formulas.html' },
         { icon: '⏱', title: 'Pomodoro Timer', desc: 'Focus timer', url: './timer.html' },
         { icon: '📓', title: 'My Notes', desc: 'Personal notebook', url: './notes.html' },
+        { icon: '⚙️', title: 'Settings', desc: 'Configure API keys & preferences', url: './settings.html', shortcut: 'Alt+, (comma)' },
         { icon: '🤖', title: 'Ask AI', desc: 'Open AI chatbot', action: () => window.SOH_AI && window.SOH_AI.open(), shortcut: 'Alt+A' },
         { icon: '🌙', title: 'Toggle Dark Mode', desc: 'Switch between light and dark', action: toggleTheme, shortcut: 'Ctrl+J' },
         { icon: '👁', title: 'Toggle Navbar', desc: 'Hide/show navbar for reading', action: toggleNavbar, shortcut: 'Ctrl+H' },
@@ -410,7 +411,8 @@
                     'e': './resources.html',
                     'm': './materials.html',
                     'r': './revision.html',
-                    'c': './concept-map.html'
+                    'c': './concept-map.html',
+                    ',': './settings.html'
                 };
                 const key = e.key.toLowerCase();
                 if (keyMap[key]) {
@@ -532,7 +534,18 @@
         // Welcome toast on first visit
         if (!sessionStorage.getItem('sohcse_welcomed')) {
             setTimeout(() => {
-                showToast('💡 Press Ctrl+K for quick navigation', 'info', 4000);
+                // Check if AI is configured
+                const userKeys = JSON.parse(localStorage.getItem('sohcse_user_keys') || '{}');
+                const chatbotKeys = JSON.parse(localStorage.getItem('sohcse_ai_keys_v3') || '{}');
+                const hasAnyKey = Object.keys(userKeys).length > 0 || Object.keys(chatbotKeys).length > 0;
+                if (!hasAnyKey) {
+                    showToast('⚙️ Configure your API keys in Settings to enable AI tutor →', 'warning', 6000);
+                    setTimeout(() => {
+                        showToast('💡 Press Ctrl+K anytime for quick navigation', 'info', 4000);
+                    }, 6500);
+                } else {
+                    showToast('💡 Press Ctrl+K for quick navigation • Alt+, for Settings', 'info', 4000);
+                }
                 sessionStorage.setItem('sohcse_welcomed', '1');
             }, 1500);
         }

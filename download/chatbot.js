@@ -166,13 +166,30 @@ CRITICAL — NO DUPLICATES:
         localStorage.setItem(STORAGE_KEY, JSON.stringify(keys));
     }
     function getKey(provider) {
-        // Check config.js built-in keys first
+        // Check user-saved keys FIRST (from settings page — localStorage)
+        const userKeys = loadKeys();
+        if (userKeys[provider]) return userKeys[provider];
+
+        // Then check config.js built-in keys (now empty by default — kept for self-hosters)
         if (typeof SOH_CONFIG !== 'undefined') {
             if (provider === 'gemini' && SOH_CONFIG.GEMINI_API_KEY) return SOH_CONFIG.GEMINI_API_KEY;
             if (provider === 'groq' && SOH_CONFIG.GROQ_API_KEY) return SOH_CONFIG.GROQ_API_KEY;
         }
-        // Then check user-saved keys
-        return loadKeys()[provider] || '';
+        return '';
+    }
+
+    // Check if any AI provider is configured (user key OR admin service)
+    function isAIConfigured() {
+        // Admin service configured?
+        if (typeof window.isAdminServiceConfigured === 'function' && window.isAdminServiceConfigured()) return true;
+        // Any user-saved key?
+        const userKeys = loadKeys();
+        if (Object.keys(userKeys).length > 0) return true;
+        // Any config key (fallback)?
+        if (typeof SOH_CONFIG !== 'undefined') {
+            if (SOH_CONFIG.GEMINI_API_KEY || SOH_CONFIG.GROQ_API_KEY) return true;
+        }
+        return false;
     }
 
     function loadHistory() {
@@ -409,6 +426,11 @@ CRITICAL — NO DUPLICATES:
                 </div>
 
                 <div class="ai-chat-config" id="aiChatConfig">
+                    <div style="background:linear-gradient(135deg, rgba(102,126,234,0.1), rgba(118,75,162,0.1));padding:10px 12px;border-radius:8px;margin-bottom:10px;border:1px solid rgba(102,126,234,0.2);">
+                        <div style="font-size:0.82rem;font-weight:700;color:var(--text);margin-bottom:4px;">⚙️ API Settings</div>
+                        <div style="font-size:0.74rem;color:var(--text-muted);margin-bottom:6px;line-height:1.4;">Manage all your API keys in one place. Keys are stored only in your browser.</div>
+                        <a href="./settings.html" target="_blank" rel="noopener" style="display:inline-block;padding:5px 12px;background:var(--grad-brand);color:white;text-decoration:none;border-radius:6px;font-size:0.78rem;font-weight:600;">🔧 Open Settings Page →</a>
+                    </div>
                     <div class="config-row">
                         <select id="aiProvider" aria-label="AI provider">
                             <option value="gemini">✨ Google Gemini (Free, 1500/day, recommended)</option>
@@ -877,7 +899,7 @@ CRITICAL — NO DUPLICATES:
         const apiKey = getKey(provider);
         
         if (!adminConfigured && !apiKey) {
-            addMessage('error', '⚠ No AI key configured. Either:\n1. Set up admin-service in config.js (recommended)\n2. Or add a direct API key — click ⚙ below.\nFree: Gemini at aistudio.google.com/apikey or Groq at console.groq.com/keys');
+            addMessage('error', '⚠ No AI key configured yet. To start using the AI tutor:\n\n**Option 1 — Open Settings page (recommended):**\n👉 Click here: [Open Settings](./settings.html)\n\n**Option 2 — Quick add via this panel:**\nClick ⚙ below to add a free API key.\n\n**Free API keys:**\n• Gemini: https://aistudio.google.com/apikey (1500 req/day)\n• Groq: https://console.groq.com/keys (fast, Llama 3.3 70B)\n\nAll keys are stored ONLY in your browser (localStorage). They never leave your device.');
             toggleConfig();
             return;
         }

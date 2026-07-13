@@ -28,6 +28,7 @@
         'timer.html':         { label: '⏱ Timer',       group: 'tools' },
         'notes.html':         { label: '📓 Notes',       group: 'tools' },
         'planner.html':       { label: '📅 Planner',     group: 'tools' },
+        'settings.html':      { label: '⚙️ Settings',    group: 'tools' },
         'progress.html':      { label: '📈 Progress',    group: 'track' },
         'resources.html':     { label: '🚀 Resources',   group: 'track' },
     };
@@ -36,7 +37,7 @@
         'main':     { label: '🏠 Home',         pages: ['index.html', 'dashboard.html'] },
         'study':    { label: '📖 Study',        pages: ['learn.html', 'syllabus.html', 'materials.html', 'formulas.html', 'concept-map.html'] },
         'practice': { label: '🎯 Practice',     pages: ['pyq.html', 'mocktest.html', 'quiz.html', 'flashcards.html', 'revision.html', 'videos.html'] },
-        'tools':    { label: '🛠 Tools',        pages: ['calculator.html', 'timer.html', 'notes.html', 'planner.html'] },
+        'tools':    { label: '🛠 Tools',        pages: ['calculator.html', 'timer.html', 'notes.html', 'planner.html', 'settings.html'] },
         'track':    { label: '📈 Track',        pages: ['progress.html', 'resources.html'] },
     };
 
