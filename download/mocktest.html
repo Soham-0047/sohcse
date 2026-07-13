@@ -420,6 +420,7 @@
 <script src="./chatbot.js"></script>
 <script src="./tracker.js"></script>
 <script src="./gamification.js"></script>
+<script src="./question-engine.js"></script>
 <script src="./loader.js"></script>
 <script src="./nav.js"></script>
 <script>
@@ -510,7 +511,11 @@ function renderSetup() {
 
                     <div style="background:var(--bg-light);border-radius:10px;padding:14px;margin-bottom:20px;font-size:0.82rem;color:var(--text-muted);line-height:1.7;">
                         <strong>📌 Exam Features:</strong><br>
-                        • Questions selected based on GATE subject weightage (Math 15%, Algorithms 12%, DS 12%, etc.)<br>
+                        • <strong>Smart v2 Algorithm</strong> — analyzes 15 years of PYQ trends (2011–2025) for subject weightage, type distribution (MCQ ~60%, MSQ ~15%, NAT ~25%), and chapter importance<br>
+                        • <strong>Strict deduplication</strong> via question_id + content hash — no question repeats<br>
+                        • <strong>Chapter diversity enforcement</strong> — penalizes over-represented chapters<br>
+                        • <strong>Year recency boost</strong> — newer questions weighted higher (2024–2026: 1.4–1.5×)<br>
+                        • <strong>Adaptive difficulty</strong> — uses your past accuracy to balance easy/medium/hard<br>
                         • Side calculator available (same as real GATE exam)<br>
                         • Question palette with color-coded status (answered, not answered, marked for review)<br>
                         • Real negative marking: MCQ −1/3 (1-mark), −2/3 (2-mark); MSQ/NAT no negative<br>
@@ -518,19 +523,86 @@ function renderSetup() {
                         • AI integration: generate similar questions for weak areas after the test
                     </div>
 
+                    <div id="trendAnalysisPanel"></div>
+
                     <button class="btn btn-primary btn-lg" style="width:100%;" onclick="startMockTest()">🚀 Start Mock Test</button>
                 </div>
             </div>
         </div>
     `;
+    // Render trend analysis if engine is loaded
+    if (typeof window.SOH_QEngine !== 'undefined') {
+        setTimeout(renderTrendPanel, 100);
+    }
 }
 
-// ============ Question Selection Algorithm ============
+function renderTrendPanel() {
+    const panel = document.getElementById('trendAnalysisPanel');
+    if (!panel) return;
+    const summary = window.SOH_QEngine.getTrendSummary();
+    const totalQ = summary.totalQuestions || 0;
+    if (totalQ === 0) { panel.innerHTML = ''; return; }
+
+    const subjRows = summary.topSubjects.map(s => {
+        const label = s.subject.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+        const pct = ((s.count / totalQ) * 100).toFixed(1);
+        const trend = summary.trends[s.subject] || 0;
+        const trendIcon = trend > 0.1 ? '📈' : (trend < -0.1 ? '📉' : '➡️');
+        const trendLabel = trend > 0.1 ? `+${(trend * 100).toFixed(0)}%` : (trend < -0.1 ? `${(trend * 100).toFixed(0)}%` : 'stable');
+        return `<tr><td>${label}</td><td><strong>${s.count}</strong></td><td>${pct}%</td><td>${trendIcon} ${trendLabel}</td></tr>`;
+    }).join('');
+
+    const mcqPct = ((summary.typeDistribution.mcq || 0) / totalQ * 100).toFixed(0);
+    const msqPct = ((summary.typeDistribution.msq || 0) / totalQ * 100).toFixed(0);
+    const natPct = ((summary.typeDistribution.nat || 0) / totalQ * 100).toFixed(0);
+
+    panel.innerHTML = `
+        <div style="background:linear-gradient(135deg, rgba(102,126,234,0.05), rgba(118,75,162,0.05));border-radius:10px;padding:14px;margin-bottom:20px;border:1px solid var(--border);">
+            <div style="font-size:0.86rem;font-weight:700;color:var(--text);margin-bottom:8px;">📊 15-Year Trend Analysis (${summary.yearRange.min}–${summary.yearRange.max})</div>
+            <div style="font-size:0.74rem;color:var(--text-muted);margin-bottom:10px;">Based on ${totalQ.toLocaleString()} analyzed PYQs across ${summary.subjects} subjects</div>
+
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;">
+                <div style="background:var(--bg-card);padding:8px;border-radius:6px;text-align:center;border:1px solid var(--border);">
+                    <div style="font-size:1.1rem;font-weight:800;color:#3b82f6;">${mcqPct}%</div>
+                    <div style="font-size:0.7rem;color:var(--text-muted);">MCQ</div>
+                </div>
+                <div style="background:var(--bg-card);padding:8px;border-radius:6px;text-align:center;border:1px solid var(--border);">
+                    <div style="font-size:1.1rem;font-weight:800;color:#f59e0b;">${msqPct}%</div>
+                    <div style="font-size:0.7rem;color:var(--text-muted);">MSQ</div>
+                </div>
+                <div style="background:var(--bg-card);padding:8px;border-radius:6px;text-align:center;border:1px solid var(--border);">
+                    <div style="font-size:1.1rem;font-weight:800;color:#10b981;">${natPct}%</div>
+                    <div style="font-size:0.7rem;color:var(--text-muted);">NAT</div>
+                </div>
+            </div>
+
+            <table class="cutoff-table" style="font-size:0.78rem;">
+                <thead><tr><th>Top Subject</th><th>Qs</th><th>Weight</th><th>5-yr Trend</th></tr></thead>
+                <tbody>${subjRows}</tbody>
+            </table>
+        </div>
+    `;
+}
+
+// ============ Question Selection Algorithm (v2 — uses SOH_QEngine) ============
 function selectQuestions(source) {
+    // Use the new robust question engine if available
+    if (typeof window.SOH_QEngine !== 'undefined') {
+        const questions = window.SOH_QEngine.buildMockTest(source, {
+            totalQuestions: TOTAL_QUESTIONS,
+            totalMarks: TOTAL_MARKS,
+            subjectWeights: SUBJECT_WEIGHTS,
+        });
+        if (questions.length > 0) return questions;
+        // Fallback to old algorithm below if engine returned empty
+    }
+
     if (typeof window.GATE_DATA === 'undefined') return [];
 
+    // === LEGACY FALLBACK (only if QEngine fails) ===
     // Collect all questions grouped by subject
     const bySubject = {};
+    const seenIds = new Set(); // Deduplication
     for (const subj of window.GATE_DATA.subjects) {
         for (const chap of subj.chapters) {
             for (const q of chap.questions) {
@@ -538,6 +610,8 @@ function selectQuestions(source) {
                 if (source === '2025' && q.year !== 2025) continue;
                 if (source === '2024' && q.year !== 2024) continue;
                 if (source === '2023' && q.year !== 2023) continue;
+                if (seenIds.has(q.question_id)) continue; // Skip duplicates
+                seenIds.add(q.question_id);
 
                 if (!bySubject[q.subject]) bySubject[q.subject] = [];
                 bySubject[q.subject].push(q);
@@ -547,6 +621,7 @@ function selectQuestions(source) {
 
     // Calculate how many questions to pick from each subject based on weightage
     const selected = [];
+    const selectedIds = new Set();
     let totalWeight = 0;
     for (const [subj, weight] of Object.entries(SUBJECT_WEIGHTS)) {
         if (bySubject[subj] && bySubject[subj].length > 0) totalWeight += weight;
@@ -556,10 +631,19 @@ function selectQuestions(source) {
         if (!bySubject[subj] || bySubject[subj].length === 0) continue;
         const targetCount = Math.round((weight / totalWeight) * TOTAL_QUESTIONS);
 
-        // Shuffle and pick
-        const shuffled = [...bySubject[subj]].sort(() => Math.random() - 0.5);
+        // Proper Fisher-Yates shuffle
+        const shuffled = [...bySubject[subj]];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
         const picked = shuffled.slice(0, Math.min(targetCount, shuffled.length));
-        selected.push(...picked);
+        for (const q of picked) {
+            if (!selectedIds.has(q.question_id)) {
+                selected.push(q);
+                selectedIds.add(q.question_id);
+            }
+        }
     }
 
     // If we have too few, fill randomly from remaining
@@ -567,18 +651,30 @@ function selectQuestions(source) {
         const allRemaining = [];
         for (const qs of Object.values(bySubject)) {
             for (const q of qs) {
-                if (!selected.find(s => s.question_id === q.question_id)) allRemaining.push(q);
+                if (!selectedIds.has(q.question_id)) allRemaining.push(q);
             }
         }
-        allRemaining.sort(() => Math.random() - 0.5);
-        selected.push(...allRemaining.slice(0, TOTAL_QUESTIONS - selected.length));
+        // Fisher-Yates shuffle
+        for (let i = allRemaining.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [allRemaining[i], allRemaining[j]] = [allRemaining[j], allRemaining[i]];
+        }
+        for (const q of allRemaining) {
+            if (selected.length >= TOTAL_QUESTIONS) break;
+            if (!selectedIds.has(q.question_id)) {
+                selected.push(q);
+                selectedIds.add(q.question_id);
+            }
+        }
     }
 
-    // If too many, trim
+    // If too many, trim. Then Fisher-Yates final shuffle.
     const final = selected.slice(0, TOTAL_QUESTIONS);
-
-    // Shuffle the final set so subjects are mixed (not grouped)
-    return final.sort(() => Math.random() - 0.5);
+    for (let i = final.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [final[i], final[j]] = [final[j], final[i]];
+    }
+    return final;
 }
 
 // ============ Start Test ============
