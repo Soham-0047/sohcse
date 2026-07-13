@@ -12,29 +12,32 @@
     // ============ Page definitions ============
     const PAGES = {
         'index.html':         { label: '🏠 Home',        group: 'main' },
+        'dashboard.html':     { label: '📊 Dashboard',   group: 'main' },
         'learn.html':         { label: '📖 Learn',       group: 'study' },
         'syllabus.html':      { label: '📋 Syllabus',    group: 'study' },
         'materials.html':     { label: '📚 Materials',   group: 'study' },
         'formulas.html':      { label: '📐 Formulas',    group: 'study' },
+        'concept-map.html':   { label: '🗺️ Concept Map', group: 'study' },
         'pyq.html':           { label: '📝 PYQs',        group: 'practice' },
         'mocktest.html':      { label: '🎯 Mock Test',   group: 'practice' },
         'quiz.html':          { label: '🎯 Quiz',        group: 'practice' },
         'flashcards.html':    { label: '🎴 Flashcards',  group: 'practice' },
+        'revision.html':      { label: '🔁 Revision',    group: 'practice' },
         'videos.html':        { label: '🎥 Videos',      group: 'practice' },
         'calculator.html':    { label: '🧮 Calculator',  group: 'tools' },
         'timer.html':         { label: '⏱ Timer',       group: 'tools' },
         'notes.html':         { label: '📓 Notes',       group: 'tools' },
         'planner.html':       { label: '📅 Planner',     group: 'tools' },
-        'progress.html':      { label: '📊 Progress',    group: 'track' },
+        'progress.html':      { label: '📈 Progress',    group: 'track' },
         'resources.html':     { label: '🚀 Resources',   group: 'track' },
     };
 
     const GROUPS = {
-        'main':     { label: '🏠 Home',         pages: ['index.html'] },
-        'study':    { label: '📖 Study',        pages: ['learn.html', 'syllabus.html', 'materials.html', 'formulas.html'] },
-        'practice': { label: '🎯 Practice',     pages: ['pyq.html', 'mocktest.html', 'quiz.html', 'flashcards.html', 'videos.html'] },
+        'main':     { label: '🏠 Home',         pages: ['index.html', 'dashboard.html'] },
+        'study':    { label: '📖 Study',        pages: ['learn.html', 'syllabus.html', 'materials.html', 'formulas.html', 'concept-map.html'] },
+        'practice': { label: '🎯 Practice',     pages: ['pyq.html', 'mocktest.html', 'quiz.html', 'flashcards.html', 'revision.html', 'videos.html'] },
         'tools':    { label: '🛠 Tools',        pages: ['calculator.html', 'timer.html', 'notes.html', 'planner.html'] },
-        'track':    { label: '📊 Track',        pages: ['progress.html', 'resources.html'] },
+        'track':    { label: '📈 Track',        pages: ['progress.html', 'resources.html'] },
     };
 
     // ============ Get current page ============
@@ -61,7 +64,7 @@
                 const activePage = group.pages.find(p => p === current);
                 const triggerLabel = activePage ? PAGES[activePage].label : group.label;
                 html += `<div class="topnav-dropdown ${isActive ? 'open' : ''}" data-group="${groupKey}">`;
-                html += `<button class="topnav-dropdown-trigger ${isActive ? 'active' : ''}" onclick="this.parentElement.classList.toggle('open')">`;
+                html += `<button class="topnav-dropdown-trigger ${isActive ? 'active' : ''}" onclick="toggleDropdown(this.parentElement)">`;
                 html += `${triggerLabel} <span class="caret">▼</span></button>`;
                 html += `<div class="topnav-dropdown-menu">`;
                 for (const page of group.pages) {
@@ -79,7 +82,7 @@
     function generateMobileBottomNav() {
         const current = getCurrentPage();
         // Show 5 key pages on bottom nav
-        const bottomPages = ['index.html', 'learn.html', 'pyq.html', 'videos.html', 'progress.html'];
+        const bottomPages = ['index.html', 'dashboard.html', 'pyq.html', 'revision.html', 'progress.html'];
         let html = '';
         for (const page of bottomPages) {
             const def = PAGES[page];
@@ -91,6 +94,15 @@
         }
         return html;
     }
+
+    // ============ Toggle dropdown (close others when opening new one) ============
+    window.toggleDropdown = function (dropdown) {
+        const isOpen = dropdown.classList.contains('open');
+        // Close ALL dropdowns first
+        document.querySelectorAll('.topnav-dropdown.open').forEach(d => d.classList.remove('open'));
+        // Open this one if it was closed
+        if (!isOpen) dropdown.classList.add('open');
+    };
 
     // ============ Inject navigation ============
     function injectNav() {
@@ -110,13 +122,11 @@
             document.body.appendChild(bottomNav);
         }
 
-        // Close dropdowns when clicking outside
+        // Close dropdowns when clicking outside — close ALL dropdowns
         document.addEventListener('click', (e) => {
             if (!e.target.closest('.topnav-dropdown')) {
                 document.querySelectorAll('.topnav-dropdown.open').forEach(d => {
-                    // Only close if not the active group
-                    const activePage = d.querySelector('.topnav-dropdown-trigger.active');
-                    if (!activePage) d.classList.remove('open');
+                    d.classList.remove('open');
                 });
             }
         });

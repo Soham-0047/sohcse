@@ -54,8 +54,11 @@
     </div>
 </div>
 
+<script src="./config.js"></script>
+<script src="./admin-client.js"></script>
 <script src="./chatbot.js"></script>
 <script src="./tracker.js"></script>
+<script src="./gamification.js"></script>
 <script src="./loader.js"></script>
 <script src="./flashcards_data.js"></script>
 <script>
@@ -332,6 +335,11 @@ function flipCard() {
 function rateAndNext(rating) {
     const cardId = state.queue[state.currentIdx];
     rateCard(cardId, rating);
+    // Award XP via gamification
+    if (window.SOH_Game) {
+        const qMap = { 'again': 0, 'hard': 1, 'good': 2, 'easy': 3 };
+        window.SOH_Game.onFlashcardReview(qMap[rating] ?? 2);
+    }
     state.currentIdx++;
     renderStudy();
 }

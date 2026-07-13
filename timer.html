@@ -271,8 +271,11 @@
     </div>
 </div>
 
+<script src="./config.js"></script>
+<script src="./admin-client.js"></script>
 <script src="./chatbot.js"></script>
 <script src="./tracker.js"></script>
+<script src="./gamification.js"></script>
 <script src="./loader.js"></script>
 <script>
 const TIMER_KEY = 'sohcse_timer_data';
@@ -390,6 +393,8 @@ function completeSession() {
         }
         saveData();
         if (window.showToast) window.showToast('🎉 Work session complete! Take a break.', 'success', 4000);
+        // Award XP via gamification
+        if (window.SOH_Game) window.SOH_Game.onPomodoroComplete(Math.round(getDuration('work') / 60));
         // Auto-switch to break
         setTimeout(() => {
             const nextMode = timer.completedToday % 4 === 0 ? 'long-break' : 'break';

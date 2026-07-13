@@ -53,8 +53,11 @@
     </div>
 </div>
 
+<script src="./config.js"></script>
+<script src="./admin-client.js"></script>
 <script src="./chatbot.js"></script>
 <script src="./tracker.js"></script>
+<script src="./gamification.js"></script>
 <script src="./loader.js"></script>
 <script>
 // ============ State ============
@@ -564,6 +567,13 @@ function saveQuizResult(score, total, correct, wrong, unattempted, subjectBreakd
             duration_sec: state.startTime ? Math.floor((Date.now() - state.startTime) / 1000) : 0,
             subject_breakdown: subjectBreakdown || {},
         });
+    }
+
+    // Award XP via gamification
+    if (window.SOH_Game) {
+        const totalMarks = state.quiz.reduce((s, q) => s + q.marks, 0);
+        const pct = totalMarks > 0 ? (score / totalMarks) * 100 : 0;
+        window.SOH_Game.onQuizComplete({ percentage: pct.toFixed(1), correct });
     }
 }
 

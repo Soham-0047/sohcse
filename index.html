@@ -21,14 +21,17 @@
         </button>
         <div class="topnav-links">
             <a href="./index.html" class="topnav-link active">🏠 Home</a>
+            <a href="./dashboard.html" class="topnav-link">📊 Dashboard</a>
             <a href="./learn.html" class="topnav-link">📖 Learn</a>
             <a href="./syllabus.html" class="topnav-link">📋 Syllabus</a>
             <a href="./materials.html" class="topnav-link">📚 Materials</a>
             <a href="./pyq.html" class="topnav-link">📝 PYQs</a>
             <a href="./mocktest.html" class="topnav-link">🎯 Mock Test</a>
+            <a href="./revision.html" class="topnav-link">🔁 Revision</a>
+            <a href="./concept-map.html" class="topnav-link">🗺️ Map</a>
             <a href="./flashcards.html" class="topnav-link">🎴 Flashcards</a>
             <a href="./quiz.html" class="topnav-link">🎯 Quiz</a>
-            <a href="./progress.html" class="topnav-link">📊 Progress</a>
+            <a href="./progress.html" class="topnav-link">📈 Progress</a>
             <a href="./planner.html" class="topnav-link">📅 Planner</a>
             <a href="./resources.html" class="topnav-link">🚀 Resources</a>
         </div>
@@ -50,7 +53,7 @@
         video lectures, flashcards, quizzes, progress tracking, and a smart study planner — all in one place.
     </p>
     <div class="hero-cta">
-        <a href="./materials.html" class="btn btn-primary btn-lg">📚 Start Studying</a>
+        <a href="./dashboard.html" class="btn btn-primary btn-lg">📊 Open Dashboard</a>
         <a href="./pyq.html" class="btn btn-secondary btn-lg">📝 Practice PYQs →</a>
     </div>
 
@@ -59,6 +62,41 @@
         <div class="hero-stat"><div class="v" data-count="70">0</div><div class="l">Study PDFs</div></div>
         <div class="hero-stat"><div class="v" data-count="14">0</div><div class="l">Subjects Covered</div></div>
         <div class="hero-stat"><div class="v" data-count="40">0</div><div class="l">Years (1987–2026)</div></div>
+    </div>
+</section>
+
+<!-- New Features Spotlight -->
+<section class="section">
+    <div class="section-card" style="background: linear-gradient(135deg, rgba(102,126,234,0.05), rgba(118,75,162,0.05));">
+        <div class="section-eyebrow">✨ New in v4</div>
+        <h2 class="section-title">Smarter, more personal, more motivating</h2>
+        <p class="section-subtitle">Three brand-new systems designed to make your GATE prep more effective and more fun.</p>
+        <div class="features-grid">
+            <a href="./dashboard.html" class="feature-card" style="--card-grad: var(--grad-brand);">
+                <div class="feature-icon">📊</div>
+                <div class="feature-title">Personal Study Dashboard</div>
+                <div class="feature-desc">Daily smart recommendations, GATE score predictor, 7-day activity timeline, and quick actions — all in one place.</div>
+                <div class="feature-arrow">Open dashboard →</div>
+            </a>
+            <a href="./revision.html" class="feature-card" style="--card-grad: var(--grad-red);">
+                <div class="feature-icon">🔁</div>
+                <div class="feature-title">Smart Revision Hub</div>
+                <div class="feature-desc">Unified spaced-repetition queue across flashcards, error notebook, and bookmarked PYQs. Visualize the Ebbinghaus forgetting curve and beat it.</div>
+                <div class="feature-arrow">Start reviewing →</div>
+            </a>
+            <a href="./concept-map.html" class="feature-card" style="--card-grad: var(--grad-cyan);">
+                <div class="feature-icon">🗺️</div>
+                <div class="feature-title">Interactive Concept Map</div>
+                <div class="feature-desc">Force-directed graph of GATE subjects and their dependencies. Color-coded by your mastery. Discover the optimal learning path.</div>
+                <div class="feature-arrow">Explore the map →</div>
+            </a>
+            <div class="feature-card" style="--card-grad: var(--grad-gold); cursor: default;">
+                <div class="feature-icon">🏆</div>
+                <div class="feature-title">Gamification & Achievements</div>
+                <div class="feature-desc">Earn XP for every action. Climb 8 ranks from Aspirant to GATE Champion. Unlock 30+ achievements. Build streaks. Stay motivated.</div>
+                <div class="feature-arrow" style="opacity:0.6;">Automatic across all pages</div>
+            </div>
+        </div>
     </div>
 </section>
 
@@ -231,8 +269,11 @@
     <div>Made with 💜 for GATE CSE aspirants • PYQ data sourced from ExamSIDE.com</div>
 </footer>
 
+<script src="./config.js"></script>
+<script src="./admin-client.js"></script>
 <script src="./chatbot.js"></script>
 <script src="./tracker.js"></script>
+<script src="./gamification.js"></script>
 <script src="./loader.js"></script>
 <script>
 function animateCounters() {

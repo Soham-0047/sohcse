@@ -80,8 +80,11 @@
     </div>
 </div>
 
+<script src="./config.js"></script>
+<script src="./admin-client.js"></script>
 <script src="./chatbot.js"></script>
 <script src="./tracker.js"></script>
+<script src="./gamification.js"></script>
 <script src="./loader.js"></script>
 <script>
 let data = null;
@@ -451,6 +454,8 @@ function selectPracticeOption(qid, identifier, isMSQ) {
         if (!isCorrect && typeof window.addToErrorNotebook === 'function') {
             window.addToErrorNotebook(q);
         }
+        // Award XP via gamification
+        if (window.SOH_Game) window.SOH_Game.onAttempt(isCorrect);
     }
     renderChapterView();
 }
@@ -477,6 +482,8 @@ function submitNATAnswer(qid, correctAnswer) {
         if (!isCorrect && typeof window.addToErrorNotebook === 'function') {
             window.addToErrorNotebook(q);
         }
+        // Award XP via gamification
+        if (window.SOH_Game) window.SOH_Game.onAttempt(isCorrect);
     }
     renderChapterView();
 }
@@ -627,7 +634,11 @@ function toggleQuestionBookmark(qid) {
     const bm = getQuestionBookmarks();
     const idx = bm.findIndex(b => b.question_id === qid);
     if (idx >= 0) bm.splice(idx, 1);
-    else bm.push({ question_id: q.question_id, year: q.year, paper_title: q.paper_title, type: q.type, subject: q.subject, chapter: q.chapter, subject_label: q.subject_label, chapter_label: q.chapter_label, question_preview: stripHtmlSimple(q.question_text).slice(0, 120), url: q.url, addedAt: Date.now() });
+    else {
+        bm.push({ question_id: q.question_id, year: q.year, paper_title: q.paper_title, type: q.type, subject: q.subject, chapter: q.chapter, subject_label: q.subject_label, chapter_label: q.chapter_label, question_preview: stripHtmlSimple(q.question_text).slice(0, 120), url: q.url, addedAt: Date.now() });
+        // Award XP for new bookmark
+        if (window.SOH_Game) window.SOH_Game.onBookmark();
+    }
     localStorage.setItem(Q_BOOKMARKS_KEY, JSON.stringify(bm));
     if (state.view === 'chapter') renderChapterView();
     else if (state.view === 'papers' && state.selectedPaperYear) renderPapers();

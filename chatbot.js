@@ -158,7 +158,15 @@ RULES:
         else delete keys[provider];
         localStorage.setItem(STORAGE_KEY, JSON.stringify(keys));
     }
-    function getKey(provider) { return loadKeys()[provider] || ''; }
+    function getKey(provider) {
+        // Check config.js built-in keys first
+        if (typeof SOH_CONFIG !== 'undefined') {
+            if (provider === 'gemini' && SOH_CONFIG.GEMINI_API_KEY) return SOH_CONFIG.GEMINI_API_KEY;
+            if (provider === 'groq' && SOH_CONFIG.GROQ_API_KEY) return SOH_CONFIG.GROQ_API_KEY;
+        }
+        // Then check user-saved keys
+        return loadKeys()[provider] || '';
+    }
 
     function loadHistory() {
         try { return JSON.parse(localStorage.getItem(CHAT_HISTORY_KEY) || '[]'); } catch { return []; }
@@ -257,7 +265,7 @@ RULES:
                 </div>
 
                 <div class="ai-chat-messages" id="aiChatMessages">
-                    <div class="message system">👋 Hi! I'm <strong>SOH AI v3</strong> — your GATE CSE tutor with 5 specialist modes. Switch modes above. I can solve PYQs, explain concepts, write C code, plan your study, and generate quizzes!</div>
+                    <div class="message system">👋 Hi! I'm <strong>SOH AI v3</strong> — your GATE CSE tutor with 5 specialist modes. Switch modes above. I can solve PYQs, explain concepts, write C code, plan your study, and generate quizzes!${(typeof window.isAdminServiceConfigured === 'function' && window.isAdminServiceConfigured()) ? '<br><small style="opacity:0.7;">✅ Connected to admin-service — smart AI routing with automatic failover.</small>' : ''}</div>
                 </div>
 
                 <div class="ai-suggestions" id="aiSuggestions">
@@ -272,11 +280,11 @@ RULES:
                 <div class="ai-chat-config" id="aiChatConfig">
                     <div class="config-row">
                         <select id="aiProvider" aria-label="AI provider">
+                            <option value="gemini">✨ Google Gemini (Free, 1500/day, recommended)</option>
                             <option value="groq">⚡ Groq (Free, fast, Llama 3.3 70B)</option>
                             <option value="openai">🤖 OpenAI (GPT-4o-mini, best quality)</option>
                             <option value="together">🤝 Together AI (Free, Llama 3.3 70B)</option>
                             <option value="cohere">💫 Cohere (Free tier)</option>
-                            <option value="gemini">✨ Google Gemini (Free, 1500/day)</option>
                             <option value="huggingface">🤗 HuggingFace (Free)</option>
                         </select>
                     </div>
@@ -520,22 +528,41 @@ RULES:
     }
 
     function loadSavedKey() {
+        // If config.js has a default provider, use it
+        if (typeof SOH_CONFIG !== 'undefined' && SOH_CONFIG.DEFAULT_AI_PROVIDER) {
+            const select = document.getElementById('aiProvider');
+            if (select && select.value !== SOH_CONFIG.DEFAULT_AI_PROVIDER) {
+                select.value = SOH_CONFIG.DEFAULT_AI_PROVIDER;
+            }
+        }
         const provider = document.getElementById('aiProvider').value;
         document.getElementById('aiApiKey').value = getKey(provider);
         updateKeyStatus();
     }
 
     function updateKeyStatus() {
+        // Check if admin-service is configured
+        const adminOk = (typeof window.isAdminServiceConfigured === 'function' && window.isAdminServiceConfigured());
+        if (adminOk) {
+            document.getElementById('aiKeyDot').className = 'dot ok';
+            document.getElementById('aiKeyStatus').textContent = '✅ Admin service connected — smart routing active';
+            return;
+        }
+        
         const provider = document.getElementById('aiProvider').value;
         const has = !!getKey(provider);
         const dot = document.getElementById('aiKeyDot');
         const status = document.getElementById('aiKeyStatus');
         if (has) {
             dot.className = 'dot ok';
-            status.textContent = `✓ Key saved for ${provider}`;
+            // Check if key is from config.js
+            const isBuiltin = (typeof SOH_CONFIG !== 'undefined' && 
+                ((provider === 'gemini' && SOH_CONFIG.GEMINI_API_KEY) ||
+                 (provider === 'groq' && SOH_CONFIG.GROQ_API_KEY)));
+            status.textContent = `✓ ${isBuiltin ? 'Built-in key active' : 'Key saved'} for ${provider}`;
         } else {
             dot.className = 'dot warn';
-            status.textContent = `⚠ No key for ${provider}`;
+            status.textContent = `⚠ No key for ${provider} — click ⚙ to add`;
         }
     }
 
@@ -708,10 +735,18 @@ RULES:
         const question = overridePrompt || input.value.trim();
         if (!question) return;
 
+        // Award XP for AI query via gamification
+        if (window.SOH_Game) window.SOH_Game.onAIQuery();
+
+        // Check if admin-service is configured (primary method)
+        const adminConfigured = (typeof window.isAdminServiceConfigured === 'function' && window.isAdminServiceConfigured());
+        
+        // Check API key (fallback method)
         const provider = document.getElementById('aiProvider').value;
         const apiKey = getKey(provider);
-        if (!apiKey) {
-            addMessage('error', `⚠ No API key for ${provider}. Click ⚙ to add your key (saved locally). Get a free Groq key at console.groq.com/keys`);
+        
+        if (!adminConfigured && !apiKey) {
+            addMessage('error', '⚠ No AI key configured. Either:\n1. Set up admin-service in config.js (recommended)\n2. Or add a direct API key — click ⚙ below.\nFree: Gemini at aistudio.google.com/apikey or Groq at console.groq.com/keys');
             toggleConfig();
             return;
         }
@@ -738,16 +773,46 @@ RULES:
         try {
             const context = window.getAIContext();
             const conversation = getConversationHistory();
-            const fullResponse = await callProvider(provider, question, apiKey, conversation, context);
+            let fullResponse;
+            
+            // Try admin-service first (if configured)
+            if (adminConfigured) {
+                try {
+                    const messages = [
+                        { role: 'system', content: getSystemPrompt() },
+                    ];
+                    if (context) {
+                        messages.push({ role: 'system', content: 'Context: ' + context.substring(0, 2000) });
+                    }
+                    const history = conversation.slice(0, -1);
+                    for (const m of history) {
+                        if (m.role === 'user' || m.role === 'assistant') {
+                            messages.push({ role: m.role === 'assistant' ? 'assistant' : 'user', content: m.content });
+                        }
+                    }
+                    messages.push({ role: 'user', content: question });
+                    
+                    fullResponse = await window.adminGenerate(messages);
+                } catch (adminErr) {
+                    console.warn('Admin service failed, falling back to direct:', adminErr.message);
+                    if (!apiKey) {
+                        throw new Error(`Admin service: ${adminErr.message}. No fallback key configured — click ⚙ to add one.`);
+                    }
+                    fullResponse = await callProvider(provider, question, apiKey, conversation, context);
+                }
+            } else {
+                // No admin-service — use direct provider
+                fullResponse = await callProvider(provider, question, apiKey, conversation, context);
+            }
+            
             removeLoading();
-
             addMessage('ai', fullResponse);
             appendHistory('ai', fullResponse);
             document.getElementById('aiStatusText').textContent = `Ready • ${MODES[currentMode].label}`;
         } catch (err) {
             removeLoading();
             addMessage('error', `❌ ${err.message}`);
-            document.getElementById('aiStatusText').textContent = 'Error — check API key';
+            document.getElementById('aiStatusText').textContent = 'Error — check configuration';
         } finally {
             isSending = false;
             document.getElementById('aiSendBtn').disabled = false;

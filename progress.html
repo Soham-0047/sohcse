@@ -49,8 +49,11 @@
     </div>
 </div>
 
+<script src="./config.js"></script>
+<script src="./admin-client.js"></script>
 <script src="./chatbot.js"></script>
 <script src="./tracker.js"></script>
+<script src="./gamification.js"></script>
 <script src="./loader.js"></script>
 <script>
 // ============ Storage keys ============
@@ -336,6 +339,13 @@ function renderDashboard() {
         <!-- Weak Areas (AI-powered) -->
         <div id="weakAreaSection"></div>
 
+        <!-- Achievements & Gamification -->
+        <div class="section-card" id="achievements" style="margin-top:18px;background:linear-gradient(135deg, rgba(251,191,36,0.05), rgba(245,158,11,0.05));">
+            <h3 style="margin-bottom:6px;">🏆 Achievements & XP</h3>
+            <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:14px;">Earn XP for every action. Unlock achievements. Climb the ranks.</p>
+            <div id="achievementsContent"></div>
+        </div>
+
         <!-- Quick Actions -->
         <div class="custom-playlist-section" style="margin-top:18px;background:linear-gradient(135deg, rgba(102,126,234,0.05), rgba(118,75,162,0.05));">
             <h3>🚀 Quick Actions</h3>
@@ -354,6 +364,86 @@ function renderDashboard() {
     `;
     // Render weak areas after dashboard renders
     setTimeout(renderWeakAreas, 300);
+    // Render achievements
+    setTimeout(renderAchievements, 350);
+}
+
+function renderAchievements() {
+    if (typeof window.SOH_Game === 'undefined') return;
+    const gameData = window.SOH_Game.getData();
+    const level = window.SOH_Game.getLevelProgress(gameData.xp);
+    const allAch = window.SOH_Game.getAllAchievements();
+    const unlocked = allAch.filter(a => a.unlocked);
+    const locked = allAch.filter(a => !a.unlocked);
+
+    const section = document.getElementById('achievementsContent');
+    if (!section) return;
+
+    section.innerHTML = `
+        <!-- Level / Rank card -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px;flex-wrap:wrap;">
+            <div class="metric-card" style="--metric-grad: var(--grad-brand);margin:0;">
+                <div class="metric-icon" style="font-size:2rem;">${level.current.icon}</div>
+                <div class="metric-value" style="font-size:1.2rem;">${level.current.name}</div>
+                <div class="metric-label">Current Rank</div>
+                <div class="metric-sub">${gameData.xp.toLocaleString()} total XP</div>
+                <div class="level-progress-bar"><div class="level-fill" style="width:${level.pct}%;"></div></div>
+                <div style="font-size:0.72rem;color:var(--text-muted);margin-top:4px;">
+                    ${level.next ? `${level.next.minXP - gameData.xp} XP to ${level.next.name}` : 'Maximum rank achieved!'}
+                </div>
+            </div>
+            <div class="metric-card" style="--metric-grad: var(--grad-gold);margin:0;">
+                <div class="metric-icon">🏆</div>
+                <div class="metric-value">${unlocked.length}/${allAch.length}</div>
+                <div class="metric-label">Achievements Unlocked</div>
+                <div class="metric-sub">${Math.round((unlocked.length / allAch.length) * 100)}% complete</div>
+            </div>
+        </div>
+
+        <!-- Rank Ladder -->
+        <h4 style="margin:14px 0 8px;font-size:0.92rem;">Rank Ladder</h4>
+        <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:14px;">
+            ${window.SOH_Game.RANKS.map(r => {
+                const isCurrent = r.name === level.current.name;
+                const isUnlocked = gameData.xp >= r.minXP;
+                return `
+                    <div style="flex:0 0 auto;text-align:center;padding:8px 12px;border-radius:8px;background:${isUnlocked ? 'linear-gradient(135deg, ' + r.color + '20, ' + r.color + '10)' : 'var(--bg-light)'};border:1px solid ${isUnlocked ? r.color : 'var(--border)'};${isCurrent ? 'box-shadow:0 0 0 2px ' + r.color + '40;' : ''}">
+                        <div style="font-size:1.4rem;">${r.icon}</div>
+                        <div style="font-size:0.74rem;font-weight:700;color:${isUnlocked ? r.color : 'var(--text-muted)'};">${r.name}</div>
+                        <div style="font-size:0.66rem;color:var(--text-muted);">${r.minXP.toLocaleString()} XP</div>
+                    </div>
+                `;
+            }).join('')}
+        </div>
+
+        <!-- Unlocked achievements -->
+        ${unlocked.length > 0 ? `
+            <h4 style="margin:14px 0 8px;font-size:0.92rem;">✨ Unlocked (${unlocked.length})</h4>
+            <div class="achievement-grid">
+                ${unlocked.map(a => `
+                    <div class="achievement-badge unlocked" title="${a.desc}">
+                        <div class="ach-badge-icon">${a.icon}</div>
+                        <div class="ach-badge-name">${a.name}</div>
+                        <div style="font-size:0.66rem;color:#f59e0b;font-weight:600;margin-top:2px;">+${a.xp} XP</div>
+                    </div>
+                `).join('')}
+            </div>
+        ` : ''}
+
+        <!-- Locked achievements (upcoming) -->
+        ${locked.length > 0 ? `
+            <h4 style="margin:14px 0 8px;font-size:0.92rem;color:var(--text-muted);">🔒 Locked (${locked.length})</h4>
+            <div class="achievement-grid">
+                ${locked.map(a => `
+                    <div class="achievement-badge" title="${a.desc}" style="opacity:0.55;">
+                        <div class="ach-badge-icon" style="filter:grayscale(1);">${a.icon}</div>
+                        <div class="ach-badge-name">${a.name}</div>
+                        <div style="font-size:0.66rem;color:var(--text-muted);margin-top:2px;">+${a.xp} XP</div>
+                    </div>
+                `).join('')}
+            </div>
+        ` : ''}
+    `;
 }
 
 function exportProgressData() {

@@ -1009,9 +1009,12 @@
 <!-- Mini Player Container -->
 <div id="miniPlayer" class="mini-player"></div>
 
+<script src="./config.js"></script>
+<script src="./admin-client.js"></script>
 <script src="./chatbot.js"></script>
 <script src="./videos_data.js"></script>
 <script src="./tracker.js"></script>
+<script src="./gamification.js"></script>
 <script src="./loader.js"></script>
 <script src="./nav.js"></script>
 <script>
@@ -1175,6 +1178,10 @@ const YT_API_KEY_STORAGE = 'sohcse_youtube_api_key';
 const TRENDING_SEARCHES = ['binary search', 'deadlock', 'normalization', 'dijkstra algorithm', 'page replacement', 'context free grammar', 'tcp congestion control', 'avl tree rotation'];
 
 function getYTApiKey() {
+    // Check config.js built-in key first, then user-saved key
+    if (typeof SOH_CONFIG !== 'undefined' && SOH_CONFIG.YOUTUBE_API_KEY) {
+        return SOH_CONFIG.YOUTUBE_API_KEY;
+    }
     return localStorage.getItem(YT_API_KEY_STORAGE) || '';
 }
 function setYTApiKey(key) {
@@ -1344,6 +1351,90 @@ function saveYTKeyAndSearch() {
 }
 
 // ============ Init ============
+// ============ Playlist Dropdown (from player) ============
+function showPlaylistDropdown(video) {
+    const pls = getCustomPlaylists();
+    
+    // Create a dropdown overlay
+    const existing = document.getElementById('playlistDropdown');
+    if (existing) existing.remove();
+    
+    const dropdown = document.createElement('div');
+    dropdown.id = 'playlistDropdown';
+    dropdown.style.cssText = 'position:fixed;inset:0;z-index:5000;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;padding:20px;';
+    dropdown.onclick = (e) => { if (e.target === dropdown) dropdown.remove(); };
+    
+    const card = document.createElement('div');
+    card.style.cssText = 'background:var(--bg-card);border-radius:16px;padding:24px;max-width:400px;width:100%;box-shadow:var(--shadow-xl);';
+    
+    if (pls.length === 0) {
+        card.innerHTML = `
+            <h3 style="font-size:1rem;margin-bottom:12px;color:var(--text);">🎵 Add to Playlist</h3>
+            <p style="font-size:0.84rem;color:var(--text-muted);margin-bottom:16px;">No playlists yet. Create one:</p>
+            <input type="text" id="quickPlName" placeholder="Playlist name" style="width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:0.86rem;font-family:inherit;background:var(--bg-light);color:var(--text);margin-bottom:10px;">
+            <div style="display:flex;gap:8px;">
+                <button class="btn btn-primary btn-sm" style="flex:1;" onclick="
+                    var name = document.getElementById('quickPlName').value.trim();
+                    if (!name) { alert('Enter a name'); return; }
+                    var pl = createCustomPlaylist(name);
+                    addToCustomPlaylist(pl.id, { id: '${video.id}', title: ${JSON.stringify(video.title)}, channel: ${JSON.stringify(video.channel || '')}, type: '${video.type || 'video'}', searchQuery: ${JSON.stringify(video.searchQuery || '')}, thumb: getThumbUrl(video) });
+                    document.getElementById('playlistDropdown').remove();
+                    if (window.showToast) window.showToast('✅ Added to \"' + name + '\"', 'success');
+                ">Create & Add</button>
+                <button class="btn btn-ghost btn-sm" onclick="document.getElementById('playlistDropdown').remove();">Cancel</button>
+            </div>
+        `;
+    } else {
+        card.innerHTML = `
+            <h3 style="font-size:1rem;margin-bottom:12px;color:var(--text);">🎵 Add to Playlist</h3>
+            <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px;max-height:300px;overflow-y:auto;">
+                ${pls.map(pl => {
+                    const has = pl.videos.some(v => v.id === video.id);
+                    return `
+                        <button onclick="
+                            ${has ? '' : `addToCustomPlaylist('${pl.id}', { id: '${video.id}', title: ${JSON.stringify(video.title)}, channel: ${JSON.stringify(video.channel || '')}, type: '${video.type || 'video'}', searchQuery: ${JSON.stringify(video.searchQuery || '')}, thumb: getThumbUrl(video) });`}
+                            document.getElementById('playlistDropdown').remove();
+                            if (window.showToast) window.showToast('${has ? 'Already in' : '✅ Added to'} ${pl.name.replace(/'/g, "\\'")}', '${has ? 'warning' : 'success'}');
+                        " style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1px solid var(--border);border-radius:10px;background:var(--bg-light);color:var(--text);cursor:pointer;font-family:inherit;font-size:0.86rem;text-align:left;width:100%;">
+                            <span style="font-size:1.1rem;">${has ? '✅' : '🎵'}</span>
+                            <span style="flex:1;">${escapeHtml(pl.name)}</span>
+                            <span style="font-size:0.72rem;color:var(--text-muted);">${pl.videos.length} videos</span>
+                        </button>
+                    `;
+                }).join('')}
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;">
+                <input type="text" id="quickPlName" placeholder="New playlist name..." style="flex:1;padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:0.82rem;font-family:inherit;background:var(--bg-light);color:var(--text);">
+                <button class="btn btn-primary btn-sm" onclick="
+                    var name = document.getElementById('quickPlName').value.trim();
+                    if (!name) { alert('Enter a name'); return; }
+                    var pl = createCustomPlaylist(name);
+                    addToCustomPlaylist(pl.id, { id: '${video.id}', title: ${JSON.stringify(video.title)}, channel: ${JSON.stringify(video.channel || '')}, type: '${video.type || 'video'}', searchQuery: ${JSON.stringify(video.searchQuery || '')}, thumb: getThumbUrl(video) });
+                    document.getElementById('playlistDropdown').remove();
+                    if (window.showToast) window.showToast('✅ Created \"' + name + '\" and added video', 'success');
+                ">+ New</button>
+            </div>
+            <button style="width:100%;margin-top:10px;padding:8px;border:none;background:none;color:var(--text-muted);cursor:pointer;font-family:inherit;font-size:0.82rem;" onclick="document.getElementById('playlistDropdown').remove();">Cancel</button>
+        `;
+    }
+    
+    dropdown.appendChild(card);
+    document.body.appendChild(dropdown);
+}
+
+// ============ Auto-time-adjust for notes ============
+// Detects time patterns in note text and auto-converts to clickable links
+function autoDetectTimestamps(text) {
+    // Match patterns like "5:30", "12:45", "1:23:45"
+    return text.replace(/(\d{1,2}:\d{2}(?::\d{2})?)/g, (match) => {
+        const seconds = parseTimeToSeconds(match);
+        if (seconds > 0) {
+            return `[${match}]`;
+        }
+        return match;
+    });
+}
+
 function init() {
     loadPlayerPrefs();
     const params = new URLSearchParams(location.search);
@@ -1381,8 +1472,8 @@ function renderBrowse() {
             </div>
             ${getYTApiKey() ? `
                 <div style="display:flex;align-items:center;gap:6px;margin-top:6px;font-size:0.72rem;color:var(--correct);">
-                    ✅ YouTube API connected — search will return embeddable videos
-                    <button onclick="if(confirm('Remove YouTube API key?')) { localStorage.removeItem('sohcse_youtube_api_key'); renderBrowse(); }" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:0.72rem;text-decoration:underline;">Remove</button>
+                    ✅ YouTube API connected — search returns embeddable videos
+                    ${(!SOH_CONFIG?.YOUTUBE_API_KEY) ? `<button onclick="if(confirm('Remove YouTube API key?')) { localStorage.removeItem('sohcse_youtube_api_key'); renderBrowse(); }" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:0.72rem;text-decoration:underline;">Remove</button>` : '<span style="font-size:0.68rem;opacity:0.7;">(built-in)</span>'}
                 </div>
             ` : `
                 <div style="display:flex;align-items:center;gap:6px;margin-top:6px;font-size:0.72rem;color:var(--text-muted);">
@@ -1697,8 +1788,8 @@ function renderPlayer() {
                     <button class="player-ctrl-btn ${isBm ? 'active' : ''}" onclick="toggleBookmarkUIPlayer()" title="Save">
                         <span class="icon">${isBm ? '❤' : '🤍'}</span> ${isBm ? 'Saved' : 'Save'}
                     </button>
-                    <button class="player-ctrl-btn" onclick='showAddToPlaylist(${pJson})' title="Add to playlist">
-                        <span class="icon">➕</span> Playlist
+                    <button class="player-ctrl-btn" onclick='showPlaylistDropdown(${pJson})' title="Add to playlist">
+                        <span class="icon">➕</span> Add to Playlist
                     </button>
                     <div class="player-ctrl-divider"></div>
                     <!-- Speed selector -->

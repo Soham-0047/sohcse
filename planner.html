@@ -49,8 +49,11 @@
     </div>
 </div>
 
+<script src="./config.js"></script>
+<script src="./admin-client.js"></script>
 <script src="./chatbot.js"></script>
 <script src="./tracker.js"></script>
+<script src="./gamification.js"></script>
 <script src="./loader.js"></script>
 <script>
 const TASKS_KEY = 'sohcse_planner_tasks_v1';
@@ -318,9 +321,14 @@ function toggleTask(id) {
     const tasks = getTasks();
     const t = tasks.find(x => x.id === id);
     if (t) {
+        const wasCompleted = t.completed;
         t.completed = !t.completed;
         saveTasks(tasks);
         renderPlanner();
+        // Award XP when task is marked complete
+        if (!wasCompleted && t.completed && window.SOH_Game) {
+            window.SOH_Game.onTaskCompleted();
+        }
     }
 }
 
@@ -373,16 +381,41 @@ function changeDay(delta) {
 }
 
 function generateAIPlan() {
+    // Build a smart prompt based on user's actual data
+    const weakChapters = (typeof window.getWeakChapters === 'function') ? window.getWeakChapters(60) : [];
+    const subjectPerf = (typeof window.getSubjectPerformance === 'function') ? window.getSubjectPerformance() : {};
+    const totalStats = (typeof window.getTotalStats === 'function') ? window.getTotalStats() : null;
+    const days = Math.ceil((new Date('2027-02-13') - new Date()) / (1000 * 60 * 60 * 24));
+
+    let prompt = `Create a personalized 7-day GATE CSE study plan${days > 0 ? ` (GATE is in ${days} days)` : ''}. `;
+
+    if (totalStats && totalStats.totalAttempts > 0) {
+        prompt += `My current stats: ${totalStats.totalAttempts} PYQs attempted, ${totalStats.accuracy}% accuracy. `;
+    } else {
+        prompt += `I'm just starting my preparation. `;
+    }
+
+    if (weakChapters.length > 0) {
+        const top = weakChapters.slice(0, 3).map(w => {
+            const label = w.subject ? w.subject.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : '';
+            return `${label} (${w.accuracy}% accuracy)`;
+        });
+        prompt += `My weakest areas are: ${top.join(', ')}. Focus on these first. `;
+    } else {
+        prompt += `Suggest a balanced plan covering high-weight subjects: Discrete Math, Algorithms, Data Structures, OS, DBMS, and TOC. `;
+    }
+
+    prompt += 'For each day, suggest: (1) topic to study, (2) duration (45-90 min), (3) 5-10 PYQs to practice, (4) one revision slot for flashcards. Keep it realistic for a working student. Format as a clean day-by-day list.';
+
     if (typeof window.SOH_AI !== 'undefined') {
         window.SOH_AI.open();
         window.SOH_AI.setMode('planner');
-        // Pre-fill with smart prompt
         setTimeout(() => {
             const input = document.getElementById('aiChatInput');
             if (input) {
-                input.value = 'Create a 7-day study plan for GATE CSE. I want to focus on high-weight topics. Suggest specific topics, durations, and resources for each day.';
-                // Trigger input event for autosize
+                input.value = prompt;
                 input.dispatchEvent(new Event('input'));
+                if (window.showToast) window.showToast('🤖 AI plan tailored to your weak areas!', 'info', 3000);
             }
         }, 300);
     }

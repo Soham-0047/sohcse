@@ -196,8 +196,11 @@
     </div>
 </div>
 
+<script src="./config.js"></script>
+<script src="./admin-client.js"></script>
 <script src="./chatbot.js"></script>
 <script src="./tracker.js"></script>
+<script src="./gamification.js"></script>
 <script src="./loader.js"></script>
 <script>
 const NOTES_KEY = 'sohcse_personal_notes';
@@ -231,6 +234,8 @@ function saveNote() {
             createdAt: Date.now(),
             updatedAt: Date.now()
         });
+        // Award XP for new note via gamification
+        if (window.SOH_Game) window.SOH_Game.onNoteCreated();
     }
     setNotes(notes);
     document.getElementById('noteTitle').value = '';

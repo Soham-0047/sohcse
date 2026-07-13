@@ -233,18 +233,27 @@
     // ============ Command Palette ============
     const COMMANDS = [
         { icon: '🏠', title: 'Home', desc: 'Go to landing page', url: './index.html', shortcut: 'Alt+H' },
+        { icon: '📊', title: 'Dashboard', desc: 'Personalized daily study dashboard', url: './dashboard.html', shortcut: 'Alt+D' },
         { icon: '📖', title: 'Learn', desc: 'Concept notes & study material', url: './learn.html', shortcut: 'Alt+L' },
         { icon: '📋', title: 'Syllabus', desc: 'Complete GATE CSE syllabus', url: './syllabus.html', shortcut: 'Alt+S' },
         { icon: '📝', title: 'PYQs', desc: 'Previous year questions', url: './pyq.html', shortcut: 'Alt+P' },
+        { icon: '🎯', title: 'Mock Test', desc: 'Full GATE exam simulator', url: './mocktest.html', shortcut: 'Alt+O' },
+        { icon: '🔁', title: 'Smart Revision', desc: 'Spaced repetition hub', url: './revision.html', shortcut: 'Alt+R' },
+        { icon: '🗺️', title: 'Concept Map', desc: 'Visual subject relationships', url: './concept-map.html', shortcut: 'Alt+C' },
         { icon: '🎥', title: 'Videos', desc: 'Video lectures', url: './videos.html', shortcut: 'Alt+V' },
         { icon: '🎴', title: 'Flashcards', desc: 'Spaced repetition cards', url: './flashcards.html', shortcut: 'Alt+F' },
         { icon: '🎯', title: 'Quiz', desc: 'Take a practice quiz', url: './quiz.html', shortcut: 'Alt+Q' },
-        { icon: '📊', title: 'Progress', desc: 'View your progress dashboard', url: './progress.html', shortcut: 'Alt+R' },
-        { icon: '📅', title: 'Planner', desc: 'Study planner & calendar', url: './planner.html', shortcut: 'Alt+D' },
+        { icon: '📈', title: 'Progress', desc: 'View your progress dashboard', url: './progress.html', shortcut: 'Alt+G' },
+        { icon: '📅', title: 'Planner', desc: 'Study planner & calendar', url: './planner.html', shortcut: 'Alt+N' },
         { icon: '🚀', title: 'Resources', desc: 'All GATE prep resources', url: './resources.html', shortcut: 'Alt+E' },
         { icon: '📚', title: 'Materials', desc: 'Study PDFs & textbooks', url: './materials.html', shortcut: 'Alt+M' },
+        { icon: '🧮', title: 'Calculator', desc: 'GATE virtual calculator', url: './calculator.html' },
+        { icon: '📐', title: 'Formula Book', desc: 'Quick formula reference', url: './formulas.html' },
+        { icon: '⏱', title: 'Pomodoro Timer', desc: 'Focus timer', url: './timer.html' },
+        { icon: '📓', title: 'My Notes', desc: 'Personal notebook', url: './notes.html' },
         { icon: '🤖', title: 'Ask AI', desc: 'Open AI chatbot', action: () => window.SOH_AI && window.SOH_AI.open(), shortcut: 'Alt+A' },
         { icon: '🌙', title: 'Toggle Dark Mode', desc: 'Switch between light and dark', action: toggleTheme, shortcut: 'Ctrl+J' },
+        { icon: '👁', title: 'Toggle Navbar', desc: 'Hide/show navbar for reading', action: toggleNavbar, shortcut: 'Ctrl+H' },
     ];
 
     function initCommandPalette() {
@@ -388,16 +397,20 @@
             if (e.altKey && !e.ctrlKey && !e.metaKey) {
                 const keyMap = {
                     'h': './index.html',
+                    'd': './dashboard.html',
                     'l': './learn.html',
                     's': './syllabus.html',
                     'p': './pyq.html',
+                    'o': './mocktest.html',
                     'v': './videos.html',
                     'f': './flashcards.html',
                     'q': './quiz.html',
-                    'r': './progress.html',
-                    'd': './planner.html',
+                    'g': './progress.html',
+                    'n': './planner.html',
                     'e': './resources.html',
-                    'm': './materials.html'
+                    'm': './materials.html',
+                    'r': './revision.html',
+                    'c': './concept-map.html'
                 };
                 const key = e.key.toLowerCase();
                 if (keyMap[key]) {
@@ -430,6 +443,75 @@
         });
     }
 
+    // ============ Floating Action Button (FAB) ============
+    function initFAB() {
+        if (document.querySelector('.fab-container')) return;
+        const container = document.createElement('div');
+        container.className = 'fab-container';
+        container.innerHTML = `
+            <button class="fab-mini" data-action="revision" title="Smart Revision">
+                🔁<span class="fab-label">Smart Revision</span>
+            </button>
+            <button class="fab-mini" data-action="quiz" title="Quick Quiz">
+                🎯<span class="fab-label">Quick Quiz</span>
+            </button>
+            <button class="fab-mini" data-action="pyq" title="Practice PYQs">
+                📝<span class="fab-label">Practice PYQs</span>
+            </button>
+            <button class="fab-mini" data-action="ai" title="Ask AI Tutor">
+                🤖<span class="fab-label">Ask AI Tutor</span>
+            </button>
+            <button class="fab-mini" data-action="dashboard" title="Dashboard">
+                📊<span class="fab-label">Dashboard</span>
+            </button>
+            <button class="fab-main" title="Quick Actions" aria-label="Quick Actions">
+                ⚡
+            </button>
+        `;
+        document.body.appendChild(container);
+
+        const main = container.querySelector('.fab-main');
+        main.onclick = (e) => {
+            e.stopPropagation();
+            container.classList.toggle('open');
+            main.classList.toggle('active');
+        };
+
+        container.querySelectorAll('.fab-mini').forEach(btn => {
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                const action = btn.dataset.action;
+                container.classList.remove('open');
+                main.classList.remove('active');
+                switch (action) {
+                    case 'ai':
+                        if (window.SOH_AI) window.SOH_AI.open();
+                        break;
+                    case 'pyq':
+                        window.location.href = './pyq.html';
+                        break;
+                    case 'quiz':
+                        window.location.href = './quiz.html';
+                        break;
+                    case 'revision':
+                        window.location.href = './revision.html';
+                        break;
+                    case 'dashboard':
+                        window.location.href = './dashboard.html';
+                        break;
+                }
+            };
+        });
+
+        // Close on outside click
+        document.addEventListener('click', (e) => {
+            if (!container.contains(e.target)) {
+                container.classList.remove('open');
+                main.classList.remove('active');
+            }
+        });
+    }
+
     // ============ Init All ============
     function init() {
         initTheme();
@@ -438,6 +520,7 @@
         initCommandPalette();
         initKeyboardShortcuts();
         injectToastContainer();
+        initFAB();
 
         // Delay scroll-dependent features to ensure DOM is ready
         setTimeout(() => {
