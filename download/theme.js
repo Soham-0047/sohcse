@@ -514,6 +514,83 @@
         });
     }
 
+    // ============ Help Widget ============
+    function initHelpWidget() {
+        if (document.querySelector('.help-widget')) return;
+        const btn = document.createElement('button');
+        btn.className = 'help-widget';
+        btn.title = 'Help & Shortcuts';
+        btn.setAttribute('aria-label', 'Help');
+        btn.innerHTML = '?';
+        btn.onclick = showHelpBottomSheet;
+        document.body.appendChild(btn);
+
+        // Show after delay
+        setTimeout(() => btn.classList.add('visible'), 2000);
+    }
+
+    function showHelpBottomSheet() {
+        // Remove existing
+        const existing = document.getElementById('helpBottomSheet');
+        if (existing) { existing.remove(); return; }
+
+        const sheet = document.createElement('div');
+        sheet.id = 'helpBottomSheet';
+        sheet.className = 'bottom-sheet visible';
+        sheet.innerHTML = `
+            <div class="bottom-sheet-content">
+                <div class="bottom-sheet-handle" onclick="this.parentElement.parentElement.remove()"></div>
+                <div class="bottom-sheet-title">⌨️ Keyboard Shortcuts & Tips</div>
+
+                <div style="display:grid;gap:10px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--bg-light);border-radius:8px;">
+                        <span style="font-size:0.86rem;">Quick navigation</span>
+                        <span><span class="kbd-hint">Ctrl</span>+<span class="kbd-hint">K</span></span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--bg-light);border-radius:8px;">
+                        <span style="font-size:0.86rem;">Toggle dark mode</span>
+                        <span><span class="kbd-hint">Ctrl</span>+<span class="kbd-hint">J</span></span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--bg-light);border-radius:8px;">
+                        <span style="font-size:0.86rem;">Hide/show navbar</span>
+                        <span><span class="kbd-hint">Ctrl</span>+<span class="kbd-hint">H</span></span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--bg-light);border-radius:8px;">
+                        <span style="font-size:0.86rem;">Open AI Tutor</span>
+                        <span><span class="kbd-hint">Alt</span>+<span class="kbd-hint">A</span></span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--bg-light);border-radius:8px;">
+                        <span style="font-size:0.86rem;">Go to Dashboard</span>
+                        <span><span class="kbd-hint">Alt</span>+<span class="kbd-hint">D</span></span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--bg-light);border-radius:8px;">
+                        <span style="font-size:0.86rem;">Open Settings</span>
+                        <span><span class="kbd-hint">Alt</span>+<span class="kbd-hint">,</span></span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--bg-light);border-radius:8px;">
+                        <span style="font-size:0.86rem;">Close panels</span>
+                        <span><span class="kbd-hint">Esc</span></span>
+                    </div>
+                </div>
+
+                <div style="margin-top:16px;padding:12px;background:linear-gradient(135deg, rgba(102,126,234,0.05), rgba(118,75,162,0.05));border-radius:8px;">
+                    <div style="font-size:0.82rem;font-weight:700;margin-bottom:4px;">💡 Pro Tips</div>
+                    <ul style="font-size:0.78rem;color:var(--text-2);line-height:1.6;padding-left:18px;margin:0;">
+                        <li>Practice daily to maintain your streak — even 5 questions counts!</li>
+                        <li>Wrong answers automatically go to your Error Notebook for revision</li>
+                        <li>Use the Smart Revision hub for spaced repetition across all content</li>
+                        <li>Take a mock test weekly to track your GATE readiness</li>
+                        <li>All progress saves locally — export from Progress page for backup</li>
+                    </ul>
+                </div>
+
+                <button class="btn btn-primary" style="width:100%;margin-top:14px;" onclick="this.parentElement.parentElement.remove()">Got it!</button>
+            </div>
+        `;
+        document.body.appendChild(sheet);
+        sheet.onclick = (e) => { if (e.target === sheet) sheet.remove(); };
+    }
+
     // ============ Init All ============
     function init() {
         initTheme();
@@ -523,6 +600,8 @@
         initKeyboardShortcuts();
         injectToastContainer();
         initFAB();
+        initHelpWidget();
+        initViewTransitions();
 
         // Delay scroll-dependent features to ensure DOM is ready
         setTimeout(() => {
@@ -549,6 +628,32 @@
                 sessionStorage.setItem('sohcse_welcomed', '1');
             }, 1500);
         }
+    }
+
+    // ============ View Transitions for smooth page navigation ============
+    function initViewTransitions() {
+        if (!document.startViewTransition) return;
+
+        // Intercept same-origin link clicks
+        document.addEventListener('click', (e) => {
+            const link = e.target.closest('a');
+            if (!link) return;
+            const url = new URL(link.href);
+            // Only intercept same-origin, GET links to our pages
+            if (url.origin !== location.origin) return;
+            if (link.target === '_blank') return;
+            if (link.hasAttribute('download')) return;
+            if (url.href === location.href) return;
+            // Skip if modifier keys (let browser handle new tab etc.)
+            if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+            // Skip in-app links (hash)
+            if (url.pathname === location.pathname && url.hash) return;
+
+            e.preventDefault();
+            document.startViewTransition(() => {
+                location.href = link.href;
+            });
+        });
     }
 
     if (document.readyState === 'loading') {
