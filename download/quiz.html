@@ -60,6 +60,7 @@
 <script src="./tracker.js"></script>
 <script src="./gamification.js"></script>
 <script src="./question-engine.js"></script>
+<script src="./gate-engine.js"></script>
 <script src="./analytics.js"></script>
 <script src="./loader.js"></script>
 <script src="./pwa.js"></script>
@@ -339,12 +340,22 @@ function startQuiz() {
         return;
     }
 
-    // === Use new question engine (v2) ===
+    // === Use GATE Engine v3 (preferred) ===
     let quiz;
-    if (typeof window.SOH_QEngine !== 'undefined') {
+    if (typeof window.SOH_QEngine !== 'undefined' && window.SOH_QEngine.GATE_PATTERN) {
+        try {
+            quiz = window.SOH_QEngine.buildQuiz(subject, count, { types, difficulty, adaptive: true, avoidRecent: true });
+        } catch (e) {
+            console.warn('GATE Engine v3 failed, falling back:', e);
+            quiz = null;
+        }
+    }
+    // Fallback to v2 engine
+    if (!quiz && typeof window.SOH_QEngine !== 'undefined') {
         quiz = window.SOH_QEngine.buildQuiz(subject, count, { types, difficulty });
-    } else {
-        // Legacy fallback (only if engine not loaded)
+    }
+    // Legacy fallback
+    if (!quiz) {
         if (!SAMPLE_QUIZZES[subject]) {
             alert('No built-in quiz for this subject yet. Try AI-generated instead!');
             return;

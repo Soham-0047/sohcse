@@ -422,6 +422,7 @@
 <script src="./tracker.js"></script>
 <script src="./gamification.js"></script>
 <script src="./question-engine.js"></script>
+<script src="./gate-engine.js"></script>
 <script src="./analytics.js"></script>
 <script src="./loader.js"></script>
 <script src="./pwa.js"></script>
@@ -513,22 +514,24 @@ function renderSetup() {
                     </div>
 
                     <div style="background:var(--bg-light);border-radius:10px;padding:14px;margin-bottom:20px;font-size:0.82rem;color:var(--text-muted);line-height:1.7;">
-                        <strong>📌 Exam Features:</strong><br>
-                        • <strong>Smart v2 Algorithm</strong> — analyzes 15 years of PYQ trends (2011–2025) for subject weightage, type distribution (MCQ ~60%, MSQ ~15%, NAT ~25%), and chapter importance<br>
-                        • <strong>Strict deduplication</strong> via question_id + content hash — no question repeats<br>
-                        • <strong>Chapter diversity enforcement</strong> — penalizes over-represented chapters<br>
-                        • <strong>Year recency boost</strong> — newer questions weighted higher (2024–2026: 1.4–1.5×)<br>
-                        • <strong>Adaptive difficulty</strong> — uses your past accuracy to balance easy/medium/hard<br>
-                        • Side calculator available (same as real GATE exam)<br>
-                        • Question palette with color-coded status (answered, not answered, marked for review)<br>
-                        • Real negative marking: MCQ −1/3 (1-mark), −2/3 (2-mark); MSQ/NAT no negative<br>
-                        • Post-test: subject-wise accuracy breakdown + wrong answers added to Error Notebook<br>
-                        • AI integration: generate similar questions for weak areas after the test
+                        <strong>🎯 GATE Intelligent Engine v3 — Features:</strong><br>
+                        • <strong>Real GATE Paper Structure</strong> — exact 1-mark/2-mark distribution from 2021-2026 analysis (25×1m + 40×2m = 100 marks)<br>
+                        • <strong>10-Year Deep Trend Analysis</strong> — tracks topic frequency, hot topics (4+ of last 5 years), cyclic topics, and subject trends<br>
+                        • <strong>Adaptive Question Selection</strong> — drills your weak areas (auto-boosts <50% accuracy subjects), maintains strong areas<br>
+                        • <strong>Difficulty Curve Simulation</strong> — GATE-style ~30% easy, ~50% medium, ~20% hard<br>
+                        • <strong>Concept Diversity Engine</strong> — FNV-1a content hash + Jaccard similarity = zero duplicates, ever<br>
+                        • <strong>Chapter Diversity</strong> — max 4 questions per chapter, prevents over-representation<br>
+                        • <strong>Year Recency Boost</strong> — 2026: 1.8×, 2025: 1.7×, 2024: 1.6× (more relevant questions)<br>
+                        • <strong>Quality Scoring</strong> — prefers questions with explanations, answers, and recent years<br>
+                        • <strong>Recent Practice Avoidance</strong> — skips questions you've attempted in last 7 days<br>
+                        • <strong>Hot Topic Priority</strong> — 1.4× weight for topics appearing in 4+ of last 5 GATE papers<br>
+                        • Side calculator + question palette + real negative marking (MCQ −1/3, −2/3)<br>
+                        • Post-test: subject-wise accuracy + wrong answers → Error Notebook + AI drilling
                     </div>
 
                     <div id="trendAnalysisPanel"></div>
 
-                    <button class="btn btn-primary btn-lg" style="width:100%;" onclick="startMockTest()">🚀 Start Mock Test</button>
+                    <button class="btn btn-primary btn-lg" style="width:100%;" onclick="startMockTest()">🚀 Start GATE-Style Mock Test</button>
                 </div>
             </div>
         </div>
@@ -561,8 +564,8 @@ function renderTrendPanel() {
 
     panel.innerHTML = `
         <div style="background:linear-gradient(135deg, rgba(102,126,234,0.05), rgba(118,75,162,0.05));border-radius:10px;padding:14px;margin-bottom:20px;border:1px solid var(--border);">
-            <div style="font-size:0.86rem;font-weight:700;color:var(--text);margin-bottom:8px;">📊 15-Year Trend Analysis (${summary.yearRange.min}–${summary.yearRange.max})</div>
-            <div style="font-size:0.74rem;color:var(--text-muted);margin-bottom:10px;">Based on ${totalQ.toLocaleString()} analyzed PYQs across ${summary.subjects} subjects</div>
+            <div style="font-size:0.86rem;font-weight:700;color:var(--text);margin-bottom:8px;">📊 10-Year GATE Trend Analysis (${summary.yearRange.min}–${summary.yearRange.max})</div>
+            <div style="font-size:0.74rem;color:var(--text-muted);margin-bottom:10px;">Based on ${totalQ.toLocaleString()} analyzed PYQs across ${summary.subjects} subjects • Engine v3</div>
 
             <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;">
                 <div style="background:var(--bg-card);padding:8px;border-radius:6px;text-align:center;border:1px solid var(--border);">
@@ -583,13 +586,46 @@ function renderTrendPanel() {
                 <thead><tr><th>Top Subject</th><th>Qs</th><th>Weight</th><th>5-yr Trend</th></tr></thead>
                 <tbody>${subjRows}</tbody>
             </table>
+
+            ${summary.hotTopics && summary.hotTopics.length > 0 ? `
+                <div style="margin-top:14px;">
+                    <div style="font-size:0.78rem;font-weight:700;color:var(--text);margin-bottom:6px;">🔥 Hot Topics (appeared in 4+ of last 5 years)</div>
+                    <div style="display:flex;flex-wrap:wrap;gap:4px;">
+                        ${summary.hotTopics.slice(0, 8).map(h => {
+                            const parts = h.chapter.split('/');
+                            const chapLabel = parts[1] ? parts[1].replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : h.chapter;
+                            return `<span style="display:inline-block;padding:3px 8px;background:rgba(239,68,68,0.1);color:#dc2626;border-radius:6px;font-size:0.7rem;font-weight:600;">🔥 ${chapLabel} (${h.totalCount})</span>`;
+                        }).join('')}
+                    </div>
+                </div>
+            ` : ''}
         </div>
     `;
 }
 
-// ============ Question Selection Algorithm (v2 — uses SOH_QEngine) ============
+// ============ Question Selection Algorithm (v3 — uses GATE Engine) ============
 function selectQuestions(source) {
-    // Use the new robust question engine if available
+    // PREFER the new GATE Intelligent Engine v3
+    if (typeof window.SOH_QEngine !== 'undefined' && window.SOH_QEngine.GATE_PATTERN) {
+        try {
+            const questions = window.SOH_QEngine.buildMockTest(source, {
+                totalQuestions: TOTAL_QUESTIONS,
+                totalMarks: TOTAL_MARKS,
+                adaptive: true,
+                avoidRecent: true,
+            });
+            if (questions.length > 0) {
+                // Log paper stats for transparency
+                const stats = window.SOH_QEngine.computePaperStats(questions);
+                console.log('🎯 GATE v3 Paper Generated:', stats);
+                return questions;
+            }
+        } catch (e) {
+            console.warn('GATE Engine failed, falling back to v2:', e);
+        }
+    }
+
+    // Fallback to v2 engine
     if (typeof window.SOH_QEngine !== 'undefined') {
         const questions = window.SOH_QEngine.buildMockTest(source, {
             totalQuestions: TOTAL_QUESTIONS,
@@ -597,12 +633,11 @@ function selectQuestions(source) {
             subjectWeights: SUBJECT_WEIGHTS,
         });
         if (questions.length > 0) return questions;
-        // Fallback to old algorithm below if engine returned empty
     }
 
     if (typeof window.GATE_DATA === 'undefined') return [];
 
-    // === LEGACY FALLBACK (only if QEngine fails) ===
+    // === LEGACY FALLBACK (v1) ===
     // Collect all questions grouped by subject
     const bySubject = {};
     const seenIds = new Set(); // Deduplication
