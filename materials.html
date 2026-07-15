@@ -6,6 +6,7 @@
 <title>Study Materials — SOH CSE</title>
 <meta name="description" content="Browse 70+ GATE CSE study materials — textbooks, notes, handouts, and short notes — organized by subject with instant search.">
 <link rel="stylesheet" href="./style.css">
+<link rel="manifest" href="./manifest.json">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23667eea'/%3E%3Ctext x='50' y='70' font-size='60' font-weight='bold' fill='white' text-anchor='middle' font-family='Arial'%3EG%3C/text%3E%3C/svg%3E">
 </head>
@@ -96,7 +97,11 @@
 <script src="./chatbot.js"></script>
 <script src="./tracker.js"></script>
 <script src="./gamification.js"></script>
+<script src="./question-engine.js"></script>
+<script src="./gate-engine.js"></script>
+<script src="./analytics.js"></script>
 <script src="./loader.js"></script>
+<script src="./pwa.js"></script>
 <script src="./pw_notes_data.js"></script>
 <script>
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
@@ -146,29 +151,194 @@ function renderPWNotes() {
             </div>
             <p style="font-size:0.78rem;color:var(--text-muted);line-height:1.5;">${note.description}</p>
             <div class="pw-actions">
-                <button class="view-btn" onclick="showExternalPDF('${note.url}', '${note.title.replace(/'/g, "\\'")}')">📖 View</button>
+                <button class="view-btn" onclick="showExternalPDF('${note.url}', '${note.title.replace(/'/g, "\\'")}')">📖 View (PDF.js)</button>
                 <a href="${note.url}" download target="_blank" rel="noopener">⬇ Download</a>
             </div>
         </div>
     `).join('');
 }
 
-function showExternalPDF(url, title) {
+// Render external PDFs (like PW notes) using pdf.js
+// Works around X-Frame-Options: SAMEORIGIN that blocks iframe embedding
+let currentPdfDoc = null;
+let currentPdfPageNum = 1;
+let currentPdfTotalPages = 0;
+let currentPdfUrl = null;
+let currentPdfTitle = '';
+
+async function showExternalPDF(url, title) {
     document.getElementById('welcomeScreen').style.display = 'none';
     document.getElementById('loadingScreen').style.display = 'flex';
+    document.getElementById('loadingScreen').innerHTML = '<div class="spinner"></div><p>Loading PDF (rendering with PDF.js)…</p>';
     document.getElementById('pdfViewer').style.display = 'none';
     document.getElementById('pdfControls').style.display = 'flex';
+    document.getElementById('pdfControls').innerHTML = `
+        <button class="control-btn" onclick="prevPdfPage()" title="Previous page" id="pdfPrevBtn">←</button>
+        <span id="pdfPageInfo" style="font-size:0.82rem;color:var(--text-muted);padding:0 8px;">Page 0 / 0</span>
+        <button class="control-btn" onclick="nextPdfPage()" title="Next page" id="pdfNextBtn">→</button>
+        <input type="number" id="pdfPageInput" min="1" placeholder="Go to" style="width:60px;padding:4px 8px;border:1px solid var(--border);border-radius:6px;font-size:0.82rem;background:var(--bg-card);color:var(--text);" onchange="goToPdfPage(this.value)">
+        <button class="control-btn" onclick="zoomPdf(0.25)" title="Zoom in">➕</button>
+        <button class="control-btn" onclick="zoomPdf(-0.25)" title="Zoom out">➖</button>
+        <button class="control-btn" onclick="toggleFullscreen()" title="Fullscreen">⛶</button>
+        <a class="control-btn" href="${url}" download target="_blank" rel="noopener" title="Download">⬇</a>
+        <button class="control-btn" onclick="hideViewer()" title="Close PDF">✕</button>
+    `;
 
     // Set AI context
     if (typeof window.setAIContext === 'function') {
         window.setAIContext(`Currently viewing: ${title} (PW Short Notes)`);
     }
 
-    // Show in iframe (for external PDFs, just load directly)
-    document.getElementById('loadingScreen').style.display = 'none';
-    const viewer = document.getElementById('pdfViewer');
-    viewer.src = url;
-    viewer.style.display = 'block';
+    currentPdfUrl = url;
+    currentPdfTitle = title;
+
+    try {
+        // Fetch and render PDF using pdf.js (works around X-Frame-Options)
+        const loadingTask = pdfjsLib.getDocument({
+            url: url,
+            withCredentials: false,
+            // Some CORS setups need this
+            cMapUrl: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/cmaps/',
+            cMapPacked: true,
+        });
+
+        currentPdfDoc = await loadingTask.promise;
+        currentPdfTotalPages = currentPdfDoc.numPages;
+        currentPdfPageNum = 1;
+
+        // Extract text from first 5 pages for AI context
+        try {
+            let extractedText = '';
+            for (let p = 1; p <= Math.min(currentPdfTotalPages, 5); p++) {
+                const page = await currentPdfDoc.getPage(p);
+                const tc = await page.getTextContent();
+                extractedText += tc.items.map(i => i.str).join(' ') + '\n';
+            }
+            if (typeof window.setAIContext === 'function') {
+                window.setAIContext(`Currently viewing: ${title} (PW Short Notes, ${currentPdfTotalPages} pages)\n\nFirst pages content:\n${extractedText.substring(0, 1500)}`);
+            }
+        } catch (e) { console.warn('Text extraction failed:', e); }
+
+        // Hide loading, show canvas container
+        document.getElementById('loadingScreen').style.display = 'none';
+
+        // Create canvas-based viewer (replaces iframe)
+        const content = document.querySelector('.app-content');
+        let canvasContainer = document.getElementById('pdfCanvasContainer');
+        if (!canvasContainer) {
+            canvasContainer = document.createElement('div');
+            canvasContainer.id = 'pdfCanvasContainer';
+            canvasContainer.className = 'pdf-canvas-container';
+            canvasContainer.style.cssText = 'display:block;width:100%;height:calc(100vh - 60px);overflow:auto;background:#525659;padding:20px 0;';
+            content.appendChild(canvasContainer);
+        }
+        canvasContainer.style.display = 'block';
+        // Hide old iframe viewer
+        document.getElementById('pdfViewer').style.display = 'none';
+
+        // Render current page
+        await renderPdfPage();
+    } catch (err) {
+        console.error('PDF.js failed to load:', err);
+        document.getElementById('loadingScreen').style.display = 'none';
+        // Fallback: show download link
+        const content = document.querySelector('.app-content');
+        let fallback = document.getElementById('pdfFallback');
+        if (!fallback) {
+            fallback = document.createElement('div');
+            fallback.id = 'pdfFallback';
+            fallback.className = 'pdf-fallback';
+            fallback.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;text-align:center;min-height:60vh;';
+            content.appendChild(fallback);
+        }
+        fallback.style.display = 'flex';
+        fallback.innerHTML = `
+            <div style="font-size:3rem;margin-bottom:12px;">📄</div>
+            <h2 style="margin-bottom:8px;">PDF cannot be embedded</h2>
+            <p style="color:var(--text-muted);margin-bottom:18px;max-width:480px;">
+                This PDF (from ${currentPdfTitle}) cannot be rendered inside the app due to browser security restrictions.
+                You can still open or download it directly.
+            </p>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;">
+                <a href="${url}" target="_blank" rel="noopener" class="btn btn-primary btn-sm">↗ Open in New Tab</a>
+                <a href="${url}" download class="btn btn-secondary btn-sm">⬇ Download PDF</a>
+            </div>
+            <p style="font-size:0.74rem;color:var(--text-muted);margin-top:14px;max-width:480px;">
+                Technical details: ${err.message}
+            </p>
+        `;
+    }
+}
+
+let currentPdfScale = 1.3;
+
+async function renderPdfPage() {
+    if (!currentPdfDoc) return;
+    const page = await currentPdfDoc.getPage(currentPdfPageNum);
+
+    const container = document.getElementById('pdfCanvasContainer');
+    if (!container) return;
+    // Clear previous canvas
+    container.innerHTML = '';
+
+    const viewport = page.getViewport({ scale: currentPdfScale });
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+
+    // Render at device pixel ratio for crispness
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = viewport.width * dpr;
+    canvas.height = viewport.height * dpr;
+    canvas.style.width = viewport.width + 'px';
+    canvas.style.height = viewport.height + 'px';
+    canvas.style.display = 'block';
+    canvas.style.margin = '0 auto';
+    canvas.style.background = 'white';
+    canvas.style.boxShadow = '0 4px 20px rgba(0,0,0,0.3)';
+
+    ctx.scale(dpr, dpr);
+
+    container.appendChild(canvas);
+
+    await page.render({
+        canvasContext: ctx,
+        viewport: viewport,
+    }).promise;
+
+    // Update page info
+    const info = document.getElementById('pdfPageInfo');
+    if (info) info.textContent = `Page ${currentPdfPageNum} / ${currentPdfTotalPages}`;
+    const input = document.getElementById('pdfPageInput');
+    if (input) {
+        input.max = currentPdfTotalPages;
+        input.value = currentPdfPageNum;
+    }
+    // Scroll to top
+    container.scrollTop = 0;
+}
+
+async function nextPdfPage() {
+    if (!currentPdfDoc || currentPdfPageNum >= currentPdfTotalPages) return;
+    currentPdfPageNum++;
+    await renderPdfPage();
+}
+
+async function prevPdfPage() {
+    if (!currentPdfDoc || currentPdfPageNum <= 1) return;
+    currentPdfPageNum--;
+    await renderPdfPage();
+}
+
+async function goToPdfPage(n) {
+    n = parseInt(n, 10);
+    if (!currentPdfDoc || isNaN(n) || n < 1 || n > currentPdfTotalPages) return;
+    currentPdfPageNum = n;
+    await renderPdfPage();
+}
+
+async function zoomPdf(delta) {
+    currentPdfScale = Math.max(0.5, Math.min(3, currentPdfScale + delta));
+    await renderPdfPage();
 }
 
 function updateStats() {
@@ -249,8 +419,26 @@ function hideViewer() {
     document.getElementById('pdfViewer').style.display = 'none';
     document.getElementById('pdfViewer').src = '';
     document.getElementById('pdfControls').style.display = 'none';
+    document.getElementById('pdfControls').innerHTML = `
+        <button class="control-btn" onclick="toggleFullscreen()" title="Fullscreen">⛶</button>
+        <button class="control-btn" onclick="hideViewer()" title="Close PDF">✕</button>
+    `;
     document.getElementById('loadingScreen').style.display = 'none';
+    document.getElementById('loadingScreen').innerHTML = '<div class="spinner"></div><p>Loading PDF…</p>';
     document.getElementById('welcomeScreen').style.display = 'flex';
+    // Hide canvas container (PW notes)
+    const canvasContainer = document.getElementById('pdfCanvasContainer');
+    if (canvasContainer) {
+        canvasContainer.style.display = 'none';
+        canvasContainer.innerHTML = '';
+    }
+    // Hide fallback
+    const fallback = document.getElementById('pdfFallback');
+    if (fallback) fallback.style.display = 'none';
+    // Reset state
+    currentPdfDoc = null;
+    currentPdfPageNum = 1;
+    currentPdfTotalPages = 0;
     if (typeof window.setAIContext === 'function') window.setAIContext('');
 }
 

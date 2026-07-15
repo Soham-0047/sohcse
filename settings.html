@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Settings — API Configuration | SOH CSE</title>
+<meta name="description" content="Configure your AI provider API keys, YouTube API key, and admin service token. All keys stored locally in your browser only.">
+<link rel="stylesheet" href="./style.css">
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23667eea'/%3E%3Ctext x='50' y='70' font-size='60' font-weight='bold' fill='white' text-anchor='middle' font-family='Arial'%3EG%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+
+<nav class="topnav">
+    <div class="topnav-inner">
+        <a href="./index.html" class="topnav-brand">
+            <div class="brand-mark">G</div>
+            <div class="brand-text">SOH CSE <small>GATE Preparation Hub</small></div>
+        </a>
+        <button class="topnav-menu-btn" onclick="document.querySelector('.topnav-links').classList.toggle('open')" aria-label="Toggle menu">
+            <span></span><span></span><span></span>
+        </button>
+        <div class="topnav-links">
+            <a href="./index.html" class="topnav-link">🏠 Home</a>
+            <a href="./dashboard.html" class="topnav-link">📊 Dashboard</a>
+            <a href="./materials.html" class="topnav-link">📚 Materials</a>
+            <a href="./pyq.html" class="topnav-link">📝 PYQs</a>
+            <a href="./mocktest.html" class="topnav-link">🎯 Mock Test</a>
+            <a href="./revision.html" class="topnav-link">🔁 Revision</a>
+            <a href="./flashcards.html" class="topnav-link">🎴 Flashcards</a>
+            <a href="./quiz.html" class="topnav-link">🎯 Quiz</a>
+            <a href="./progress.html" class="topnav-link">📈 Progress</a>
+            <a href="./planner.html" class="topnav-link">📅 Planner</a>
+            <a href="./resources.html" class="topnav-link">🚀 Resources</a>
+            <a href="./settings.html" class="topnav-link active">⚙️ Settings</a>
+        </div>
+    </div>
+</nav>
+
+<div class="app-content">
+    <div class="app-content-scroll" id="contentArea">
+        <div id="mainContent" style="max-width: 900px; margin: 0 auto;">
+            <div style="text-align:center;margin-bottom:24px;">
+                <div style="font-size:3rem;margin-bottom:8px;">⚙️</div>
+                <h1 style="font-size:1.8rem;font-weight:800;color:var(--text);margin-bottom:4px;">Settings</h1>
+                <p style="color:var(--text-muted);font-size:0.92rem;">Configure your API keys for AI tutor and YouTube search. All keys stored ONLY in your browser.</p>
+            </div>
+
+            <!-- Security Notice -->
+            <div class="section-card" style="background:linear-gradient(135deg, rgba(16,185,129,0.08), rgba(34,197,94,0.05));border:1px solid rgba(16,185,129,0.2);margin-bottom:18px;">
+                <div style="display:flex;gap:12px;align-items:flex-start;">
+                    <div style="font-size:1.6rem;flex-shrink:0;">🔒</div>
+                    <div>
+                        <h3 style="margin-bottom:4px;color:var(--correct);">Your keys never leave your browser</h3>
+                        <p style="font-size:0.86rem;color:var(--text-2);line-height:1.5;">
+                            All API keys you enter here are stored in <code style="background:var(--bg-light);padding:2px 6px;border-radius:4px;font-size:0.78rem;">localStorage</code> on your device only.
+                            They are NOT sent to any server (except the AI provider you're calling).
+                            You can export, import, or clear all keys at any time.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Start -->
+            <div class="section-card" style="margin-bottom:18px;">
+                <h3 style="margin-bottom:10px;">🚀 Quick Start (Free)</h3>
+                <p style="font-size:0.88rem;color:var(--text-2);margin-bottom:14px;line-height:1.6;">
+                    To use the AI tutor, you need at least ONE of the following free API keys. <strong>Gemini is recommended</strong> — it's free, generous (1500 requests/day), and high quality.
+                </p>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;">
+                    <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener" class="provider-link" style="background:linear-gradient(135deg, rgba(102,126,234,0.1), rgba(118,75,162,0.1));">
+                        <div style="font-size:1.4rem;">✨</div>
+                        <div style="font-weight:700;">Google Gemini</div>
+                        <div style="font-size:0.74rem;color:var(--text-muted);">Free • 1500 req/day</div>
+                        <div style="font-size:0.74rem;color:var(--primary);margin-top:4px;">Get key ↗</div>
+                    </a>
+                    <a href="https://console.groq.com/keys" target="_blank" rel="noopener" class="provider-link" style="background:linear-gradient(135deg, rgba(244,114,182,0.1), rgba(236,72,153,0.1));">
+                        <div style="font-size:1.4rem;">⚡</div>
+                        <div style="font-weight:700;">Groq</div>
+                        <div style="font-size:0.74rem;color:var(--text-muted);">Free • Llama 3.3 70B</div>
+                        <div style="font-size:0.74rem;color:var(--primary);margin-top:4px;">Get key ↗</div>
+                    </a>
+                    <a href="https://console.cloud.google.com/" target="_blank" rel="noopener" class="provider-link" style="background:linear-gradient(135deg, rgba(239,68,68,0.1), rgba(220,38,38,0.1));">
+                        <div style="font-size:1.4rem;">🎥</div>
+                        <div style="font-weight:700;">YouTube Data API</div>
+                        <div style="font-size:0.74rem;color:var(--text-muted);">Free • 10k units/day</div>
+                        <div style="font-size:0.74rem;color:var(--primary);margin-top:4px;">Get key ↗</div>
+                    </a>
+                </div>
+            </div>
+
+            <!-- AI Provider Keys -->
+            <div class="section-card">
+                <h3 style="margin-bottom:6px;">🤖 AI Provider Keys</h3>
+                <p style="font-size:0.84rem;color:var(--text-muted);margin-bottom:18px;">Add at least one key to enable the AI tutor. Multiple keys provide automatic failover.</p>
+
+                <!-- Gemini -->
+                <div class="api-key-card">
+                    <div class="api-key-header">
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            <span style="font-size:1.4rem;">✨</span>
+                            <div>
+                                <div style="font-weight:700;">Google Gemini</div>
+                                <div style="font-size:0.74rem;color:var(--text-muted);">Free • 1500 req/day • Gemini 1.5 Flash</div>
+                            </div>
+                        </div>
+                        <div class="api-key-status" id="status-gemini">Not configured</div>
+                    </div>
+                    <input type="password" id="key-gemini" placeholder="AIza..." autocomplete="off" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg-card);color:var(--text);font-family:monospace;font-size:0.86rem;margin-top:10px;">
+                    <div class="api-key-actions">
+                        <button class="btn btn-primary btn-sm" onclick="saveKey('gemini')">💾 Save</button>
+                        <button class="btn btn-ghost btn-sm" onclick="testKey('gemini')">🧪 Test</button>
+                        <button class="btn btn-ghost btn-sm" onclick="toggleKeyVisibility('gemini')">👁 Show</button>
+                        <button class="btn btn-ghost btn-sm" onclick="clearKey('gemini')">🗑 Clear</button>
+                        <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener" class="btn btn-ghost btn-sm" style="margin-left:auto;">Get key ↗</a>
+                    </div>
+                    <div class="api-key-test-result" id="test-gemini"></div>
+                </div>
+
+                <!-- Groq -->
+                <div class="api-key-card">
+                    <div class="api-key-header">
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            <span style="font-size:1.4rem;">⚡</span>
+                            <div>
+                                <div style="font-weight:700;">Groq</div>
+                                <div style="font-size:0.74rem;color:var(--text-muted);">Free • Llama 3.3 70B • Very fast</div>
+                            </div>
+                        </div>
+                        <div class="api-key-status" id="status-groq">Not configured</div>
+                    </div>
+                    <input type="password" id="key-groq" placeholder="gsk_..." autocomplete="off" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg-card);color:var(--text);font-family:monospace;font-size:0.86rem;margin-top:10px;">
+                    <div class="api-key-actions">
+                        <button class="btn btn-primary btn-sm" onclick="saveKey('groq')">💾 Save</button>
+                        <button class="btn btn-ghost btn-sm" onclick="testKey('groq')">🧪 Test</button>
+                        <button class="btn btn-ghost btn-sm" onclick="toggleKeyVisibility('groq')">👁 Show</button>
+                        <button class="btn btn-ghost btn-sm" onclick="clearKey('groq')">🗑 Clear</button>
+                        <a href="https://console.groq.com/keys" target="_blank" rel="noopener" class="btn btn-ghost btn-sm" style="margin-left:auto;">Get key ↗</a>
+                    </div>
+                    <div class="api-key-test-result" id="test-groq"></div>
+                </div>
+
+                <!-- OpenAI -->
+                <div class="api-key-card">
+                    <div class="api-key-header">
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            <span style="font-size:1.4rem;">🤖</span>
+                            <div>
+                                <div style="font-weight:700;">OpenAI</div>
+                                <div style="font-size:0.74rem;color:var(--text-muted);">Paid • GPT-4o-mini • Best quality</div>
+                            </div>
+                        </div>
+                        <div class="api-key-status" id="status-openai">Not configured</div>
+                    </div>
+                    <input type="password" id="key-openai" placeholder="sk-..." autocomplete="off" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg-card);color:var(--text);font-family:monospace;font-size:0.86rem;margin-top:10px;">
+                    <div class="api-key-actions">
+                        <button class="btn btn-primary btn-sm" onclick="saveKey('openai')">💾 Save</button>
+                        <button class="btn btn-ghost btn-sm" onclick="testKey('openai')">🧪 Test</button>
+                        <button class="btn btn-ghost btn-sm" onclick="toggleKeyVisibility('openai')">👁 Show</button>
+                        <button class="btn btn-ghost btn-sm" onclick="clearKey('openai')">🗑 Clear</button>
+                        <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener" class="btn btn-ghost btn-sm" style="margin-left:auto;">Get key ↗</a>
+                    </div>
+                    <div class="api-key-test-result" id="test-openai"></div>
+                </div>
+
+                <!-- Together AI -->
+                <div class="api-key-card">
+                    <div class="api-key-header">
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            <span style="font-size:1.4rem;">🤝</span>
+                            <div>
+                                <div style="font-weight:700;">Together AI</div>
+                                <div style="font-size:0.74rem;color:var(--text-muted);">Free tier • Llama 3.3 70B</div>
+                            </div>
+                        </div>
+                        <div class="api-key-status" id="status-together">Not configured</div>
+                    </div>
+                    <input type="password" id="key-together" placeholder="..." autocomplete="off" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg-card);color:var(--text);font-family:monospace;font-size:0.86rem;margin-top:10px;">
+                    <div class="api-key-actions">
+                        <button class="btn btn-primary btn-sm" onclick="saveKey('together')">💾 Save</button>
+                        <button class="btn btn-ghost btn-sm" onclick="testKey('together')">🧪 Test</button>
+                        <button class="btn btn-ghost btn-sm" onclick="toggleKeyVisibility('together')">👁 Show</button>
+                        <button class="btn btn-ghost btn-sm" onclick="clearKey('together')">🗑 Clear</button>
+                        <a href="https://api.together.xyz/settings/api-keys" target="_blank" rel="noopener" class="btn btn-ghost btn-sm" style="margin-left:auto;">Get key ↗</a>
+                    </div>
+                    <div class="api-key-test-result" id="test-together"></div>
+                </div>
+
+                <!-- Cohere -->
+                <div class="api-key-card">
+                    <div class="api-key-header">
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            <span style="font-size:1.4rem;">💫</span>
+                            <div>
+                                <div style="font-weight:700;">Cohere</div>
+                                <div style="font-size:0.74rem;color:var(--text-muted);">Free tier • Command R</div>
+                            </div>
+                        </div>
+                        <div class="api-key-status" id="status-cohere">Not configured</div>
+                    </div>
+                    <input type="password" id="key-cohere" placeholder="..." autocomplete="off" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg-card);color:var(--text);font-family:monospace;font-size:0.86rem;margin-top:10px;">
+                    <div class="api-key-actions">
+                        <button class="btn btn-primary btn-sm" onclick="saveKey('cohere')">💾 Save</button>
+                        <button class="btn btn-ghost btn-sm" onclick="testKey('cohere')">🧪 Test</button>
+                        <button class="btn btn-ghost btn-sm" onclick="toggleKeyVisibility('cohere')">👁 Show</button>
+                        <button class="btn btn-ghost btn-sm" onclick="clearKey('cohere')">🗑 Clear</button>
+                        <a href="https://dashboard.cohere.com/api-keys" target="_blank" rel="noopener" class="btn btn-ghost btn-sm" style="margin-left:auto;">Get key ↗</a>
+                    </div>
+                    <div class="api-key-test-result" id="test-cohere"></div>
+                </div>
+
+                <!-- HuggingFace -->
+                <div class="api-key-card">
+                    <div class="api-key-header">
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            <span style="font-size:1.4rem;">🤗</span>
+                            <div>
+                                <div style="font-weight:700;">HuggingFace</div>
+                                <div style="font-size:0.74rem;color:var(--text-muted);">Free tier • Multiple models</div>
+                            </div>
+                        </div>
+                        <div class="api-key-status" id="status-huggingface">Not configured</div>
+                    </div>
+                    <input type="password" id="key-huggingface" placeholder="hf_..." autocomplete="off" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg-card);color:var(--text);font-family:monospace;font-size:0.86rem;margin-top:10px;">
+                    <div class="api-key-actions">
+                        <button class="btn btn-primary btn-sm" onclick="saveKey('huggingface')">💾 Save</button>
+                        <button class="btn btn-ghost btn-sm" onclick="testKey('huggingface')">🧪 Test</button>
+                        <button class="btn btn-ghost btn-sm" onclick="toggleKeyVisibility('huggingface')">👁 Show</button>
+                        <button class="btn btn-ghost btn-sm" onclick="clearKey('huggingface')">🗑 Clear</button>
+                        <a href="https://huggingface.co/settings/tokens" target="_blank" rel="noopener" class="btn btn-ghost btn-sm" style="margin-left:auto;">Get key ↗</a>
+                    </div>
+                    <div class="api-key-test-result" id="test-huggingface"></div>
+                </div>
+            </div>
+
+            <!-- Admin Service -->
+            <div class="section-card" style="margin-top:18px;">
+                <h3 style="margin-bottom:6px;">🛡 Admin Service (Optional — Smart AI Routing)</h3>
+                <p style="font-size:0.84rem;color:var(--text-muted);margin-bottom:18px;line-height:1.5;">
+                    The admin service is a smart router that automatically picks the healthiest free AI provider, with failover across multiple keys. If you have a service token, add it here — otherwise the AI tutor will use your direct keys above.
+                </p>
+                <div class="api-key-card">
+                    <div class="api-key-header">
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            <span style="font-size:1.4rem;">🛡</span>
+                            <div>
+                                <div style="font-weight:700;">Admin Service Token</div>
+                                <div style="font-size:0.74rem;color:var(--text-muted);">Backend: admin-w1i8.onrender.com</div>
+                            </div>
+                        </div>
+                        <div class="api-key-status" id="status-admin_service_token">Not configured</div>
+                    </div>
+                    <input type="password" id="key-admin_service_token" placeholder="Paste your service token here..." autocomplete="off" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg-card);color:var(--text);font-family:monospace;font-size:0.86rem;margin-top:10px;">
+                    <div class="api-key-actions">
+                        <button class="btn btn-primary btn-sm" onclick="saveKey('admin_service_token')">💾 Save</button>
+                        <button class="btn btn-ghost btn-sm" onclick="testAdminService()">🧪 Test Connection</button>
+                        <button class="btn btn-ghost btn-sm" onclick="toggleKeyVisibility('admin_service_token')">👁 Show</button>
+                        <button class="btn btn-ghost btn-sm" onclick="clearKey('admin_service_token')">🗑 Clear</button>
+                    </div>
+                    <div class="api-key-test-result" id="test-admin_service_token"></div>
+                </div>
+            </div>
+
+            <!-- YouTube Data API -->
+            <div class="section-card" style="margin-top:18px;">
+                <h3 style="margin-bottom:6px;">🎥 YouTube Data API v3 (Optional)</h3>
+                <p style="font-size:0.84rem;color:var(--text-muted);margin-bottom:18px;line-height:1.5;">
+                    Used for in-app video search on the Videos page. Free tier: 10,000 units/day (~99 searches). If not configured, the Videos page falls back to curated playlists.
+                </p>
+                <div class="api-key-card">
+                    <div class="api-key-header">
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            <span style="font-size:1.4rem;">🎥</span>
+                            <div>
+                                <div style="font-weight:700;">YouTube Data API Key</div>
+                                <div style="font-size:0.74rem;color:var(--text-muted);">Enable "YouTube Data API v3" in Google Cloud Console</div>
+                            </div>
+                        </div>
+                        <div class="api-key-status" id="status-youtube_api_key">Not configured</div>
+                    </div>
+                    <input type="password" id="key-youtube_api_key" placeholder="AIza..." autocomplete="off" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg-card);color:var(--text);font-family:monospace;font-size:0.86rem;margin-top:10px;">
+                    <div class="api-key-actions">
+                        <button class="btn btn-primary btn-sm" onclick="saveKey('youtube_api_key')">💾 Save</button>
+                        <button class="btn btn-ghost btn-sm" onclick="testYouTubeKey()">🧪 Test</button>
+                        <button class="btn btn-ghost btn-sm" onclick="toggleKeyVisibility('youtube_api_key')">👁 Show</button>
+                        <button class="btn btn-ghost btn-sm" onclick="clearKey('youtube_api_key')">🗑 Clear</button>
+                        <a href="https://console.cloud.google.com/" target="_blank" rel="noopener" class="btn btn-ghost btn-sm" style="margin-left:auto;">Get key ↗</a>
+                    </div>
+                    <div class="api-key-test-result" id="test-youtube_api_key"></div>
+                </div>
+            </div>
+
+            <!-- Data Management -->
+            <div class="section-card" style="margin-top:18px;">
+                <h3 style="margin-bottom:14px;">📦 Key Management</h3>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;">
+                    <button class="btn btn-primary btn-sm" onclick="exportKeys()">⬇ Export Keys</button>
+                    <button class="btn btn-ghost btn-sm" onclick="document.getElementById('importKeysInput').click()">⬆ Import Keys</button>
+                    <input type="file" id="importKeysInput" accept=".json" style="display:none;" onchange="importKeys(event)">
+                    <button class="btn btn-ghost btn-sm" style="color:var(--danger);" onclick="clearAllKeys()">🗑 Clear All Keys</button>
+                </div>
+                <p style="font-size:0.74rem;color:var(--text-muted);margin-top:10px;line-height:1.4;">
+                    Export creates an encrypted JSON file with all your keys. Keep it safe — anyone with this file can use your API quotas.
+                </p>
+            </div>
+
+            <!-- Status Summary -->
+            <div class="section-card" style="margin-top:18px;background:linear-gradient(135deg, rgba(102,126,234,0.05), rgba(118,75,162,0.05));">
+                <h3 style="margin-bottom:10px;">📊 Configuration Status</h3>
+                <div id="statusSummary">Loading...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="./config.js"></script>
+<script src="./admin-client.js"></script>
+<script>
+// ============ Storage ============
+const USER_KEYS_KEY = 'sohcse_user_keys'; // Used by config.js loader
+const CHATBOT_KEYS_KEY = 'sohcse_ai_keys_v3'; // Used by chatbot.js
+
+function getUserKeys() {
+    try {
+        const userKeys = JSON.parse(localStorage.getItem(USER_KEYS_KEY) || '{}');
+        const chatbotKeys = JSON.parse(localStorage.getItem(CHATBOT_KEYS_KEY) || '{}');
+        // Merge: chatbot keys override user keys (newer)
+        return { ...userKeys, ...chatbotKeys };
+    } catch { return {}; }
+}
+
+function saveUserKey(provider, key) {
+    const userKeys = JSON.parse(localStorage.getItem(USER_KEYS_KEY) || '{}');
+    const chatbotKeys = JSON.parse(localStorage.getItem(CHATBOT_KEYS_KEY) || '{}');
+    if (key && key.trim()) {
+        userKeys[provider] = key.trim();
+        chatbotKeys[provider] = key.trim();
+        delete chatbotKeys[provider] === undefined; // ensure defined
+    } else {
+        delete userKeys[provider];
+        delete chatbotKeys[provider];
+    }
+    localStorage.setItem(USER_KEYS_KEY, JSON.stringify(userKeys));
+    localStorage.setItem(CHATBOT_KEYS_KEY, JSON.stringify(chatbotKeys));
+    // Update config in-memory
+    if (typeof SOH_CONFIG !== 'undefined') {
+        if (provider === 'gemini_api_key') SOH_CONFIG.GEMINI_API_KEY = key || '';
+        if (provider === 'groq_api_key') SOH_CONFIG.GROQ_API_KEY = key || '';
+        if (provider === 'admin_service_token') SOH_CONFIG.ADMIN_SERVICE_TOKEN = key || '';
+        if (provider === 'youtube_api_key') SOH_CONFIG.YOUTUBE_API_KEY = key || '';
+    }
+}
+
+// Map UI provider names to storage keys
+const KEY_MAP = {
+    'gemini': 'gemini_api_key',
+    'groq': 'groq_api_key',
+    'openai': 'openai_api_key',
+    'together': 'together_api_key',
+    'cohere': 'cohere_api_key',
+    'huggingface': 'huggingface_api_key',
+    'admin_service_token': 'admin_service_token',
+    'youtube_api_key': 'youtube_api_key',
+};
+
+// ============ Init ============
+function init() {
+    const keys = getUserKeys();
+    // Populate input fields
+    for (const [provider, storageKey] of Object.entries(KEY_MAP)) {
+        const input = document.getElementById('key-' + provider);
+        const status = document.getElementById('status-' + provider);
+        if (input && keys[storageKey]) {
+            input.value = keys[storageKey];
+        }
+        updateStatus(provider, !!keys[storageKey]);
+    }
+    updateStatusSummary();
+}
+
+function updateStatus(provider, configured) {
+    const status = document.getElementById('status-' + provider);
+    if (!status) return;
+    if (configured) {
+        status.textContent = '✅ Configured';
+        status.style.background = 'rgba(16,185,129,0.15)';
+        status.style.color = 'var(--correct)';
+    } else {
+        status.textContent = 'Not configured';
+        status.style.background = 'var(--bg-light)';
+        status.style.color = 'var(--text-muted)';
+    }
+}
+
+function updateStatusSummary() {
+    const keys = getUserKeys();
+    const summary = document.getElementById('statusSummary');
+    const configured = [];
+    const missing = [];
+
+    for (const [provider, storageKey] of Object.entries(KEY_MAP)) {
+        if (keys[storageKey]) {
+            configured.push(provider);
+        } else {
+            missing.push(provider);
+        }
+    }
+
+    const aiConfigured = keys.gemini_api_key || keys.groq_api_key || keys.openai_api_key || keys.together_api_key || keys.cohere_api_key || keys.huggingface_api_key || keys.admin_service_token;
+    const ytConfigured = keys.youtube_api_key;
+
+    summary.innerHTML = `
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;">
+            <div class="metric-card" style="--metric-grad: ${aiConfigured ? 'var(--grad-correct, linear-gradient(135deg,#10b981,#059669))' : 'var(--grad-red)'};margin:0;">
+                <div class="metric-icon">${aiConfigured ? '✅' : '⚠️'}</div>
+                <div class="metric-value" style="font-size:1.2rem;">${aiConfigured ? 'Ready' : 'Not Set'}</div>
+                <div class="metric-label">AI Tutor</div>
+                <div class="metric-sub">${configured.filter(p => p !== 'youtube_api_key').length} provider(s)</div>
+            </div>
+            <div class="metric-card" style="--metric-grad: ${ytConfigured ? 'var(--grad-correct, linear-gradient(135deg,#10b981,#059669))' : 'var(--grad-red)'};margin:0;">
+                <div class="metric-icon">${ytConfigured ? '✅' : '⚠️'}</div>
+                <div class="metric-value" style="font-size:1.2rem;">${ytConfigured ? 'Ready' : 'Optional'}</div>
+                <div class="metric-label">YouTube Search</div>
+                <div class="metric-sub">${ytConfigured ? 'Configured' : 'Using fallback'}</div>
+            </div>
+        </div>
+        ${!aiConfigured ? `
+            <div style="margin-top:14px;padding:14px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:8px;font-size:0.84rem;color:var(--text-2);line-height:1.5;">
+                ⚠️ <strong>AI Tutor not configured.</strong> Add at least one AI provider key above (Gemini recommended — free, 1500 req/day) to enable the AI tutor, quiz generator, and doubt solver.
+            </div>
+        ` : `
+            <div style="margin-top:14px;padding:14px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:8px;font-size:0.84rem;color:var(--text-2);">
+                ✅ <strong>AI tutor is ready!</strong> You can now use the AI tutor, quiz generator, and doubt solver across all pages.
+            </div>
+        `}
+    `;
+}
+
+// ============ Actions ============
+function saveKey(provider) {
+    const input = document.getElementById('key-' + provider);
+    if (!input) return;
+    const key = input.value.trim();
+    const storageKey = KEY_MAP[provider] || provider;
+    saveUserKey(storageKey, key);
+    updateStatus(provider, !!key);
+    updateStatusSummary();
+    if (window.showToast) window.showToast(`💾 ${provider} key saved`, 'success');
+}
+
+function clearKey(provider) {
+    if (!confirm(`Remove ${provider} key?`)) return;
+    const input = document.getElementById('key-' + provider);
+    if (input) input.value = '';
+    const storageKey = KEY_MAP[provider] || provider;
+    saveUserKey(storageKey, '');
+    updateStatus(provider, false);
+    updateStatusSummary();
+    if (window.showToast) window.showToast(`🗑 ${provider} key removed`, 'info');
+}
+
+function toggleKeyVisibility(provider) {
+    const input = document.getElementById('key-' + provider);
+    if (!input) return;
+    input.type = input.type === 'password' ? 'text' : 'password';
+}
+
+async function testKey(provider) {
+    const input = document.getElementById('key-' + provider);
+    const result = document.getElementById('test-' + provider);
+    if (!input || !result) return;
+    const key = input.value.trim();
+    if (!key) {
+        result.innerHTML = '<div style="color:var(--danger);font-size:0.78rem;margin-top:8px;">⚠ Enter a key first</div>';
+        return;
+    }
+
+    result.innerHTML = '<div style="color:var(--text-muted);font-size:0.78rem;margin-top:8px;">⏳ Testing...</div>';
+
+    try {
+        let testResult;
+        switch (provider) {
+            case 'gemini':
+                testResult = await testGeminiKey(key);
+                break;
+            case 'groq':
+                testResult = await testGroqKey(key);
+                break;
+            case 'openai':
+                testResult = await testOpenAIKey(key);
+                break;
+            case 'together':
+                testResult = await testTogetherKey(key);
+                break;
+            case 'cohere':
+                testResult = await testCohereKey(key);
+                break;
+            case 'huggingface':
+                testResult = await testHuggingFaceKey(key);
+                break;
+            default:
+                testResult = { ok: false, message: 'Test not implemented for this provider' };
+        }
+        if (testResult.ok) {
+            result.innerHTML = `<div style="color:var(--correct);font-size:0.78rem;margin-top:8px;">✅ ${testResult.message}</div>`;
+        } else {
+            result.innerHTML = `<div style="color:var(--danger);font-size:0.78rem;margin-top:8px;">❌ ${testResult.message}</div>`;
+        }
+    } catch (e) {
+        result.innerHTML = `<div style="color:var(--danger);font-size:0.78rem;margin-top:8px;">❌ Error: ${e.message}</div>`;
+    }
+}
+
+async function testGeminiKey(key) {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}`, {
+        method: 'GET',
+    });
+    if (res.ok) {
+        const data = await res.json();
+        return { ok: true, message: `Valid key — ${data.models?.length || 0} models available` };
+    }
+    if (res.status === 403 || res.status === 401) return { ok: false, message: 'Invalid API key' };
+    if (res.status === 429) return { ok: false, message: 'Rate limit exceeded (key valid)' };
+    return { ok: false, message: `HTTP ${res.status}` };
+}
+
+async function testGroqKey(key) {
+    const res = await fetch('https://api.groq.com/openai/v1/models', {
+        headers: { 'Authorization': `Bearer ${key}` },
+    });
+    if (res.ok) {
+        const data = await res.json();
+        return { ok: true, message: `Valid key — ${data.data?.length || 0} models available` };
+    }
+    if (res.status === 401) return { ok: false, message: 'Invalid API key' };
+    if (res.status === 429) return { ok: false, message: 'Rate limit exceeded (key valid)' };
+    return { ok: false, message: `HTTP ${res.status}` };
+}
+
+async function testOpenAIKey(key) {
+    const res = await fetch('https://api.openai.com/v1/models', {
+        headers: { 'Authorization': `Bearer ${key}` },
+    });
+    if (res.ok) return { ok: true, message: 'Valid key — OpenAI access confirmed' };
+    if (res.status === 401) return { ok: false, message: 'Invalid API key' };
+    return { ok: false, message: `HTTP ${res.status}` };
+}
+
+async function testTogetherKey(key) {
+    const res = await fetch('https://api.together.xyz/v1/models', {
+        headers: { 'Authorization': `Bearer ${key}` },
+    });
+    if (res.ok) return { ok: true, message: 'Valid key — Together AI access confirmed' };
+    if (res.status === 401) return { ok: false, message: 'Invalid API key' };
+    return { ok: false, message: `HTTP ${res.status}` };
+}
+
+async function testCohereKey(key) {
+    const res = await fetch('https://api.cohere.ai/v1/models', {
+        headers: { 'Authorization': `Bearer ${key}` },
+    });
+    if (res.ok) return { ok: true, message: 'Valid key — Cohere access confirmed' };
+    if (res.status === 401) return { ok: false, message: 'Invalid API key' };
+    return { ok: false, message: `HTTP ${res.status}` };
+}
+
+async function testHuggingFaceKey(key) {
+    const res = await fetch('https://huggingface.co/api/whoami-v2', {
+        headers: { 'Authorization': `Bearer ${key}` },
+    });
+    if (res.ok) {
+        const data = await res.json();
+        return { ok: true, message: `Valid key — logged in as ${data.name || 'user'}` };
+    }
+    if (res.status === 401) return { ok: false, message: 'Invalid API key' };
+    return { ok: false, message: `HTTP ${res.status}` };
+}
+
+async function testAdminService() {
+    const input = document.getElementById('key-admin_service_token');
+    const result = document.getElementById('test-admin_service_token');
+    if (!input || !result) return;
+    const token = input.value.trim();
+    if (!token) {
+        result.innerHTML = '<div style="color:var(--danger);font-size:0.78rem;margin-top:8px;">⚠ Enter a token first</div>';
+        return;
+    }
+
+    result.innerHTML = '<div style="color:var(--text-muted);font-size:0.78rem;margin-top:8px;">⏳ Testing connection...</div>';
+
+    try {
+        const res = await fetch('https://admin-w1i8.onrender.com/public/providers/route-models?kind=llm&freeOnly=1&limit=3', {
+            headers: { 'Authorization': `Bearer ${token}` },
+        });
+        if (res.ok) {
+            const data = await res.json();
+            const count = (data.candidates?.length || 0) + (data.primary ? 1 : 0);
+            result.innerHTML = `<div style="color:var(--correct);font-size:0.78rem;margin-top:8px;">✅ Connected — ${count} AI models available</div>`;
+        } else if (res.status === 401 || res.status === 403) {
+            result.innerHTML = '<div style="color:var(--danger);font-size:0.78rem;margin-top:8px;">❌ Invalid token</div>';
+        } else {
+            result.innerHTML = `<div style="color:var(--danger);font-size:0.78rem;margin-top:8px;">❌ HTTP ${res.status}</div>`;
+        }
+    } catch (e) {
+        result.innerHTML = `<div style="color:var(--danger);font-size:0.78rem;margin-top:8px;">❌ ${e.message} (service may be sleeping — try again in 30s)</div>`;
+    }
+}
+
+async function testYouTubeKey() {
+    const input = document.getElementById('key-youtube_api_key');
+    const result = document.getElementById('test-youtube_api_key');
+    if (!input || !result) return;
+    const key = input.value.trim();
+    if (!key) {
+        result.innerHTML = '<div style="color:var(--danger);font-size:0.78rem;margin-top:8px;">⚠ Enter a key first</div>';
+        return;
+    }
+
+    result.innerHTML = '<div style="color:var(--text-muted);font-size:0.78rem;margin-top:8px;">⏳ Testing...</div>';
+
+    try {
+        const res = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet&id=dQw4w9WgXcQ&key=${key}`);
+        if (res.ok) return { ok: true, message: 'Valid key — YouTube API access confirmed' };
+        if (res.status === 403) {
+            const data = await res.json().catch(() => ({}));
+            const reason = data.error?.errors?.[0]?.reason || 'forbidden';
+            if (reason === 'keyInvalid') return { ok: false, message: 'Invalid API key' };
+            if (reason === 'accessNotConfigured') return { ok: false, message: 'API not enabled — enable "YouTube Data API v3" in Google Cloud Console' };
+            return { ok: false, message: `Forbidden: ${reason}` };
+        }
+        return { ok: false, message: `HTTP ${res.status}` };
+    } catch (e) {
+        result.innerHTML = `<div style="color:var(--danger);font-size:0.78rem;margin-top:8px;">❌ ${e.message}</div>`;
+        return;
+    }
+
+    const testResult = await testYouTubeKey();
+    if (testResult.ok) {
+        result.innerHTML = `<div style="color:var(--correct);font-size:0.78rem;margin-top:8px;">✅ ${testResult.message}</div>`;
+    } else {
+        result.innerHTML = `<div style="color:var(--danger);font-size:0.78rem;margin-top:8px;">❌ ${testResult.message}</div>`;
+    }
+}
+
+function exportKeys() {
+    const keys = getUserKeys();
+    const exportData = {
+        version: 1,
+        exported_at: new Date().toISOString(),
+        keys: keys,
+    };
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'sohcse_api_keys_' + new Date().toISOString().slice(0, 10) + '.json';
+    a.click();
+    URL.revokeObjectURL(url);
+    if (window.showToast) window.showToast('⬇ Keys exported (keep this file safe!)', 'success');
+}
+
+function importKeys(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const data = JSON.parse(e.target.result);
+            if (!data.keys) throw new Error('Invalid format');
+            if (!confirm('Import keys? This will overwrite current keys.')) return;
+            const userKeys = JSON.parse(localStorage.getItem(USER_KEYS_KEY) || '{}');
+            const chatbotKeys = JSON.parse(localStorage.getItem(CHATBOT_KEYS_KEY) || '{}');
+            for (const [k, v] of Object.entries(data.keys)) {
+                userKeys[k] = v;
+                chatbotKeys[k] = v;
+            }
+            localStorage.setItem(USER_KEYS_KEY, JSON.stringify(userKeys));
+            localStorage.setItem(CHATBOT_KEYS_KEY, JSON.stringify(chatbotKeys));
+            if (window.showToast) window.showToast('✅ Keys imported', 'success');
+            setTimeout(() => location.reload(), 1000);
+        } catch (e) {
+            alert('Import failed: ' + e.message);
+        }
+    };
+    reader.readAsText(file);
+}
+
+function clearAllKeys() {
+    if (!confirm('Clear ALL API keys? This cannot be undone.')) return;
+    localStorage.removeItem(USER_KEYS_KEY);
+    localStorage.removeItem(CHATBOT_KEYS_KEY);
+    if (window.showToast) window.showToast('🗑 All keys cleared', 'info');
+    setTimeout(() => location.reload(), 1000);
+}
+
+init();
+</script>
+<script src="./tracker.js"></script>
+<script src="./gamification.js"></script>
+<script src="./question-engine.js"></script>
+<script src="./gate-engine.js"></script>
+<script src="./analytics.js"></script>
+<script src="./loader.js"></script>
+<script src="./pwa.js"></script>
+<script src="./nav.js"></script>
+<script src="./theme.js"></script>
+</body>
+</html>

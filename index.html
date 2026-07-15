@@ -6,6 +6,7 @@
 <title>SOH CSE — GATE CSE Preparation Hub | Materials, PYQs, Videos, AI Tutor</title>
 <meta name="description" content="Complete GATE CSE preparation: 70+ study materials, 2,736 PYQs with solutions, AI tutor, video lectures, flashcards, quizzes, and progress tracking.">
 <link rel="stylesheet" href="./style.css">
+<link rel="manifest" href="./manifest.json">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23667eea'/%3E%3Ctext x='50' y='70' font-size='60' font-weight='bold' fill='white' text-anchor='middle' font-family='Arial'%3EG%3C/text%3E%3C/svg%3E">
 </head>
 <body>
@@ -68,14 +69,14 @@
 <!-- New Features Spotlight -->
 <section class="section">
     <div class="section-card" style="background: linear-gradient(135deg, rgba(102,126,234,0.05), rgba(118,75,162,0.05));">
-        <div class="section-eyebrow">✨ New in v4</div>
+        <div class="section-eyebrow">✨ v5 — Now a PWA with Advanced Analytics</div>
         <h2 class="section-title">Smarter, more personal, more motivating</h2>
-        <p class="section-subtitle">Three brand-new systems designed to make your GATE prep more effective and more fun.</p>
+        <p class="section-subtitle">Installable as an app, works offline, and now with AI-powered insights that analyze your study patterns to predict streaks, surface peak hours, and track performance trajectory.</p>
         <div class="features-grid">
             <a href="./dashboard.html" class="feature-card" style="--card-grad: var(--grad-brand);">
                 <div class="feature-icon">📊</div>
                 <div class="feature-title">Personal Study Dashboard</div>
-                <div class="feature-desc">Daily smart recommendations, GATE score predictor, 7-day activity timeline, and quick actions — all in one place.</div>
+                <div class="feature-desc">Daily smart recommendations, GATE score predictor, streak forecasting, study time insights, performance trajectory, and 7-day activity timeline.</div>
                 <div class="feature-arrow">Open dashboard →</div>
             </a>
             <a href="./revision.html" class="feature-card" style="--card-grad: var(--grad-red);">
@@ -274,7 +275,11 @@
 <script src="./chatbot.js"></script>
 <script src="./tracker.js"></script>
 <script src="./gamification.js"></script>
+<script src="./question-engine.js"></script>
+<script src="./gate-engine.js"></script>
+<script src="./analytics.js"></script>
 <script src="./loader.js"></script>
+<script src="./pwa.js"></script>
 <script>
 function animateCounters() {
     document.querySelectorAll('[data-count]').forEach(el => {

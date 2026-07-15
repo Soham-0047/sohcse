@@ -6,6 +6,7 @@
 <title>Study Dashboard — Your Daily Hub | SOH CSE</title>
 <meta name="description" content="Personalized daily study dashboard with smart recommendations, quick stats, and goal tracking.">
 <link rel="stylesheet" href="./style.css">
+<link rel="manifest" href="./manifest.json">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23667eea'/%3E%3Ctext x='50' y='70' font-size='60' font-weight='bold' fill='white' text-anchor='middle' font-family='Arial'%3EG%3C/text%3E%3C/svg%3E">
 </head>
 <body>
@@ -49,7 +50,11 @@
 <script src="./chatbot.js"></script>
 <script src="./tracker.js"></script>
 <script src="./gamification.js"></script>
+<script src="./question-engine.js"></script>
+<script src="./gate-engine.js"></script>
+<script src="./analytics.js"></script>
 <script src="./loader.js"></script>
+<script src="./pwa.js"></script>
 <script>
 // ============ Helpers ============
 function getJSON(key, def) {
@@ -423,6 +428,33 @@ function renderDashboard() {
         </div>
         `}
 
+        <!-- Smart Insights (AI-powered) -->
+        <div class="section-card" style="margin-top:18px;background:linear-gradient(135deg, rgba(168,85,247,0.05), rgba(236,72,153,0.05));border:1px solid rgba(168,85,247,0.15);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+                <h3 style="margin:0;">💡 Smart Insights</h3>
+                <span style="font-size:0.78rem;color:var(--text-muted);">Personalized analysis from your study patterns</span>
+            </div>
+            <div id="smartInsights">Loading insights...</div>
+        </div>
+
+        <!-- Streak Forecast & Study Time Insights -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:18px;" class="insights-grid">
+            <div class="section-card" id="streakForecastCard">
+                <h3 style="margin-bottom:10px;">🔥 Streak Forecast</h3>
+                <div id="streakForecast">Loading...</div>
+            </div>
+            <div class="section-card" id="studyTimeCard">
+                <h3 style="margin-bottom:10px;">⏰ Study Time Patterns</h3>
+                <div id="studyTimePatterns">Loading...</div>
+            </div>
+        </div>
+
+        <!-- Performance Trajectory -->
+        <div class="section-card" style="margin-top:18px;">
+            <h3 style="margin-bottom:14px;">📈 Performance Trajectory</h3>
+            <div id="performanceTrajectory">Loading...</div>
+        </div>
+
         <!-- Recent Activity Timeline -->
         <div class="section-card" style="margin-top:18px;">
             <h3 style="margin-bottom:14px;">📅 Recent Activity</h3>
@@ -545,7 +577,267 @@ function renderActivityTimeline() {
 }
 
 // ============ Init ============
-window.addEventListener('load', renderDashboard);
+window.addEventListener('load', () => {
+    renderDashboard();
+    // Render advanced analytics after main dashboard
+    setTimeout(() => {
+        renderSmartInsights();
+        renderStreakForecast();
+        renderStudyTimePatterns();
+        renderPerformanceTrajectory();
+    }, 200);
+});
+
+// ============ Smart Insights ============
+function renderSmartInsights() {
+    const container = document.getElementById('smartInsights');
+    if (!container) return;
+    if (typeof window.SOH_Analytics === 'undefined') {
+        container.innerHTML = '<div style="color:var(--text-muted);font-size:0.85rem;">Analytics module not loaded.</div>';
+        return;
+    }
+    const insights = window.SOH_Analytics.generateInsights();
+    if (insights.length === 0) {
+        container.innerHTML = `
+            <div style="text-align:center;padding:20px;color:var(--text-muted);">
+                <div style="font-size:1.8rem;margin-bottom:6px;">📊</div>
+                <div style="font-size:0.88rem;">Practice more to unlock personalized insights!</div>
+                <div style="font-size:0.76rem;margin-top:4px;">Need at least 10 attempts for analysis.</div>
+            </div>
+        `;
+        return;
+    }
+    const colorMap = {
+        urgent: 'var(--danger)',
+        success: 'var(--correct)',
+        warning: 'var(--warning)',
+        info: 'var(--info)',
+    };
+    const bgMap = {
+        urgent: 'rgba(239,68,68,0.08)',
+        success: 'rgba(16,185,129,0.08)',
+        warning: 'rgba(245,158,11,0.08)',
+        info: 'rgba(59,130,246,0.08)',
+    };
+    container.innerHTML = insights.map(insight => `
+        <div style="display:flex;gap:12px;align-items:flex-start;padding:12px 14px;background:${bgMap[insight.type]};border-left:3px solid ${colorMap[insight.type]};border-radius:8px;margin-bottom:8px;">
+            <div style="font-size:1.3rem;flex-shrink:0;">${insight.icon}</div>
+            <div style="flex:1;">
+                <div style="font-weight:700;font-size:0.9rem;color:var(--text);margin-bottom:2px;">${insight.title}</div>
+                <div style="font-size:0.82rem;color:var(--text-2);line-height:1.4;">${insight.desc}</div>
+                ${insight.action && insight.href ? `<a href="${insight.href}" style="display:inline-block;margin-top:6px;font-size:0.78rem;font-weight:600;color:${colorMap[insight.type]};text-decoration:none;">${insight.action} →</a>` : ''}
+            </div>
+        </div>
+    `).join('');
+}
+
+// ============ Streak Forecast ============
+function renderStreakForecast() {
+    const container = document.getElementById('streakForecast');
+    if (!container) return;
+    if (typeof window.SOH_Analytics === 'undefined') return;
+    const forecast = window.SOH_Analytics.forecastStreak();
+
+    const riskColors = {
+        none: '#94a3b8',
+        safe: '#10b981',
+        warning: '#f59e0b',
+        danger: '#ef4444',
+        broken: '#6b7280',
+    };
+    const riskBg = {
+        none: 'rgba(148,163,184,0.1)',
+        safe: 'rgba(16,185,129,0.1)',
+        warning: 'rgba(245,158,11,0.1)',
+        danger: 'rgba(239,68,68,0.1)',
+        broken: 'rgba(107,114,128,0.1)',
+    };
+
+    // Day-of-week mini bars
+    const dayNames = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+    const maxDay = Math.max(...forecast.weeklyActivity, 1);
+    const dayBars = forecast.weeklyActivity.map((count, i) => {
+        const height = (count / maxDay) * 100;
+        return `<div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;">
+            <div style="font-size:0.6rem;color:var(--text-muted);">${dayNames[i]}</div>
+            <div style="width:100%;height:40px;background:var(--bg-light);border-radius:3px;position:relative;overflow:hidden;">
+                <div style="position:absolute;bottom:0;left:0;right:0;height:${height}%;background:${riskColors.safe};border-radius:3px;transition:height 0.4s var(--ease-out);"></div>
+            </div>
+        </div>`;
+    }).join('');
+
+    container.innerHTML = `
+        <div style="background:${riskBg[forecast.riskLevel]};border-radius:8px;padding:12px;margin-bottom:12px;border-left:3px solid ${riskColors[forecast.riskLevel]};">
+            <div style="font-size:0.82rem;font-weight:600;color:${riskColors[forecast.riskLevel]};margin-bottom:4px;">${forecast.riskMessage}</div>
+            ${forecast.deadlineHours < 24 && forecast.riskLevel !== 'broken' && forecast.riskLevel !== 'none' ? `
+                <div style="font-size:0.72rem;color:var(--text-muted);">⏱ ${forecast.deadlineHours}h ${60 - new Date().getMinutes()}m until deadline</div>
+            ` : ''}
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+            <div style="text-align:center;padding:10px;background:var(--bg-light);border-radius:8px;">
+                <div style="font-size:1.6rem;font-weight:800;color:var(--primary);">${forecast.currentStreak}</div>
+                <div style="font-size:0.7rem;color:var(--text-muted);">Current Streak</div>
+            </div>
+            <div style="text-align:center;padding:10px;background:var(--bg-light);border-radius:8px;">
+                <div style="font-size:1.6rem;font-weight:800;color:var(--primary);">${forecast.projected30DayStreak}</div>
+                <div style="font-size:0.7rem;color:var(--text-muted);">30-day Forecast</div>
+            </div>
+        </div>
+
+        <div style="font-size:0.74rem;color:var(--text-muted);margin-bottom:6px;">📊 Activity by day of week</div>
+        <div style="display:flex;gap:4px;height:50px;">${dayBars}</div>
+
+        ${forecast.bestDayCount > 0 ? `
+            <div style="font-size:0.74rem;color:var(--text-2);margin-top:8px;text-align:center;">
+                🏆 Best day: <strong>${forecast.bestDay}</strong> (${forecast.bestDayCount} sessions)
+            </div>
+        ` : ''}
+    `;
+}
+
+// ============ Study Time Patterns ============
+function renderStudyTimePatterns() {
+    const container = document.getElementById('studyTimePatterns');
+    if (!container) return;
+    if (typeof window.SOH_Analytics === 'undefined') return;
+    const data = window.SOH_Analytics.studyTimeInsights();
+
+    if (data.totalStudyMinutes === 0) {
+        container.innerHTML = `
+            <div style="text-align:center;padding:20px;color:var(--text-muted);">
+                <div style="font-size:1.5rem;margin-bottom:6px;">⏰</div>
+                <div style="font-size:0.85rem;">Start practicing to see your study patterns!</div>
+            </div>
+        `;
+        return;
+    }
+
+    const hours = Math.floor(data.totalStudyMinutes / 60);
+    const mins = data.totalStudyMinutes % 60;
+    const timeStr = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+
+    // Peak hours display
+    const peakHoursHtml = data.peakHours.length > 0 ? data.peakHours.map(h => {
+        const hour12 = h.hour === 0 ? '12a' : h.hour < 12 ? `${h.hour}a` : h.hour === 12 ? '12p' : `${h.hour - 12}p`;
+        return `<span style="display:inline-block;padding:3px 8px;background:var(--bg-light);border-radius:6px;font-size:0.72rem;font-weight:600;margin:2px;">${hour12} (${h.count})</span>`;
+    }).join('') : 'No data';
+
+    // Time of day distribution
+    const tod = data.timeOfDay;
+    const todHtml = tod ? `
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px;">
+            <div style="text-align:center;padding:8px 4px;background:rgba(251,191,36,0.1);border-radius:6px;">
+                <div style="font-size:1.1rem;font-weight:800;color:#d97706;">${tod.morning.pct}%</div>
+                <div style="font-size:0.62rem;color:var(--text-muted);">🌅 Morning</div>
+            </div>
+            <div style="text-align:center;padding:8px 4px;background:rgba(239,68,68,0.1);border-radius:6px;">
+                <div style="font-size:1.1rem;font-weight:800;color:#dc2626;">${tod.afternoon.pct}%</div>
+                <div style="font-size:0.62rem;color:var(--text-muted);">☀️ Afternoon</div>
+            </div>
+            <div style="text-align:center;padding:8px 4px;background:rgba(168,85,247,0.1);border-radius:6px;">
+                <div style="font-size:1.1rem;font-weight:800;color:#7c3aed;">${tod.evening.pct}%</div>
+                <div style="font-size:0.62rem;color:var(--text-muted);">🌆 Evening</div>
+            </div>
+            <div style="text-align:center;padding:8px 4px;background:rgba(59,130,246,0.1);border-radius:6px;">
+                <div style="font-size:1.1rem;font-weight:800;color:#2563eb;">${tod.night.pct}%</div>
+                <div style="font-size:0.62rem;color:var(--text-muted);">🌙 Night</div>
+            </div>
+        </div>
+    ` : '';
+
+    // Week-over-week change
+    const wowColor = data.weekOverWeekChange >= 0 ? 'var(--correct)' : 'var(--danger)';
+    const wowIcon = data.weekOverWeekChange >= 0 ? '📈' : '📉';
+
+    container.innerHTML = `
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;">
+            <div style="text-align:center;padding:10px 6px;background:var(--bg-light);border-radius:8px;">
+                <div style="font-size:1.3rem;font-weight:800;color:var(--primary);">${timeStr}</div>
+                <div style="font-size:0.66rem;color:var(--text-muted);">Total Time</div>
+            </div>
+            <div style="text-align:center;padding:10px 6px;background:var(--bg-light);border-radius:8px;">
+                <div style="font-size:1.3rem;font-weight:800;color:var(--primary);">${data.avgSessionMinutes}m</div>
+                <div style="font-size:0.66rem;color:var(--text-muted);">Avg Session</div>
+            </div>
+            <div style="text-align:center;padding:10px 6px;background:var(--bg-light);border-radius:8px;">
+                <div style="font-size:1.3rem;font-weight:800;color:${wowColor};">${wowIcon} ${Math.abs(data.weekOverWeekChange)}%</div>
+                <div style="font-size:0.66rem;color:var(--text-muted);">vs Last Week</div>
+            </div>
+        </div>
+
+        <div style="font-size:0.74rem;color:var(--text-muted);margin-bottom:4px;">⏰ Peak study hours</div>
+        <div>${peakHoursHtml}</div>
+
+        ${todHtml}
+    `;
+}
+
+// ============ Performance Trajectory ============
+function renderPerformanceTrajectory() {
+    const container = document.getElementById('performanceTrajectory');
+    if (!container) return;
+    if (typeof window.SOH_Analytics === 'undefined') return;
+    const trajectory = window.SOH_Analytics.performanceTrajectory();
+
+    if (!trajectory) {
+        container.innerHTML = `
+            <div style="text-align:center;padding:20px;color:var(--text-muted);">
+                <div style="font-size:1.5rem;margin-bottom:6px;">📈</div>
+                <div style="font-size:0.85rem;">Practice at least 10 questions to see your trajectory!</div>
+            </div>
+        `;
+        return;
+    }
+
+    // Render 5-bucket accuracy chart (mini bar chart)
+    const maxAcc = Math.max(...trajectory.buckets.map(b => b.accuracy), 100);
+    const barsHtml = trajectory.buckets.map((b, i) => {
+        const height = (b.accuracy / 100) * 100;
+        const color = b.accuracy >= 70 ? '#10b981' : (b.accuracy >= 50 ? '#f59e0b' : '#ef4444');
+        return `
+            <div style="display:flex;flex-direction:column;align-items:center;flex:1;gap:4px;">
+                <div style="font-size:0.7rem;font-weight:700;color:${color};">${b.accuracy}%</div>
+                <div style="width:100%;max-width:50px;height:80px;background:var(--bg-light);border-radius:6px;position:relative;overflow:hidden;">
+                    <div style="position:absolute;bottom:0;left:0;right:0;height:${height}%;background:${color};border-radius:6px;transition:height 0.6s var(--ease-out);"></div>
+                </div>
+                <div style="font-size:0.6rem;color:var(--text-muted);">Phase ${i + 1}</div>
+            </div>
+        `;
+    }).join('');
+
+    // Subject trajectories
+    const subjTraj = Object.entries(trajectory.subjectTrajectories)
+        .sort((a, b) => b[1].change - a[1].change)
+        .slice(0, 5);
+    const subjHtml = subjTraj.length > 0 ? subjTraj.map(([subj, t]) => {
+        const label = subj.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+        const color = t.change > 5 ? 'var(--correct)' : (t.change < -5 ? 'var(--danger)' : 'var(--text-muted)');
+        const arrow = t.change > 5 ? '↑' : (t.change < -5 ? '↓' : '→');
+        return `
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border-soft);">
+                <div style="font-size:0.82rem;color:var(--text);">${label}</div>
+                <div style="font-size:0.78rem;color:${color};font-weight:600;">
+                    ${t.firstAcc}% → ${t.secondAcc}% <span style="margin-left:4px;">${arrow} ${Math.abs(t.change)}</span>
+                </div>
+            </div>
+        `;
+    }).join('') : '<div style="font-size:0.82rem;color:var(--text-muted);text-align:center;padding:10px;">Not enough data per subject yet.</div>';
+
+    container.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+            <div>
+                <div style="font-size:1.4rem;font-weight:800;color:${trajectory.trendColor};">${trajectory.trendLabel}</div>
+                <div style="font-size:0.76rem;color:var(--text-muted);margin-top:2px;">Started at ${trajectory.startingAccuracy}% • Now at ${trajectory.currentAccuracy}% • Change: ${trajectory.trend >= 0 ? '+' : ''}${trajectory.trend} pts</div>
+            </div>
+        </div>
+
+        <div style="display:flex;gap:6px;align-items:flex-end;margin-bottom:18px;">${barsHtml}</div>
+
+        <div style="font-size:0.86rem;font-weight:700;margin-bottom:8px;">📊 Subject-wise Trajectory (top 5)</div>
+        ${subjHtml}
+    `;
+}
 </script>
 <script src="./nav.js"></script>
 <script src="./theme.js"></script>

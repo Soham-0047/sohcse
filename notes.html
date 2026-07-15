@@ -6,6 +6,7 @@
 <title>Personal Notebook — SOH CSE</title>
 <meta name="description" content="Personal notebook for GATE CSE prep. Create, tag, and organize your study notes by subject.">
 <link rel="stylesheet" href="./style.css">
+<link rel="manifest" href="./manifest.json">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
@@ -201,7 +202,11 @@
 <script src="./chatbot.js"></script>
 <script src="./tracker.js"></script>
 <script src="./gamification.js"></script>
+<script src="./question-engine.js"></script>
+<script src="./gate-engine.js"></script>
+<script src="./analytics.js"></script>
 <script src="./loader.js"></script>
+<script src="./pwa.js"></script>
 <script>
 const NOTES_KEY = 'sohcse_personal_notes';
 let currentFilter = 'all';

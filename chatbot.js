@@ -138,7 +138,14 @@ RULES:
 5. ALWAYS provide the answer and explanation immediately after each question
 6. Mix difficulties (basic → advanced)
 7. Use LaTeX for all math notation
-8. Aim for 3-5 questions per topic unless user specifies otherwise`
+8. Aim for 3-5 questions per topic unless user specifies otherwise
+
+CRITICAL — NO DUPLICATES:
+9. Each question MUST test a DIFFERENT concept or sub-topic. Never repeat the same concept twice.
+10. Vary the angle of questioning: conceptual, numerical, application, edge-case, comparison.
+11. Use DIFFERENT problem setups — never reuse the same scenario, numbers, or examples.
+12. If generating 5+ questions, cover at least 3 distinct sub-topics within the main topic.
+13. Avoid templated question structures. Each question should feel unique.`
         }
     };
 
@@ -159,13 +166,30 @@ RULES:
         localStorage.setItem(STORAGE_KEY, JSON.stringify(keys));
     }
     function getKey(provider) {
-        // Check config.js built-in keys first
+        // Check user-saved keys FIRST (from settings page — localStorage)
+        const userKeys = loadKeys();
+        if (userKeys[provider]) return userKeys[provider];
+
+        // Then check config.js built-in keys (now empty by default — kept for self-hosters)
         if (typeof SOH_CONFIG !== 'undefined') {
             if (provider === 'gemini' && SOH_CONFIG.GEMINI_API_KEY) return SOH_CONFIG.GEMINI_API_KEY;
             if (provider === 'groq' && SOH_CONFIG.GROQ_API_KEY) return SOH_CONFIG.GROQ_API_KEY;
         }
-        // Then check user-saved keys
-        return loadKeys()[provider] || '';
+        return '';
+    }
+
+    // Check if any AI provider is configured (user key OR admin service)
+    function isAIConfigured() {
+        // Admin service configured?
+        if (typeof window.isAdminServiceConfigured === 'function' && window.isAdminServiceConfigured()) return true;
+        // Any user-saved key?
+        const userKeys = loadKeys();
+        if (Object.keys(userKeys).length > 0) return true;
+        // Any config key (fallback)?
+        if (typeof SOH_CONFIG !== 'undefined') {
+            if (SOH_CONFIG.GEMINI_API_KEY || SOH_CONFIG.GROQ_API_KEY) return true;
+        }
+        return false;
     }
 
     function loadHistory() {
@@ -219,10 +243,24 @@ RULES:
     window.askAIToGenerateQuiz = function (topic, numQuestions, difficulty, types) {
         open();
         setMode('quiz');
-        let prompt = `Generate ${numQuestions} GATE CSE practice question(s) on the topic: **${topic}**.\n\n`;
+
+        // Build a smarter prompt that enforces diversity
+        let prompt = `Generate ${numQuestions} UNIQUE GATE CSE practice question(s) on the topic: **${topic}**.\n\n`;
         prompt += `Difficulty: ${difficulty}\n`;
         prompt += `Question types to include: ${types.join(', ')}\n\n`;
+
+        // Add diversity instructions
+        prompt += `DIVERSITY REQUIREMENTS (CRITICAL):\n`;
+        prompt += `- Each question MUST cover a DIFFERENT sub-topic or concept within "${topic}".\n`;
+        prompt += `- Use DIFFERENT problem scenarios, examples, and numerical values for each question.\n`;
+        prompt += `- Vary the questioning style: some conceptual, some numerical, some application-based.\n`;
+        if (numQuestions >= 5) {
+            prompt += `- Since you're generating ${numQuestions} questions, identify at least 3 distinct sub-topics within "${topic}" and cover them.\n`;
+        }
+        prompt += `\nVERIFICATION:\n`;
+        prompt += `Before outputting, double-check that no two questions are testing the same concept or using the same example/scenario.\n\n`;
         prompt += `Use the exact output format specified in your system prompt. Include answers and explanations for each question.`;
+
         setTimeout(() => sendMessage(prompt), 500);
     };
 
@@ -231,6 +269,116 @@ RULES:
         const tmp = document.createElement('div');
         tmp.innerHTML = html;
         return (tmp.textContent || tmp.innerText || '').replace(/\s+/g, ' ').trim();
+    }
+
+    // ============ AI Quiz Parser ============
+    // Parses the AI's text response into structured quiz questions
+    function parseAIQuizResponse(text) {
+        if (!text) return [];
+        const questions = [];
+
+        // Split by "**Question N**" markers (case-insensitive)
+        const blocks = text.split(/\*\*\s*Question\s+\d+\s*\*\*/i).slice(1);
+
+        for (const block of blocks) {
+            const q = parseQuizBlock(block);
+            if (q) questions.push(q);
+        }
+
+        // If no "**Question N**" markers, try alternate parsing
+        if (questions.length === 0) {
+            // Try "Q1.", "Q." or "1." numbered
+            const altBlocks = text.split(/\n\s*(?:Q\.?|Question\s*)?\d+[\.\)]\s*/i).slice(1);
+            for (const block of altBlocks) {
+                const q = parseQuizBlock(block);
+                if (q) questions.push(q);
+            }
+        }
+
+        return questions;
+    }
+
+    function parseQuizBlock(block) {
+        if (!block || block.trim().length < 10) return null;
+
+        // Detect type
+        let type = 'MCQ';
+        const typeMatch = block.match(/\[\s*(MCQ|MSQ|NAT)\s*[,\s]/i);
+        if (typeMatch) type = typeMatch[1].toUpperCase();
+
+        // Detect marks
+        let marks = 1;
+        const marksMatch = block.match(/\[\s*(?:MCQ|MSQ|NAT)\s*,?\s*(\d)\s*[-\s]?mark/i);
+        if (marksMatch) marks = parseInt(marksMatch[1], 10) || 1;
+
+        // Extract question text — everything before first option marker (A. or A))
+        let questionText = '';
+        const optMarkerIdx = block.search(/\n\s*A[\.\)]/i);
+        if (optMarkerIdx > 0) {
+            questionText = block.substring(0, optMarkerIdx).trim();
+        } else {
+            // For NAT — text is everything before "Answer"
+            const ansIdx = block.search(/\*\*\s*Answer/i);
+            if (ansIdx > 0) questionText = block.substring(0, ansIdx).trim();
+            else questionText = block.trim();
+        }
+        // Clean: remove the [MCQ, 1 mark] tag from question text
+        questionText = questionText.replace(/\[\s*(?:MCQ|MSQ|NAT)\s*[,\s]*\d?\s*[-\s]?mark?\s*\]/i, '').trim();
+        if (questionText.length < 5) return null;
+
+        // Extract options (A. B. C. D. pattern)
+        const options = [];
+        const optRegex = /\n\s*([A-D])[\.\)]\s*([^\n]*(?:\n(?!\s*[A-D][\.\)])[^\n]*)*)/g;
+        let optMatch;
+        while ((optMatch = optRegex.exec(block)) !== null) {
+            options.push(optMatch[2].trim());
+        }
+        if ((type === 'MCQ' || type === 'MSQ') && options.length < 2) return null;
+
+        // Extract answer
+        let correct = null;
+        let answer = null;
+        const ansMatch = block.match(/\*\*\s*Answer\s*:\s*\*?\*?\s*([A-Z,\s]+|[\d.]+)\s*\*?\*?\*\*/i);
+        if (ansMatch) {
+            const ans = ansMatch[1].trim();
+            if (type === 'NAT') {
+                answer = ans;
+            } else if (type === 'MSQ') {
+                // Parse "A, B, C" or "ABC"
+                const letters = ans.match(/[A-D]/g);
+                if (letters) correct = [...new Set(letters)].map(l => l.charCodeAt(0) - 65);
+            } else {
+                // MCQ
+                const letter = ans.match(/[A-D]/);
+                if (letter) correct = letter[0].charCodeAt(0) - 65;
+            }
+        }
+        // Fallback for missing answer
+        if (correct === null && answer === null && type !== 'NAT') {
+            // Try alternate patterns
+            const altAnsMatch = block.match(/Answer\s*[:\-]\s*\(?([A-D])[^\w]/i);
+            if (altAnsMatch) correct = altAnsMatch[1].charCodeAt(0) - 65;
+        }
+        if (correct === null && answer === null && type === 'NAT') {
+            const natMatch = block.match(/Answer\s*[:\-]?\s*\*?\*?\s*(\-?[\d.]+)/i);
+            if (natMatch) answer = natMatch[1];
+        }
+        if (correct === null && answer === null) return null;
+
+        // Extract explanation
+        let explanation = '';
+        const explMatch = block.match(/\*\*\s*Explanation\s*\**\s*[:]?\s*([^\n]*(?:\n(?!\*\*\s*Question)[^\n]*)*)/i);
+        if (explMatch) explanation = explMatch[1].trim();
+
+        return {
+            type,
+            marks,
+            question: questionText,
+            options: options.length > 0 ? options : undefined,
+            correct: correct,
+            answer: answer,
+            explanation: explanation || 'No explanation provided.',
+        };
     }
 
     // ============ Inject UI ============
@@ -278,6 +426,11 @@ RULES:
                 </div>
 
                 <div class="ai-chat-config" id="aiChatConfig">
+                    <div style="background:linear-gradient(135deg, rgba(102,126,234,0.1), rgba(118,75,162,0.1));padding:10px 12px;border-radius:8px;margin-bottom:10px;border:1px solid rgba(102,126,234,0.2);">
+                        <div style="font-size:0.82rem;font-weight:700;color:var(--text);margin-bottom:4px;">⚙️ API Settings</div>
+                        <div style="font-size:0.74rem;color:var(--text-muted);margin-bottom:6px;line-height:1.4;">Manage all your API keys in one place. Keys are stored only in your browser.</div>
+                        <a href="./settings.html" target="_blank" rel="noopener" style="display:inline-block;padding:5px 12px;background:var(--grad-brand);color:white;text-decoration:none;border-radius:6px;font-size:0.78rem;font-weight:600;">🔧 Open Settings Page →</a>
+                    </div>
                     <div class="config-row">
                         <select id="aiProvider" aria-label="AI provider">
                             <option value="gemini">✨ Google Gemini (Free, 1500/day, recommended)</option>
@@ -746,7 +899,7 @@ RULES:
         const apiKey = getKey(provider);
         
         if (!adminConfigured && !apiKey) {
-            addMessage('error', '⚠ No AI key configured. Either:\n1. Set up admin-service in config.js (recommended)\n2. Or add a direct API key — click ⚙ below.\nFree: Gemini at aistudio.google.com/apikey or Groq at console.groq.com/keys');
+            addMessage('error', '⚠ No AI key configured yet. To start using the AI tutor:\n\n**Option 1 — Open Settings page (recommended):**\n👉 Click here: [Open Settings](./settings.html)\n\n**Option 2 — Quick add via this panel:**\nClick ⚙ below to add a free API key.\n\n**Free API keys:**\n• Gemini: https://aistudio.google.com/apikey (1500 req/day)\n• Groq: https://console.groq.com/keys (fast, Llama 3.3 70B)\n\nAll keys are stored ONLY in your browser (localStorage). They never leave your device.');
             toggleConfig();
             return;
         }
@@ -808,6 +961,61 @@ RULES:
             removeLoading();
             addMessage('ai', fullResponse);
             appendHistory('ai', fullResponse);
+
+            // If in quiz mode, parse the response and offer a "Take this quiz" button
+            if (currentMode === 'quiz') {
+                const parsed = parseAIQuizResponse(fullResponse);
+                if (parsed.length > 0) {
+                    // Verify with the question engine
+                    let verified = parsed;
+                    if (typeof window.SOH_QEngine !== 'undefined') {
+                        verified = window.SOH_QEngine.verifyAIQuiz(parsed, {
+                            dedupAgainstPYQs: true,
+                            dedupAgainstEachOther: true,
+                        });
+                    }
+                    // Deduplicate within the parsed set using content hash
+                    const seen = new Set();
+                    verified = verified.filter(q => {
+                        const h = (typeof window.SOH_QEngine !== 'undefined')
+                            ? window.SOH_QEngine.hashContent(q.question)
+                            : q.question.toLowerCase().replace(/\s+/g, ' ').trim();
+                        if (seen.has(h)) return false;
+                        seen.add(h);
+                        return true;
+                    });
+
+                    if (verified.length > 0) {
+                        // Show summary + button
+                        const droppedCount = parsed.length - verified.length;
+                        const summaryMsg = droppedCount > 0
+                            ? `✅ Parsed ${parsed.length} question(s). Dropped ${droppedCount} duplicate(s) after verification. ${verified.length} unique question(s) ready.`
+                            : `✅ Parsed and verified ${verified.length} unique question(s).`;
+                        addMessage('system', summaryMsg);
+
+                        // Add a "Take this quiz" button below the AI message
+                        setTimeout(() => {
+                            const messages = document.getElementById('aiChatMessages');
+                            if (!messages) return;
+                            const btnWrap = document.createElement('div');
+                            btnWrap.className = 'message system';
+                            btnWrap.style.padding = '8px 12px';
+                            btnWrap.innerHTML = `<button class="btn btn-primary btn-sm" id="takeParsedQuizBtn" style="width:100%;">🎯 Take this quiz (${verified.length} Qs) →</button>`;
+                            messages.appendChild(btnWrap);
+                            const btn = document.getElementById('takeParsedQuizBtn');
+                            if (btn) btn.onclick = () => {
+                                // Store the verified quiz and redirect to quiz page
+                                try {
+                                    localStorage.setItem('sohcse_pending_ai_quiz', JSON.stringify(verified));
+                                } catch {}
+                                window.location.href = './quiz.html?ai_quiz=1';
+                            };
+                            messages.scrollTop = messages.scrollHeight;
+                        }, 100);
+                    }
+                }
+            }
+
             document.getElementById('aiStatusText').textContent = `Ready • ${MODES[currentMode].label}`;
         } catch (err) {
             removeLoading();

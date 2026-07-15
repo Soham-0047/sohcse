@@ -6,6 +6,7 @@
 <title>Mock Test — GATE CSE Exam Simulator | SOH CSE</title>
 <meta name="description" content="Real GATE CSE exam simulator with side calculator, question palette, AI-powered questions, and weighted question selection.">
 <link rel="stylesheet" href="./style.css">
+<link rel="manifest" href="./manifest.json">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
@@ -420,7 +421,11 @@
 <script src="./chatbot.js"></script>
 <script src="./tracker.js"></script>
 <script src="./gamification.js"></script>
+<script src="./question-engine.js"></script>
+<script src="./gate-engine.js"></script>
+<script src="./analytics.js"></script>
 <script src="./loader.js"></script>
+<script src="./pwa.js"></script>
 <script src="./nav.js"></script>
 <script>
 const TIME_LIMIT = 3 * 60 * 60;
@@ -467,8 +472,8 @@ function renderSetup() {
                 </div>
 
                 <div class="setup-card">
-                    <div class="setup-title">📋 Exam Pattern</div>
-                    <div class="setup-desc">Follows the exact GATE CSE pattern — 65 questions, 100 marks, 3 hours.</div>
+                    <div class="setup-title">📋 Official GATE CSE Pattern</div>
+                    <div class="setup-desc">Follows the <strong>exact official GATE CSE weightage</strong> — 65 questions, 100 marks, 3 hours. GA: 15 + Math: 13 + Core CS: 72 = 100 marks.</div>
 
                     <div class="setup-pattern">
                         <div class="setup-pattern-card"><div class="setup-pattern-value">65</div><div class="setup-pattern-label">Questions</div></div>
@@ -477,13 +482,38 @@ function renderSetup() {
                         <div class="setup-pattern-card"><div class="setup-pattern-value">−1/3</div><div class="setup-pattern-label">Neg. Mark</div></div>
                     </div>
 
+                    <!-- Official Subject Weightage Table -->
+                    <div style="margin-bottom:20px;">
+                        <div style="font-size:0.82rem;font-weight:700;color:var(--text);margin-bottom:8px;">🎯 Official Subject Weightage (2021-2026 analysis)</div>
+                        <table class="cutoff-table" style="font-size:0.78rem;">
+                            <thead>
+                                <tr><th>Section</th><th>Subject</th><th>Marks</th><th>Qs</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr style="background:rgba(102,126,234,0.05);"><td rowspan="1"><strong>GA</strong></td><td>General Aptitude</td><td><strong>15</strong></td><td>10</td></tr>
+                                <tr style="background:rgba(244,114,182,0.05);"><td rowspan="1"><strong>Math</strong></td><td>Discrete Mathematics</td><td><strong>13</strong></td><td>8</td></tr>
+                                <tr style="background:rgba(16,185,129,0.05);"><td rowspan="10"><strong>Core CS (72)</strong></td><td>Operating Systems</td><td><strong>8</strong></td><td>5</td></tr>
+                                <tr style="background:rgba(16,185,129,0.05);"><td>Theory of Computation</td><td><strong>8</strong></td><td>5</td></tr>
+                                <tr style="background:rgba(16,185,129,0.05);"><td>Computer Organization</td><td><strong>8</strong></td><td>5</td></tr>
+                                <tr style="background:rgba(16,185,129,0.05);"><td>Computer Networks</td><td><strong>8</strong></td><td>5</td></tr>
+                                <tr style="background:rgba(16,185,129,0.05);"><td>Database Management</td><td><strong>7</strong></td><td>5</td></tr>
+                                <tr style="background:rgba(16,185,129,0.05);"><td>Data Structures</td><td><strong>7</strong></td><td>5</td></tr>
+                                <tr style="background:rgba(16,185,129,0.05);"><td>Digital Logic</td><td><strong>7</strong></td><td>4</td></tr>
+                                <tr style="background:rgba(16,185,129,0.05);"><td>Programming & C</td><td><strong>7</strong></td><td>4</td></tr>
+                                <tr style="background:rgba(16,185,129,0.05);"><td>Algorithms</td><td><strong>6</strong></td><td>4</td></tr>
+                                <tr style="background:rgba(16,185,129,0.05);"><td>Compiler Design</td><td><strong>6</strong></td><td>4</td></tr>
+                                <tr style="background:var(--bg-light);"><td colspan="2"><strong>TOTAL</strong></td><td><strong>100</strong></td><td><strong>65</strong></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
                     <table class="cutoff-table" style="margin-bottom:20px;">
                         <thead><tr><th>Type</th><th>Count</th><th>Marks</th><th>Negative</th></tr></thead>
                         <tbody>
                             <tr><td>1-mark MCQ</td><td>~15</td><td>15</td><td>−1/3</td></tr>
                             <tr><td>2-mark MCQ</td><td>~20</td><td>40</td><td>−2/3</td></tr>
-                            <tr><td>1-mark MSQ/NAT</td><td>~15</td><td>15</td><td>None</td></tr>
-                            <tr><td>2-mark MSQ/NAT</td><td>~15</td><td>30</td><td>None</td></tr>
+                            <tr><td>1-mark MSQ/NAT</td><td>~10</td><td>10</td><td>None</td></tr>
+                            <tr><td>2-mark MSQ/NAT</td><td>~20</td><td>40</td><td>None</td></tr>
                         </tbody>
                     </table>
 
@@ -509,28 +539,133 @@ function renderSetup() {
                     </div>
 
                     <div style="background:var(--bg-light);border-radius:10px;padding:14px;margin-bottom:20px;font-size:0.82rem;color:var(--text-muted);line-height:1.7;">
-                        <strong>📌 Exam Features:</strong><br>
-                        • Questions selected based on GATE subject weightage (Math 15%, Algorithms 12%, DS 12%, etc.)<br>
-                        • Side calculator available (same as real GATE exam)<br>
-                        • Question palette with color-coded status (answered, not answered, marked for review)<br>
-                        • Real negative marking: MCQ −1/3 (1-mark), −2/3 (2-mark); MSQ/NAT no negative<br>
-                        • Post-test: subject-wise accuracy breakdown + wrong answers added to Error Notebook<br>
-                        • AI integration: generate similar questions for weak areas after the test
+                        <strong>🎯 GATE Intelligent Engine v3 — Features:</strong><br>
+                        • <strong>Real GATE Paper Structure</strong> — exact 1-mark/2-mark distribution from 2021-2026 analysis (25×1m + 40×2m = 100 marks)<br>
+                        • <strong>10-Year Deep Trend Analysis</strong> — tracks topic frequency, hot topics (4+ of last 5 years), cyclic topics, and subject trends<br>
+                        • <strong>Adaptive Question Selection</strong> — drills your weak areas (auto-boosts <50% accuracy subjects), maintains strong areas<br>
+                        • <strong>Difficulty Curve Simulation</strong> — GATE-style ~30% easy, ~50% medium, ~20% hard<br>
+                        • <strong>Concept Diversity Engine</strong> — FNV-1a content hash + Jaccard similarity = zero duplicates, ever<br>
+                        • <strong>Chapter Diversity</strong> — max 4 questions per chapter, prevents over-representation<br>
+                        • <strong>Year Recency Boost</strong> — 2026: 1.8×, 2025: 1.7×, 2024: 1.6× (more relevant questions)<br>
+                        • <strong>Quality Scoring</strong> — prefers questions with explanations, answers, and recent years<br>
+                        • <strong>Recent Practice Avoidance</strong> — skips questions you've attempted in last 7 days<br>
+                        • <strong>Hot Topic Priority</strong> — 1.4× weight for topics appearing in 4+ of last 5 GATE papers<br>
+                        • Side calculator + question palette + real negative marking (MCQ −1/3, −2/3)<br>
+                        • Post-test: subject-wise accuracy + wrong answers → Error Notebook + AI drilling
                     </div>
 
-                    <button class="btn btn-primary btn-lg" style="width:100%;" onclick="startMockTest()">🚀 Start Mock Test</button>
+                    <div id="trendAnalysisPanel"></div>
+
+                    <button class="btn btn-primary btn-lg" style="width:100%;" onclick="startMockTest()">🚀 Start GATE-Style Mock Test</button>
                 </div>
             </div>
         </div>
     `;
+    // Render trend analysis if engine is loaded
+    if (typeof window.SOH_QEngine !== 'undefined') {
+        setTimeout(renderTrendPanel, 100);
+    }
 }
 
-// ============ Question Selection Algorithm ============
+function renderTrendPanel() {
+    const panel = document.getElementById('trendAnalysisPanel');
+    if (!panel) return;
+    const summary = window.SOH_QEngine.getTrendSummary();
+    const totalQ = summary.totalQuestions || 0;
+    if (totalQ === 0) { panel.innerHTML = ''; return; }
+
+    const subjRows = summary.topSubjects.map(s => {
+        const label = s.subject.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+        const pct = ((s.count / totalQ) * 100).toFixed(1);
+        const trend = summary.trends[s.subject] || 0;
+        const trendIcon = trend > 0.1 ? '📈' : (trend < -0.1 ? '📉' : '➡️');
+        const trendLabel = trend > 0.1 ? `+${(trend * 100).toFixed(0)}%` : (trend < -0.1 ? `${(trend * 100).toFixed(0)}%` : 'stable');
+        return `<tr><td>${label}</td><td><strong>${s.count}</strong></td><td>${pct}%</td><td>${trendIcon} ${trendLabel}</td></tr>`;
+    }).join('');
+
+    const mcqPct = ((summary.typeDistribution.mcq || 0) / totalQ * 100).toFixed(0);
+    const msqPct = ((summary.typeDistribution.msq || 0) / totalQ * 100).toFixed(0);
+    const natPct = ((summary.typeDistribution.nat || 0) / totalQ * 100).toFixed(0);
+
+    panel.innerHTML = `
+        <div style="background:linear-gradient(135deg, rgba(102,126,234,0.05), rgba(118,75,162,0.05));border-radius:10px;padding:14px;margin-bottom:20px;border:1px solid var(--border);">
+            <div style="font-size:0.86rem;font-weight:700;color:var(--text);margin-bottom:8px;">📊 10-Year GATE Trend Analysis (${summary.yearRange.min}–${summary.yearRange.max})</div>
+            <div style="font-size:0.74rem;color:var(--text-muted);margin-bottom:10px;">Based on ${totalQ.toLocaleString()} analyzed PYQs across ${summary.subjects} subjects • Engine v3</div>
+
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;">
+                <div style="background:var(--bg-card);padding:8px;border-radius:6px;text-align:center;border:1px solid var(--border);">
+                    <div style="font-size:1.1rem;font-weight:800;color:#3b82f6;">${mcqPct}%</div>
+                    <div style="font-size:0.7rem;color:var(--text-muted);">MCQ</div>
+                </div>
+                <div style="background:var(--bg-card);padding:8px;border-radius:6px;text-align:center;border:1px solid var(--border);">
+                    <div style="font-size:1.1rem;font-weight:800;color:#f59e0b;">${msqPct}%</div>
+                    <div style="font-size:0.7rem;color:var(--text-muted);">MSQ</div>
+                </div>
+                <div style="background:var(--bg-card);padding:8px;border-radius:6px;text-align:center;border:1px solid var(--border);">
+                    <div style="font-size:1.1rem;font-weight:800;color:#10b981;">${natPct}%</div>
+                    <div style="font-size:0.7rem;color:var(--text-muted);">NAT</div>
+                </div>
+            </div>
+
+            <table class="cutoff-table" style="font-size:0.78rem;">
+                <thead><tr><th>Top Subject</th><th>Qs</th><th>Weight</th><th>5-yr Trend</th></tr></thead>
+                <tbody>${subjRows}</tbody>
+            </table>
+
+            ${summary.hotTopics && summary.hotTopics.length > 0 ? `
+                <div style="margin-top:14px;">
+                    <div style="font-size:0.78rem;font-weight:700;color:var(--text);margin-bottom:6px;">🔥 Hot Topics (appeared in 4+ of last 5 years)</div>
+                    <div style="display:flex;flex-wrap:wrap;gap:4px;">
+                        ${summary.hotTopics.slice(0, 8).map(h => {
+                            const parts = h.chapter.split('/');
+                            const chapLabel = parts[1] ? parts[1].replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : h.chapter;
+                            return `<span style="display:inline-block;padding:3px 8px;background:rgba(239,68,68,0.1);color:#dc2626;border-radius:6px;font-size:0.7rem;font-weight:600;">🔥 ${chapLabel} (${h.totalCount})</span>`;
+                        }).join('')}
+                    </div>
+                </div>
+            ` : ''}
+        </div>
+    `;
+}
+
+// ============ Question Selection Algorithm (v3 — uses GATE Engine) ============
 function selectQuestions(source) {
+    // PREFER the new GATE Intelligent Engine v3
+    if (typeof window.SOH_QEngine !== 'undefined' && window.SOH_QEngine.GATE_PATTERN) {
+        try {
+            const questions = window.SOH_QEngine.buildMockTest(source, {
+                totalQuestions: TOTAL_QUESTIONS,
+                totalMarks: TOTAL_MARKS,
+                adaptive: true,
+                avoidRecent: true,
+            });
+            if (questions.length > 0) {
+                // Log paper stats for transparency
+                const stats = window.SOH_QEngine.computePaperStats(questions);
+                console.log('🎯 GATE v3 Paper Generated:', stats);
+                return questions;
+            }
+        } catch (e) {
+            console.warn('GATE Engine failed, falling back to v2:', e);
+        }
+    }
+
+    // Fallback to v2 engine
+    if (typeof window.SOH_QEngine !== 'undefined') {
+        const questions = window.SOH_QEngine.buildMockTest(source, {
+            totalQuestions: TOTAL_QUESTIONS,
+            totalMarks: TOTAL_MARKS,
+            subjectWeights: SUBJECT_WEIGHTS,
+        });
+        if (questions.length > 0) return questions;
+    }
+
     if (typeof window.GATE_DATA === 'undefined') return [];
 
+    // === LEGACY FALLBACK (v1) ===
     // Collect all questions grouped by subject
     const bySubject = {};
+    const seenIds = new Set(); // Deduplication
     for (const subj of window.GATE_DATA.subjects) {
         for (const chap of subj.chapters) {
             for (const q of chap.questions) {
@@ -538,6 +673,8 @@ function selectQuestions(source) {
                 if (source === '2025' && q.year !== 2025) continue;
                 if (source === '2024' && q.year !== 2024) continue;
                 if (source === '2023' && q.year !== 2023) continue;
+                if (seenIds.has(q.question_id)) continue; // Skip duplicates
+                seenIds.add(q.question_id);
 
                 if (!bySubject[q.subject]) bySubject[q.subject] = [];
                 bySubject[q.subject].push(q);
@@ -547,6 +684,7 @@ function selectQuestions(source) {
 
     // Calculate how many questions to pick from each subject based on weightage
     const selected = [];
+    const selectedIds = new Set();
     let totalWeight = 0;
     for (const [subj, weight] of Object.entries(SUBJECT_WEIGHTS)) {
         if (bySubject[subj] && bySubject[subj].length > 0) totalWeight += weight;
@@ -556,10 +694,19 @@ function selectQuestions(source) {
         if (!bySubject[subj] || bySubject[subj].length === 0) continue;
         const targetCount = Math.round((weight / totalWeight) * TOTAL_QUESTIONS);
 
-        // Shuffle and pick
-        const shuffled = [...bySubject[subj]].sort(() => Math.random() - 0.5);
+        // Proper Fisher-Yates shuffle
+        const shuffled = [...bySubject[subj]];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
         const picked = shuffled.slice(0, Math.min(targetCount, shuffled.length));
-        selected.push(...picked);
+        for (const q of picked) {
+            if (!selectedIds.has(q.question_id)) {
+                selected.push(q);
+                selectedIds.add(q.question_id);
+            }
+        }
     }
 
     // If we have too few, fill randomly from remaining
@@ -567,18 +714,30 @@ function selectQuestions(source) {
         const allRemaining = [];
         for (const qs of Object.values(bySubject)) {
             for (const q of qs) {
-                if (!selected.find(s => s.question_id === q.question_id)) allRemaining.push(q);
+                if (!selectedIds.has(q.question_id)) allRemaining.push(q);
             }
         }
-        allRemaining.sort(() => Math.random() - 0.5);
-        selected.push(...allRemaining.slice(0, TOTAL_QUESTIONS - selected.length));
+        // Fisher-Yates shuffle
+        for (let i = allRemaining.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [allRemaining[i], allRemaining[j]] = [allRemaining[j], allRemaining[i]];
+        }
+        for (const q of allRemaining) {
+            if (selected.length >= TOTAL_QUESTIONS) break;
+            if (!selectedIds.has(q.question_id)) {
+                selected.push(q);
+                selectedIds.add(q.question_id);
+            }
+        }
     }
 
-    // If too many, trim
+    // If too many, trim. Then Fisher-Yates final shuffle.
     const final = selected.slice(0, TOTAL_QUESTIONS);
-
-    // Shuffle the final set so subjects are mixed (not grouped)
-    return final.sort(() => Math.random() - 0.5);
+    for (let i = final.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [final[i], final[j]] = [final[j], final[i]];
+    }
+    return final;
 }
 
 // ============ Start Test ============

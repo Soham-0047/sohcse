@@ -6,6 +6,7 @@
 <title>Quiz — AI-Generated Practice | SOH CSE</title>
 <meta name="description" content="Generate GATE CSE practice quizzes with AI. Topic-specific, difficulty-controlled, with instant scoring and detailed explanations.">
 <link rel="stylesheet" href="./style.css">
+<link rel="manifest" href="./manifest.json">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
@@ -58,7 +59,11 @@
 <script src="./chatbot.js"></script>
 <script src="./tracker.js"></script>
 <script src="./gamification.js"></script>
+<script src="./question-engine.js"></script>
+<script src="./gate-engine.js"></script>
+<script src="./analytics.js"></script>
 <script src="./loader.js"></script>
+<script src="./pwa.js"></script>
 <script>
 // ============ State ============
 let state = {
@@ -214,6 +219,30 @@ const SAMPLE_QUIZZES = {
 
 // ============ Init ============
 function init() {
+    // Check for pending AI quiz from chatbot
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('ai_quiz') === '1') {
+        try {
+            const pending = JSON.parse(localStorage.getItem('sohcse_pending_ai_quiz') || '[]');
+            if (pending.length > 0) {
+                localStorage.removeItem('sohcse_pending_ai_quiz');
+                // Start the quiz with the AI-generated questions
+                state.quiz = pending;
+                state.answers = {};
+                state.startTime = Date.now();
+                state.endTime = null;
+                state.timeLimit = 0;
+                state.view = 'active';
+                if (window.showToast) {
+                    window.showToast(`🎯 Loaded AI-generated quiz with ${pending.length} verified questions`, 'success', 3000);
+                }
+                renderQuiz();
+                return;
+            }
+        } catch (e) {
+            console.warn('Failed to load pending AI quiz:', e);
+        }
+    }
     renderSetup();
 }
 
@@ -311,31 +340,61 @@ function startQuiz() {
         return;
     }
 
-    // Built-in quiz: pull from SAMPLE_QUIZZES
-    if (!SAMPLE_QUIZZES[subject]) {
-        alert('No built-in quiz for this subject yet. Try AI-generated instead!');
+    // === Use GATE Engine v3 (preferred) ===
+    let quiz;
+    if (typeof window.SOH_QEngine !== 'undefined' && window.SOH_QEngine.GATE_PATTERN) {
+        try {
+            quiz = window.SOH_QEngine.buildQuiz(subject, count, { types, difficulty, adaptive: true, avoidRecent: true });
+        } catch (e) {
+            console.warn('GATE Engine v3 failed, falling back:', e);
+            quiz = null;
+        }
+    }
+    // Fallback to v2 engine
+    if (!quiz && typeof window.SOH_QEngine !== 'undefined') {
+        quiz = window.SOH_QEngine.buildQuiz(subject, count, { types, difficulty });
+    }
+    // Legacy fallback
+    if (!quiz) {
+        if (!SAMPLE_QUIZZES[subject]) {
+            alert('No built-in quiz for this subject yet. Try AI-generated instead!');
+            return;
+        }
+        let pool = [...SAMPLE_QUIZZES[subject]];
+        if (types.length < 3) {
+            const typeMap = { 'mcq': 'MCQ', 'msq': 'MSQ', 'nat': 'NAT' };
+            const wantedTypes = types.map(t => typeMap[t]).filter(Boolean);
+            pool = pool.filter(q => wantedTypes.includes(q.type));
+        }
+        // Deduplicate
+        const seen = new Set();
+        pool = pool.filter(q => {
+            const h = (q.question || '').toLowerCase().replace(/\s+/g, ' ').trim();
+            if (seen.has(h)) return false;
+            seen.add(h);
+            return true;
+        });
+        // Fisher-Yates shuffle (proper)
+        for (let i = pool.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [pool[i], pool[j]] = [pool[j], pool[i]];
+        }
+        // IMPORTANT: Return only as many unique questions as we have — NO REPEATS
+        quiz = pool.slice(0, Math.min(count, pool.length));
+    }
+
+    if (quiz.length === 0) {
+        alert('No questions match your filters. Try selecting more question types or a different subject.');
         return;
     }
 
-    // Shuffle and slice to get `count` questions
-    let pool = [...SAMPLE_QUIZZES[subject]];
-    // Filter by type if not all types selected
-    if (types.length < 3) {
-        pool = pool.filter(q => types.includes(q.type));
-    }
-    // Shuffle
-    for (let i = pool.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [pool[i], pool[j]] = [pool[j], pool[i]];
-    }
-    // If we don't have enough, repeat
-    let quiz = [];
-    while (quiz.length < count && pool.length > 0) {
-        const needed = count - quiz.length;
-        quiz.push(...pool.slice(0, Math.min(needed, pool.length)));
+    if (quiz.length < count) {
+        if (window.showToast) {
+            window.showToast(`ℹ Only ${quiz.length} unique questions available (requested ${count}). No duplicates added.`, 'info', 4000);
+        }
     }
 
-    state.quiz = quiz.slice(0, count);
+    state.quiz = quiz;
     state.answers = {};
     state.startTime = Date.now();
     state.endTime = null;
