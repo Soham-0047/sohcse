@@ -505,16 +505,28 @@
         return 'hard';                       // ~20% of questions
     }
 
-    // ============ Quality Score ============
+    // ============ Quality Score (v5 — improved) ============
     function qualityScore(question) {
-        let score = 50;
-        if (question.has_explanation) score += 20;
+        let score = 40; // lower base
+        // Strong reward for having explanation (only 33% of questions have one)
+        if (question.has_explanation) score += 25;
         if (question.has_answer) score += 10;
         if (!question.is_bonus) score += 5;
         if (!question.is_out_of_syllabus) score += 5;
-        if (question.options && question.options.length >= 4) score += 5;
-        if (question.year >= 2021) score += 5;
-        return score;
+        // Reward 4-option MCQs (complete questions)
+        if (question.options && question.options.length === 4) score += 8;
+        else if (question.options && question.options.length >= 2) score += 4;
+        // Reward recent year questions
+        if (question.year >= 2024) score += 8;
+        else if (question.year >= 2021) score += 5;
+        // Penalize very old questions slightly
+        if (question.year < 2000) score -= 5;
+        // Reward questions with longer explanations (more thorough)
+        if (question.explanation && question.explanation.length > 200) score += 5;
+        // Penalize very short question text (might be incomplete)
+        const cleanText = String(question.question_text || '').replace(/<[^>]*>/g, '').trim();
+        if (cleanText.length < 50) score -= 10;
+        return Math.max(0, Math.min(100, score));
     }
 
     // ============ User Profile ============
@@ -591,11 +603,23 @@
                     const qtype = q.normalized_type || 'mcq';
                     if (!GATE_PATTERN.valid_types.includes(qtype)) continue;
 
-                    // For MCQ/MSQ: must have at least 2 options
-                    if ((qtype === 'mcq' || qtype === 'msq') && (!q.options || q.options.length < 2)) continue;
+                    // CRITICAL: Filter out questions with invalid marks (must be 1 or 2)
+                    const marks = q.marks;
+                    if (marks !== 1 && marks !== 2) continue;
+
+                    // For MCQ/MSQ: must have at least 2 options AND at least 1 correct option
+                    if (qtype === 'mcq' || qtype === 'msq') {
+                        if (!q.options || q.options.length < 2) continue;
+                        if (!q.correct_options || q.correct_options.length === 0) continue;
+                    }
 
                     // For NAT: must have an answer
                     if (qtype === 'nat' && !q.answer && !q.has_answer) continue;
+
+                    // CRITICAL: Filter out questions with very short text (<20 chars after stripping HTML)
+                    // These are likely broken/incomplete
+                    const cleanText = String(q.question_text || '').replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+                    if (cleanText.length < 20) continue;
 
                     if (seenIds.has(q.question_id)) continue;
                     const contentHash = hashContent(q.question_text);
@@ -1146,6 +1170,20 @@
             for (const q of chap.questions) {
                 if (q.is_out_of_syllabus) continue;
                 if (!q.has_answer && !q.has_explanation) continue;
+
+                // CRITICAL: Same quality filters as buildMockTest
+                const qtype = q.normalized_type || 'mcq';
+                if (!GATE_PATTERN.valid_types.includes(qtype)) continue;
+                const marks = q.marks;
+                if (marks !== 1 && marks !== 2) continue;
+                if (qtype === 'mcq' || qtype === 'msq') {
+                    if (!q.options || q.options.length < 2) continue;
+                    if (!q.correct_options || q.correct_options.length === 0) continue;
+                }
+                if (qtype === 'nat' && !q.answer && !q.has_answer) continue;
+                const cleanText = String(q.question_text || '').replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+                if (cleanText.length < 20) continue;
+
                 if (seenIds.has(q.question_id)) continue;
                 const contentHash = hashContent(q.question_text);
                 if (seenHashes.has(contentHash)) continue;
