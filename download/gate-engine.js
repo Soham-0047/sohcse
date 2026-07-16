@@ -43,23 +43,39 @@
         tech_one_mark_marks: 25,
         tech_two_mark_marks: 60,
 
-        // ============ OFFICIAL SUBJECT MARKS WEIGHTAGE ============
+        // ============ OFFICIAL 2027 SUBJECT MARKS (from PW.live reference) ============
+        // Source: https://www.pw.live/gate/exams/gate-cse-exam-pattern
         // GA: 15, Math: 13, Core CS: 72 = 100
+        //
+        // OFFICIAL 2027 CHANGES from previous years:
+        //   Digital Logic:         6 marks (was 7)
+        //   Algorithms:            7 marks (was 6)
+        //   TOC:                   6 marks (was 8)
+        //   Compiler Design:       4 marks (was 6)
+        //   OS:                    9 marks (was 8)
+        //   CN:                   10 marks (was 8)
+        //   Programming & DS:     15 marks COMBINED (was DS=7 + PL=7=14)
         subject_marks: {
-            'general-aptitude':          15,
-            'discrete-mathematics':      13,
-            'computer-organization':      8,
-            'theory-of-computation':      8,
-            'computer-networks':          8,
-            'operating-systems':          8,
-            'database-management-system': 7,
-            'data-structures':            7,
-            'digital-logic':              7,
-            'compiler-design':            6,
-            'algorithms':                 6,
-            'programming-languages':      7,
-            'software-engineering':       0,
-            'web-technologies':           0,
+            'general-aptitude':                15,  // FIXED — 10 Qs, 15 marks
+            'discrete-mathematics':            13,  // Engineering Mathematics section
+            'digital-logic':                    6,  // 2027: 6 marks
+            'computer-organization':            8,  // COA — 8 marks
+            'programming-and-data-structures': 15,  // COMBINED PDS — 15 marks
+            'algorithms':                       7,  // 2027: 7 marks
+            'theory-of-computation':            6,  // 2027: 6 marks
+            'compiler-design':                  4,  // 2027: 4 marks
+            'operating-systems':                9,  // 2027: 9 marks
+            'database-management-system':       7,  // Databases — 7 marks
+            'computer-networks':               10,  // 2027: 10 marks
+            'software-engineering':             0,
+            'web-technologies':                 0,
+        },
+
+        // ============ SUBJECT GROUPING (combined subjects) ============
+        // 'programming-and-data-structures' is ONE official 2027 subject (15 marks)
+        // but stored as TWO subjects in PYQ data. Engine combines them.
+        subject_groups: {
+            'programming-and-data-structures': ['data-structures', 'programming-languages'],
         },
 
         // ============ TOPIC-LEVEL WEIGHTAGE (from 2021-2026 analysis) ============
@@ -179,20 +195,22 @@
             'programming-languages':      { mcq: 0.48, msq: 0.07, nat: 0.45 },
         },
 
-        // ============ QUESTION COUNT PER SUBJECT ============
+        // ============ QUESTION COUNT PER SUBJECT (sums to exactly 65) ============
+        // Each subject's Qs calculated to hit exact marks target:
+        // a(1m) + b(2m) = marks, a + b = Qs → b = marks - Qs, a = 2*Qs - marks
         subject_question_targets: {
-            'general-aptitude':          10,
-            'discrete-mathematics':       8,
-            'computer-organization':      5,
-            'theory-of-computation':      5,
-            'computer-networks':          5,
-            'operating-systems':          5,
-            'database-management-system': 5,
-            'data-structures':            5,
-            'digital-logic':              4,
-            'compiler-design':            4,
-            'algorithms':                 4,
-            'programming-languages':      4,
+            'general-aptitude':               10,  // 5×1m + 5×2m = 15 marks
+            'discrete-mathematics':            8,  // 3×1m + 5×2m = 13 marks
+            'digital-logic':                   4,  // 2×1m + 2×2m = 6 marks
+            'computer-organization':           5,  // 2×1m + 3×2m = 8 marks
+            'programming-and-data-structures': 9,  // 3×1m + 6×2m = 15 marks
+            'algorithms':                      5,  // 3×1m + 2×2m = 7 marks
+            'theory-of-computation':           4,  // 2×1m + 2×2m = 6 marks
+            'compiler-design':                 3,  // 2×1m + 1×2m = 4 marks
+            'operating-systems':               6,  // 3×1m + 3×2m = 9 marks
+            'database-management-system':      5,  // 3×1m + 2×2m = 7 marks
+            'computer-networks':               6,  // 2×1m + 4×2m = 10 marks
+            // Total: 10+8+4+5+9+5+4+3+6+5+6 = 65 ✅
         },
 
         // Year recency boost
@@ -584,14 +602,49 @@
         }
 
         // ============================================================
-        // PHASE 3: CALCULATE EXACT TARGETS PER SUBJECT (OFFICIAL)
+        // PHASE 3: CALCULATE EXACT TARGETS PER SUBJECT (OFFICIAL 2027)
         // ============================================================
+        // Handle subject groups (e.g., 'programming-and-data-structures' = DS + PL combined)
+        const getAvailableForSubject = (subj) => {
+            // Check if this is a group subject
+            const group = GATE_PATTERN.subject_groups?.[subj];
+            if (group) {
+                // Combine all subjects in the group
+                let total1m = 0, total2m = 0;
+                for (const s of group) {
+                    total1m += bySubjectMarks[s]?.[1]?.length || 0;
+                    total2m += bySubjectMarks[s]?.[2]?.length || 0;
+                }
+                return { 1: total1m, 2: total2m };
+            }
+            return {
+                1: bySubjectMarks[subj]?.[1]?.length || 0,
+                2: bySubjectMarks[subj]?.[2]?.length || 0,
+            };
+        };
+
+        const getPoolForSubject = (subj) => {
+            // Check if this is a group subject
+            const group = GATE_PATTERN.subject_groups?.[subj];
+            if (group) {
+                // Combine pools from all subjects in the group
+                const combined = { 1: [], 2: [] };
+                for (const s of group) {
+                    if (bySubjectMarks[s]) {
+                        combined[1].push(...bySubjectMarks[s][1]);
+                        combined[2].push(...bySubjectMarks[s][2]);
+                    }
+                }
+                return combined;
+            }
+            return bySubjectMarks[subj] || { 1: [], 2: [] };
+        };
+
         const subjectTargets = {};
         for (const [subj, target] of Object.entries(GATE_PATTERN.subject_question_targets)) {
             if (GATE_PATTERN.subject_marks[subj] === 0) continue;
-            const available1m = bySubjectMarks[subj]?.[1]?.length || 0;
-            const available2m = bySubjectMarks[subj]?.[2]?.length || 0;
-            const available = available1m + available2m;
+            const avail = getAvailableForSubject(subj);
+            const available = avail[1] + avail[2];
             subjectTargets[subj] = Math.min(target, available);
         }
 
@@ -600,20 +653,18 @@
             const deficit = totalQuestions - totalTargetQs;
             const subjectsWithCapacity = Object.entries(subjectTargets)
                 .filter(([subj, t]) => {
-                    const a1 = bySubjectMarks[subj]?.[1]?.length || 0;
-                    const a2 = bySubjectMarks[subj]?.[2]?.length || 0;
-                    return (a1 + a2) > t;
+                    const avail = getAvailableForSubject(subj);
+                    return (avail[1] + avail[2]) > t;
                 })
                 .sort((a, b) => {
-                    const aa = (bySubjectMarks[a[0]]?.[1]?.length || 0) + (bySubjectMarks[a[0]]?.[2]?.length || 0);
-                    const bb = (bySubjectMarks[b[0]]?.[1]?.length || 0) + (bySubjectMarks[b[0]]?.[2]?.length || 0);
-                    return bb - aa;
+                    const aa = getAvailableForSubject(a[0]);
+                    const bb = getAvailableForSubject(b[0]);
+                    return (bb[1] + bb[2]) - (aa[1] + aa[2]);
                 });
             for (let i = 0; i < deficit && i < subjectsWithCapacity.length * 3; i++) {
                 const subj = subjectsWithCapacity[i % subjectsWithCapacity.length][0];
-                const a1 = bySubjectMarks[subj]?.[1]?.length || 0;
-                const a2 = bySubjectMarks[subj]?.[2]?.length || 0;
-                if ((a1 + a2) > subjectTargets[subj]) {
+                const avail = getAvailableForSubject(subj);
+                if ((avail[1] + avail[2]) > subjectTargets[subj]) {
                     subjectTargets[subj]++;
                     totalTargetQs++;
                 }
@@ -632,8 +683,8 @@
 
         for (const [subj, target] of Object.entries(subjectTargets)) {
             if (target === 0) continue;
-            const subjPool = bySubjectMarks[subj];
-            if (!subjPool) continue;
+            const subjPool = getPoolForSubject(subj);
+            if (!subjPool || (subjPool[1].length === 0 && subjPool[2].length === 0)) continue;
 
             // Calculate marks split for this subject
             const subjMarksTarget = GATE_PATTERN.subject_marks[subj] || (target * 1.6);
@@ -658,11 +709,41 @@
                 twoMarkTarget = Math.min(5, twoMarkPool.length);
             }
 
-            // Get topic weights for this subject
-            const subjTopicWeights = topicWeights[subj] || {};
+            // Get topic weights for this subject (handle group subjects)
+            const group = GATE_PATTERN.subject_groups?.[subj];
+            let subjTopicWeights = {};
+            if (group) {
+                // Combine topic weights from all subjects in the group
+                for (const s of group) {
+                    Object.assign(subjTopicWeights, topicWeights[s] || {});
+                }
+            } else {
+                subjTopicWeights = topicWeights[subj] || {};
+            }
 
-            // Type preference for this subject
-            const typePref = GATE_PATTERN.subject_type_preference[subj] || { mcq: 0.52, msq: 0.16, nat: 0.32 };
+            // Type preference for this subject (handle group subjects)
+            let typePref;
+            if (group) {
+                // Average type preferences from group members
+                typePref = { mcq: 0, msq: 0, nat: 0 };
+                let count = 0;
+                for (const s of group) {
+                    const tp = GATE_PATTERN.subject_type_preference[s];
+                    if (tp) {
+                        typePref.mcq += tp.mcq;
+                        typePref.msq += tp.msq;
+                        typePref.nat += tp.nat;
+                        count++;
+                    }
+                }
+                if (count > 0) {
+                    typePref.mcq /= count;
+                    typePref.msq /= count;
+                    typePref.nat /= count;
+                }
+            } else {
+                typePref = GATE_PATTERN.subject_type_preference[subj] || { mcq: 0.52, msq: 0.16, nat: 0.32 };
+            }
 
             // Weight function with TOPIC-LEVEL awareness
             const weightFn = (q) => {
