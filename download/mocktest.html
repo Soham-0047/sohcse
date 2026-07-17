@@ -949,6 +949,14 @@ function renderExam() {
                         ? `<button class="exam-nav-btn primary" onclick="goTo(${mockState.currentQ + 1})">Save & Next →</button>`
                         : `<button class="exam-nav-btn primary" onclick="if(confirm('Submit test?')) submitMockTest()">✓ Submit Test</button>`}
                 </div>
+
+                <!-- Keyboard hints -->
+                <div class="exam-hints-bar">
+                    <div class="hint-item"><span class="kbd-badge">←</span><span class="kbd-badge">→</span> Navigate</div>
+                    <div class="hint-item"><span class="kbd-badge">M</span> Mark</div>
+                    <div class="hint-item"><span class="kbd-badge">C</span> Calculator</div>
+                    <div class="hint-item"><span class="kbd-badge">Esc</span> Close panels</div>
+                </div>
             </div>
 
             <!-- Sidebar: Palette + Calculator -->
@@ -1223,15 +1231,24 @@ function toggleMark() {
 
 function goTo(idx) {
     if (idx < 0 || idx >= mockState.questions.length) return;
-    // Update previous palette cell (remove current highlight)
-    const prevCell = document.querySelector('.palette-cell.current');
-    if (prevCell) prevCell.classList.remove('current');
-    mockState.currentQ = idx;
-    mockState.visited.add(idx);
-    // Full re-render only when changing question (necessary to show new Q)
-    renderExam();
-    const main = document.querySelector('.exam-main');
-    if (main) main.scrollTop = 0;
+    // Smooth fade transition
+    const card = document.querySelector('.exam-question-card');
+    if (card) card.classList.add('fading');
+
+    setTimeout(() => {
+        // Update previous palette cell (remove current highlight)
+        const prevCell = document.querySelector('.palette-cell.current');
+        if (prevCell) prevCell.classList.remove('current');
+        mockState.currentQ = idx;
+        mockState.visited.add(idx);
+        // Full re-render only when changing question
+        renderExam();
+        const main = document.querySelector('.exam-main');
+        if (main) main.scrollTop = 0;
+        // Scroll palette to current question
+        const newCell = document.querySelector('.palette-cell.current');
+        if (newCell) newCell.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }, 100);
 }
 
 // ============ Lightweight DOM updates (avoid full re-render) ============
@@ -1588,6 +1605,7 @@ document.addEventListener('keydown', (e) => {
     if (e.key === 'ArrowRight') { e.preventDefault(); goToNext(); }
     if (e.key === 'ArrowLeft') { e.preventDefault(); goTo(mockState.currentQ - 1); }
     if (e.key === 'm' || e.key === 'M') { e.preventDefault(); toggleMark(); }
+    if (e.key === 'c' || e.key === 'C') { e.preventDefault(); toggleCalc(); }
 });
 
 init();

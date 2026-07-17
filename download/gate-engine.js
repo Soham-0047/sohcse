@@ -841,15 +841,37 @@
                 const currentChapCount = chapterCount[fullChapKey] || 0;
                 w *= Math.max(0.15, 1 - currentChapCount * 0.30);
 
-                // CONCEPT CLUSTERING (new in v4) — avoid testing same concept twice
+                // CONCEPT CLUSTERING (v6 — stronger enforcement)
+                // Prevents two questions from testing the same concept
                 if (q._concepts && q._concepts.size > 0) {
                     let maxOverlap = 0;
+                    let overlapCount = 0;
                     for (const prevConcepts of selectedConcepts) {
                         const overlap = conceptOverlap(q._concepts, prevConcepts);
                         if (overlap > maxOverlap) maxOverlap = overlap;
+                        if (overlap > 0.3) overlapCount++;
                     }
-                    if (maxOverlap > 0.5) w *= 0.3; // heavy penalty for concept overlap
-                    else if (maxOverlap > 0.3) w *= 0.6;
+                    // Progressive penalty based on overlap level
+                    if (maxOverlap > 0.6) w *= 0.15; // near-duplicate — very heavy penalty
+                    else if (maxOverlap > 0.4) w *= 0.3; // high overlap — heavy penalty
+                    else if (maxOverlap > 0.3) w *= 0.5; // moderate overlap
+                    // Additional penalty if multiple questions have overlap
+                    if (overlapCount >= 2) w *= 0.5;
+                }
+
+                // TEXT SIMILARITY CHECK (v6 — new)
+                // Additional check using full text similarity (not just keywords)
+                // Catches questions that are similar but use different keywords
+                if (selected.length > 0 && selected.length < 30) {
+                    // Only check last 5 selected questions for performance
+                    const recentSelected = selected.slice(-5);
+                    let maxTextSim = 0;
+                    for (const sq of recentSelected) {
+                        const sim = textSimilarity(q.question_text, sq.question_text);
+                        if (sim > maxTextSim) maxTextSim = sim;
+                    }
+                    if (maxTextSim > 0.5) w *= 0.2; // very similar text — heavy penalty
+                    else if (maxTextSim > 0.3) w *= 0.5;
                 }
 
                 // Global type balancing
