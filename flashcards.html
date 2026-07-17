@@ -323,7 +323,7 @@ function renderStudy() {
 
 function sanitizeHtml(html) {
     if (!html) return '';
-    return DOMPurify.sanitize(html, { ADD_TAGS: ['sup', 'sub', 'u', 's', 'strong', 'em', 'br'], ADD_ATTR: [] });
+    return DOMPurify.sanitize(html, { ADD_TAGS: ['sup', 'sub', 'u', 's', 'strong', 'em', 'br', 'p', 'span', 'div', 'ul', 'ol', 'li', 'code', 'pre', 'table', 'tr', 'td', 'th', 'thead', 'tbody'], ADD_ATTR: ['class', 'style', 'colspan', 'rowspan'] });
 }
 
 function flipCard() {
@@ -426,15 +426,15 @@ function renderErrorCard() {
                 <div class="flashcard-face flashcard-front">
                     <div class="card-label">Question (from your wrong answers)</div>
                     <div class="card-content" id="frontContent">${sanitizeHtml(card.question_text || '')}</div>
-                    ${card.options && card.options.length > 0 ? `<div style="margin-top:12px;font-size:0.82rem;opacity:0.8;">${card.options.map(o => `<div><strong>${o.identifier}:</strong> ${sanitizeHtml(o.content).slice(0,60)}...</div>`).join('')}</div>` : ''}
+                    ${card.options && card.options.length > 0 ? `<div style="margin-top:12px;font-size:0.82rem;opacity:0.8;" class="card-content">${card.options.map(o => `<div style="margin-bottom:4px;"><strong>${o.identifier}:</strong> ${sanitizeHtml(o.content || '')}</div>`).join('')}</div>` : ''}
                     <div class="card-hint">Tap to reveal answer</div>
                 </div>
                 <div class="flashcard-face flashcard-back">
                     <div class="card-label">Correct Answer</div>
                     <div class="card-content" id="backContent">
-                        ${card.correct_options && card.correct_options.length > 0 ? `✅ Answer: ${card.correct_options.join(', ')}` : ''}
-                        ${card.answer ? `<br>Answer: ${sanitizeHtml(card.answer)}` : ''}
-                        ${card.explanation ? `<br><br><div style="font-size:0.82rem;opacity:0.8;">${sanitizeHtml(card.explanation).slice(0, 300)}...</div>` : ''}
+                        ${card.correct_options && card.correct_options.length > 0 ? `<div style="margin-bottom:8px;">✅ Answer: <strong>${card.correct_options.join(', ')}</strong></div>` : ''}
+                        ${card.answer ? `<div style="margin-bottom:8px;">Answer: <strong>${sanitizeHtml(String(card.answer))}</strong></div>` : ''}
+                        ${card.explanation ? `<div style="font-size:0.82rem;opacity:0.85;margin-top:8px;" class="card-content">${sanitizeHtml(card.explanation)}</div>` : ''}
                     </div>
                     <div class="card-hint">How well did you remember?</div>
                 </div>

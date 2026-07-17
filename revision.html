@@ -7,6 +7,10 @@
 <meta name="description" content="Unified spaced repetition for flashcards, error notebook, and bookmarked PYQs with Ebbinghaus forgetting curve.">
 <link rel="stylesheet" href="./style.css">
 <link rel="manifest" href="./manifest.json">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23667eea'/%3E%3Ctext x='50' y='70' font-size='60' font-weight='bold' fill='white' text-anchor='middle' font-family='Arial'%3EG%3C/text%3E%3C/svg%3E">
 </head>
 <body>
@@ -185,20 +189,29 @@ function buildReviewQueue() {
     return queue;
 }
 
+function sanitizeHtml(html) {
+    if (!html) return '';
+    if (typeof DOMPurify === 'undefined') return html;
+    return DOMPurify.sanitize(html, { ADD_TAGS: ['sup','sub','u','s','strong','em','br','p','span','div','ul','ol','li','code','pre'], ADD_ATTR: ['class','style'] });
+}
+
 function buildErrorBack(e) {
     let html = '';
     if (e.options && e.options.length) {
         html += '<div class="review-options">';
         e.options.forEach((opt, i) => {
-            const isCorrect = e.correct_options && e.correct_options.includes(i);
-            html += `<div class="review-option ${isCorrect ? 'correct' : ''}">${String.fromCharCode(65 + i)}. ${opt}</div>`;
+            const identifier = opt.identifier || String.fromCharCode(65 + i);
+            const content = sanitizeHtml(opt.content || '');
+            const isCorrect = e.correct_options && e.correct_options.includes(identifier);
+            html += `<div class="review-option ${isCorrect ? 'correct' : ''}"><strong>${identifier}.</strong> ${content}</div>`;
         });
         html += '</div>';
     } else if (e.answer) {
-        html += `<div class="review-answer">Answer: <strong>${e.answer}</strong></div>`;
+        html += `<div class="review-answer">Answer: <strong>${sanitizeHtml(String(e.answer))}</strong></div>`;
     }
     if (e.explanation) {
-        html += `<div class="review-explanation">${e.explanation.substring(0, 400)}${e.explanation.length > 400 ? '...' : ''}</div>`;
+        const expl = e.explanation.length > 500 ? e.explanation.substring(0, 500) + '...' : e.explanation;
+        html += `<div class="review-explanation">${sanitizeHtml(expl)}</div>`;
     }
     return html || '<em>No answer data available</em>';
 }
@@ -302,7 +315,7 @@ function renderDashboard() {
             <div class="review-queue-item">
                 <div class="review-queue-source source-${q.source}">${sourceLabel(q.source)}</div>
                 <div class="review-queue-content">
-                    <div class="review-queue-front">${q.front.substring(0, 100)}${q.front.length > 100 ? '...' : ''}</div>
+                    <div class="review-queue-front">${sanitizeHtml(q.front).replace(/<[^>]*>/g, '').substring(0, 100)}${q.front.length > 100 ? '...' : ''}</div>
                     <div class="review-queue-meta">${q.meta || ''}</div>
                 </div>
                 <button class="btn btn-primary btn-sm" onclick="startReviewSession('${q.id}')">Review</button>
@@ -519,15 +532,15 @@ function renderCurrentCard() {
     // Reset flip
     document.getElementById('reviewFlipper').classList.remove('flipped');
 
-    // Render front
+    // Render front (sanitize HTML, then KaTeX will render after)
     document.getElementById('cardFront').innerHTML = `
         <div class="card-meta-tag">${card.meta || ''}</div>
-        <div class="card-front-content">${card.front}</div>
+        <div class="card-front-content">${sanitizeHtml(card.front)}</div>
         <div class="card-flip-hint">Click card to reveal answer →</div>
     `;
     document.getElementById('cardBack').innerHTML = `
         <div class="card-meta-tag">${card.meta || ''}</div>
-        <div class="card-back-content">${card.back}</div>
+        <div class="card-back-content">${sanitizeHtml(card.back)}</div>
     `;
 
     // Show/hide actions
@@ -537,6 +550,31 @@ function renderCurrentCard() {
 
     // Click card to flip
     document.getElementById('reviewFlipper').onclick = flipReviewCard;
+
+    // Render KaTeX math in both faces
+    renderCardMath();
+}
+
+// Render KaTeX math in card content with retry
+function renderCardMath() {
+    if (typeof renderMathInElement === 'function') {
+        document.querySelectorAll('.review-card-face .card-front-content, .review-card-face .card-back-content').forEach(el => {
+            try {
+                renderMathInElement(el, {
+                    delimiters: [
+                        { left: '$$', right: '$$', display: true },
+                        { left: '$', right: '$', display: false },
+                        { left: '\\(', right: '\\)', display: false },
+                        { left: '\\[', right: '\\]', display: true },
+                    ],
+                    throwOnError: false
+                });
+            } catch(e) {}
+        });
+    } else {
+        // KaTeX not loaded yet — retry in 100ms
+        setTimeout(renderCardMath, 100);
+    }
 }
 
 function flipReviewCard() {

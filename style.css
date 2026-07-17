@@ -4749,3 +4749,232 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 #appRoot {
     min-height: 200px;
 }
+
+/* ==========================================================================
+   v6 UI/UX Polish — smoother transitions, better mobile, micro-interactions
+   ========================================================================== */
+
+/* ============ Question card transitions ============ */
+.question-card, .exam-question-card {
+    animation: cardSlideIn 0.3s var(--ease-out);
+}
+@keyframes cardSlideIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ============ Mock test question transition ============ */
+.exam-main {
+    scroll-behavior: smooth;
+}
+.exam-question-card {
+    transition: opacity 0.2s var(--ease-out);
+}
+.exam-question-card.fading {
+    opacity: 0.3;
+    pointer-events: none;
+}
+
+/* ============ Better option hover (desktop only) ============ */
+@media (hover: hover) {
+    .exam-option {
+        transition: background 0.15s, border-color 0.15s, transform 0.1s;
+    }
+    .exam-option:hover {
+        background: var(--bg-light);
+        border-color: var(--primary);
+        transform: translateX(2px);
+    }
+    .exam-option.selected:hover {
+        background: rgba(102, 126, 234, 0.12);
+    }
+}
+
+/* ============ Palette cell smooth transitions ============ */
+.palette-cell {
+    transition: transform 0.15s var(--ease-spring), background 0.15s;
+}
+.palette-cell:hover {
+    transform: scale(1.1);
+    z-index: 2;
+}
+
+/* ============ Quiz question card ============ */
+.quiz-question-card {
+    animation: cardSlideIn 0.25s var(--ease-out);
+}
+
+/* ============ Improved button feedback ============ */
+.btn {
+    transition: transform 0.1s, box-shadow 0.2s, background 0.2s;
+}
+.btn:active {
+    transform: scale(0.97);
+}
+.btn-primary:hover {
+    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
+}
+
+/* ============ Toast improvements ============ */
+.toast {
+    animation: toastSlideIn 0.3s var(--ease-spring);
+}
+@keyframes toastSlideIn {
+    from { opacity: 0; transform: translateY(20px) scale(0.95); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ============ Mobile exam improvements ============ */
+@media (max-width: 900px) {
+    .exam-timer-bar {
+        padding: 8px 12px !important;
+    }
+    .exam-timer-time {
+        font-size: 1.1rem !important;
+    }
+    .exam-timer-btn {
+        padding: 6px 10px !important;
+        font-size: 0.72rem !important;
+    }
+    .exam-question-card {
+        padding: 14px !important;
+        border-radius: 10px !important;
+    }
+    .exam-q-header {
+        gap: 6px !important;
+        margin-bottom: 10px !important;
+    }
+    .exam-q-number {
+        font-size: 1rem !important;
+    }
+    .exam-q-content {
+        font-size: 0.9rem !important;
+        line-height: 1.6 !important;
+    }
+    .exam-option {
+        padding: 10px 12px !important;
+        font-size: 0.85rem !important;
+    }
+    .exam-nav {
+        gap: 6px !important;
+        flex-wrap: wrap !important;
+    }
+    .exam-nav button {
+        padding: 8px 14px !important;
+        font-size: 0.78rem !important;
+    }
+}
+
+/* ============ Better scroll indicators ============ */
+.exam-sidebar::-webkit-scrollbar-thumb:hover,
+.questionReview::-webkit-scrollbar-thumb:hover {
+    background: var(--primary);
+}
+
+/* ============ Loading skeleton for question review ============ */
+.review-skeleton {
+    background: linear-gradient(90deg, var(--border-soft) 0%, var(--bg-light) 50%, var(--border-soft) 100%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 8px;
+    height: 80px;
+    margin-bottom: 10px;
+}
+
+/* ============ Keyboard shortcut badge ============ */
+.kbd-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 6px;
+    background: var(--bg-light);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-family: monospace;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+/* ============ Exam keyboard hints bar ============ */
+.exam-hints-bar {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 8px 16px;
+    background: var(--bg-light);
+    border-top: 1px solid var(--border);
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    align-items: center;
+}
+.exam-hints-bar .hint-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+@media (max-width: 768px) {
+    .exam-hints-bar {
+        display: none;
+    }
+}
+
+/* ============ Focus mode for questions ============ */
+.exam-main:focus-within .exam-question-card {
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2), var(--shadow);
+}
+
+/* ============ Accessibility: option focus ============ */
+.exam-option:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+/* ============ Smooth palette scroll ============ */
+.palette-grid {
+    scroll-behavior: smooth;
+}
+
+/* ============ Current question pulse in palette ============ */
+.palette-cell.current {
+    animation: currentPulse 2s ease-in-out infinite;
+}
+@keyframes currentPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.4); }
+    50% { box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1); }
+}
+
+/* ============ Question review card styling ============ */
+#questionReview > div {
+    transition: border-color 0.2s;
+}
+#questionReview > div:hover {
+    border-color: var(--primary);
+}
+
+/* ============ Print improvements ============ */
+@media print {
+    .exam-timer-bar, .exam-sidebar, .exam-nav, .floating-calc,
+    .exam-hints-bar, .fab-container, .help-widget {
+        display: none !important;
+    }
+    .exam-question-card {
+        page-break-inside: avoid;
+        box-shadow: none !important;
+        border: 1px solid #ccc !important;
+    }
+}
+
+/* ============ Reduced motion ============ */
+@media (prefers-reduced-motion: reduce) {
+    .question-card, .exam-question-card, .quiz-question-card,
+    .toast, .palette-cell, .btn {
+        animation: none !important;
+        transition: none !important;
+    }
+    .palette-cell.current {
+        animation: none !important;
+    }
+}

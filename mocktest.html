@@ -949,6 +949,14 @@ function renderExam() {
                         ? `<button class="exam-nav-btn primary" onclick="goTo(${mockState.currentQ + 1})">Save & Next →</button>`
                         : `<button class="exam-nav-btn primary" onclick="if(confirm('Submit test?')) submitMockTest()">✓ Submit Test</button>`}
                 </div>
+
+                <!-- Keyboard hints -->
+                <div class="exam-hints-bar">
+                    <div class="hint-item"><span class="kbd-badge">←</span><span class="kbd-badge">→</span> Navigate</div>
+                    <div class="hint-item"><span class="kbd-badge">M</span> Mark</div>
+                    <div class="hint-item"><span class="kbd-badge">C</span> Calculator</div>
+                    <div class="hint-item"><span class="kbd-badge">Esc</span> Close panels</div>
+                </div>
             </div>
 
             <!-- Sidebar: Palette + Calculator -->
@@ -1223,15 +1231,24 @@ function toggleMark() {
 
 function goTo(idx) {
     if (idx < 0 || idx >= mockState.questions.length) return;
-    // Update previous palette cell (remove current highlight)
-    const prevCell = document.querySelector('.palette-cell.current');
-    if (prevCell) prevCell.classList.remove('current');
-    mockState.currentQ = idx;
-    mockState.visited.add(idx);
-    // Full re-render only when changing question (necessary to show new Q)
-    renderExam();
-    const main = document.querySelector('.exam-main');
-    if (main) main.scrollTop = 0;
+    // Smooth fade transition
+    const card = document.querySelector('.exam-question-card');
+    if (card) card.classList.add('fading');
+
+    setTimeout(() => {
+        // Update previous palette cell (remove current highlight)
+        const prevCell = document.querySelector('.palette-cell.current');
+        if (prevCell) prevCell.classList.remove('current');
+        mockState.currentQ = idx;
+        mockState.visited.add(idx);
+        // Full re-render only when changing question
+        renderExam();
+        const main = document.querySelector('.exam-main');
+        if (main) main.scrollTop = 0;
+        // Scroll palette to current question
+        const newCell = document.querySelector('.palette-cell.current');
+        if (newCell) newCell.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }, 100);
 }
 
 // ============ Lightweight DOM updates (avoid full re-render) ============
@@ -1423,10 +1440,137 @@ function renderResults(score, correct, wrong, unattempted, subjectBreakdown, dur
                         ${Object.entries(subjectBreakdown).filter(([_, s]) => s.correct + s.wrong > 0 && (s.correct / (s.correct + s.wrong)) * 100 < 60).length === 0 ? '<p style="color:var(--correct);">🎉 No weak areas — great job!</p>' : ''}
                     </div>
                 </div>
+
+                <!-- Question Review Section -->
+                <div class="setup-card" style="margin-top:16px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+                        <h3 style="margin:0;font-size:1rem;">📝 Question Review & Solutions</h3>
+                        <div style="display:flex;gap:6px;">
+                            <button class="btn btn-ghost btn-sm" onclick="filterReview('all')" id="filterAll">All (${mockState.questions.length})</button>
+                            <button class="btn btn-ghost btn-sm" onclick="filterReview('wrong')" id="filterWrong" style="color:var(--danger);">Wrong (${wrong})</button>
+                            <button class="btn btn-ghost btn-sm" onclick="filterReview('correct')" id="filterCorrect" style="color:var(--correct);">Correct (${correct})</button>
+                        </div>
+                    </div>
+                    <div id="questionReview" style="max-height:600px;overflow-y:auto;"></div>
+                </div>
             </div>
         </div>
     `;
     renderMath();
+    renderQuestionReview('all');
+}
+
+// ============ Question Review ============
+function renderQuestionReview(filter) {
+    const container = document.getElementById('questionReview');
+    if (!container) return;
+
+    const questions = mockState.questions;
+    const answers = mockState.answers;
+
+    let html = '';
+    questions.forEach((q, i) => {
+        const userAns = answers[i];
+        const isAnswered = userAns !== undefined && userAns !== '' && !(Array.isArray(userAns) && userAns.length === 0);
+        
+        // Determine if correct
+        let isCorrect = false;
+        if (isAnswered) {
+            if (q.normalized_type === 'nat') {
+                if (q.answer) {
+                    const rm = q.answer.match(/^(-?\d+(?:\.\d+)?)\s*to\s*(-?\d+(?:\.\d+)?)$/);
+                    if (rm) { const v = parseFloat(userAns); isCorrect = v >= parseFloat(rm[1]) - 0.01 && v <= parseFloat(rm[2]) + 0.01; }
+                    else { const e = parseFloat(q.answer); const a = parseFloat(userAns); if (!isNaN(e) && !isNaN(a)) isCorrect = Math.abs(e - a) < 0.01; }
+                }
+            } else if (q.normalized_type === 'msq') {
+                const us = new Set(Array.isArray(userAns) ? userAns : []);
+                const cs = new Set(q.correct_options || []);
+                isCorrect = us.size === cs.size && [...us].every(x => cs.has(x));
+            } else {
+                isCorrect = userAns === (q.correct_options && q.correct_options[0]);
+            }
+        }
+
+        // Filter
+        if (filter === 'wrong' && (isCorrect || !isAnswered)) return;
+        if (filter === 'correct' && !isCorrect) return;
+
+        const subjLabel = (q.subject || '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+        const subjIcon = subjIcons[q.subject] || '📖';
+        
+        // Build options HTML with correct/wrong highlighting
+        let optionsHtml = '';
+        if (q.options && q.options.length > 0) {
+            optionsHtml = '<div style="margin-top:10px;display:flex;flex-direction:column;gap:6px;">';
+            q.options.forEach(opt => {
+                const identifier = opt.identifier;
+                const isUserAnswer = isMSQ(q) 
+                    ? (Array.isArray(userAns) && userAns.includes(identifier))
+                    : (userAns === identifier);
+                const isCorrectOption = q.correct_options && q.correct_options.includes(identifier);
+                let bg = 'var(--bg-light)';
+                let border = '1px solid var(--border)';
+                if (isCorrectOption) { bg = 'rgba(16,185,129,0.1)'; border = '1px solid var(--correct)'; }
+                if (isUserAnswer && !isCorrectOption) { bg = 'rgba(239,68,68,0.1)'; border = '1px solid var(--danger)'; }
+                optionsHtml += `<div style="padding:8px 12px;background:${bg};border:${border};border-radius:6px;font-size:0.82rem;" class="q-content">
+                    <strong>${identifier}.</strong> ${sanitize(opt.content || '')}
+                    ${isCorrectOption ? ' ✅' : ''}
+                    ${isUserAnswer && !isCorrectOption ? ' ❌ (your answer)' : ''}
+                </div>`;
+            });
+            optionsHtml += '</div>';
+        }
+
+        // NAT answer display
+        let natHtml = '';
+        if (q.normalized_type === 'nat') {
+            natHtml = `<div style="margin-top:10px;padding:8px 12px;background:var(--bg-light);border-radius:6px;font-size:0.82rem;">
+                Your answer: <strong>${sanitize(String(userAns || '—'))}</strong> | Correct: <strong style="color:var(--correct);">${sanitize(String(q.answer || '—'))}</strong>
+            </div>`;
+        }
+
+        // Explanation
+        let explHtml = '';
+        if (q.explanation) {
+            explHtml = `<div style="margin-top:10px;padding:10px 12px;background:rgba(102,126,234,0.05);border-left:3px solid var(--primary);border-radius:6px;font-size:0.82rem;line-height:1.5;" class="q-content">
+                <strong>💡 Explanation:</strong><br>${sanitize(q.explanation)}
+            </div>`;
+        }
+
+        const statusIcon = !isAnswered ? '⏭️' : (isCorrect ? '✅' : '❌');
+        const statusColor = !isAnswered ? 'var(--text-muted)' : (isCorrect ? 'var(--correct)' : 'var(--danger)');
+
+        html += `<div style="padding:14px;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;margin-bottom:10px;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+                <span style="font-size:1.1rem;">${statusIcon}</span>
+                <strong style="color:${statusColor};">Q${i + 1}</strong>
+                <span style="font-size:0.72rem;padding:2px 8px;background:var(--bg-light);border-radius:4px;color:var(--text-muted);">${subjIcon} ${subjLabel}</span>
+                <span style="font-size:0.72rem;padding:2px 8px;background:var(--bg-light);border-radius:4px;color:var(--text-muted);">${q.marks}m</span>
+                <span style="font-size:0.72rem;padding:2px 8px;background:var(--bg-light);border-radius:4px;color:var(--text-muted);">${q.year}</span>
+            </div>
+            <div class="q-content" style="font-size:0.88rem;line-height:1.5;">${sanitize(q.question_text || '')}</div>
+            ${optionsHtml}
+            ${natHtml}
+            ${explHtml}
+        </div>`;
+    });
+
+    if (html === '') {
+        html = '<div style="text-align:center;padding:20px;color:var(--text-muted);">No questions in this filter.</div>';
+    }
+
+    container.innerHTML = html;
+    renderMath();
+}
+
+function isMSQ(q) { return q.normalized_type === 'msq'; }
+
+function filterReview(filter) {
+    renderQuestionReview(filter);
+    // Update active button styles
+    document.querySelectorAll('[id^="filter"]').forEach(b => b.style.fontWeight = '400');
+    const btn = document.getElementById('filter' + filter.charAt(0).toUpperCase() + filter.slice(1));
+    if (btn) btn.style.fontWeight = '700';
 }
 
 function drillWeak(subject, label) {
@@ -1445,7 +1589,7 @@ function drillWeak(subject, label) {
 }
 
 // ============ Utils ============
-function sanitize(html) { if (!html) return ''; return DOMPurify.sanitize(html, { ADD_TAGS: ['sup','sub','u','s'], ADD_ATTR: ['target'] }); }
+function sanitize(html) { if (!html) return ''; return DOMPurify.sanitize(html, { ADD_TAGS: ['sup','sub','u','s','strong','em','br','p','span','div','ul','ol','li','code','pre','table','tr','td','th','thead','tbody'], ADD_ATTR: ['target','class','style','colspan','rowspan'] }); }
 function typeLabel(t) { return { mcq:'MCQ', msq:'MSQ', nat:'NAT', subjective:'Subjective', fill_blanks:'Fill', true_false:'T/F' }[t] || t; }
 
 function renderMath() {
@@ -1461,6 +1605,7 @@ document.addEventListener('keydown', (e) => {
     if (e.key === 'ArrowRight') { e.preventDefault(); goToNext(); }
     if (e.key === 'ArrowLeft') { e.preventDefault(); goTo(mockState.currentQ - 1); }
     if (e.key === 'm' || e.key === 'M') { e.preventDefault(); toggleMark(); }
+    if (e.key === 'c' || e.key === 'C') { e.preventDefault(); toggleCalc(); }
 });
 
 init();

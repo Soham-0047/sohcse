@@ -522,7 +522,7 @@ function renderQuestion(q, idx) {
 
 function sanitizeHtml(html) {
     if (!html) return '';
-    return DOMPurify.sanitize(html, { ADD_TAGS: ['sup', 'sub', 'u', 's', 'strong', 'em', 'br'], ADD_ATTR: [] });
+    return DOMPurify.sanitize(html, { ADD_TAGS: ['sup','sub','u','s','strong','em','br','p','span','div','ul','ol','li','code','pre','table','tr','td','th','thead','tbody'], ADD_ATTR: ['class','style','colspan','rowspan'] });
 }
 
 function selectOption(qIdx, optIdx, isMSQ) {

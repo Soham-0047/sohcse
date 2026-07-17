@@ -841,15 +841,37 @@
                 const currentChapCount = chapterCount[fullChapKey] || 0;
                 w *= Math.max(0.15, 1 - currentChapCount * 0.30);
 
-                // CONCEPT CLUSTERING (new in v4) — avoid testing same concept twice
+                // CONCEPT CLUSTERING (v6 — stronger enforcement)
+                // Prevents two questions from testing the same concept
                 if (q._concepts && q._concepts.size > 0) {
                     let maxOverlap = 0;
+                    let overlapCount = 0;
                     for (const prevConcepts of selectedConcepts) {
                         const overlap = conceptOverlap(q._concepts, prevConcepts);
                         if (overlap > maxOverlap) maxOverlap = overlap;
+                        if (overlap > 0.3) overlapCount++;
                     }
-                    if (maxOverlap > 0.5) w *= 0.3; // heavy penalty for concept overlap
-                    else if (maxOverlap > 0.3) w *= 0.6;
+                    // Progressive penalty based on overlap level
+                    if (maxOverlap > 0.6) w *= 0.15; // near-duplicate — very heavy penalty
+                    else if (maxOverlap > 0.4) w *= 0.3; // high overlap — heavy penalty
+                    else if (maxOverlap > 0.3) w *= 0.5; // moderate overlap
+                    // Additional penalty if multiple questions have overlap
+                    if (overlapCount >= 2) w *= 0.5;
+                }
+
+                // TEXT SIMILARITY CHECK (v6 — new)
+                // Additional check using full text similarity (not just keywords)
+                // Catches questions that are similar but use different keywords
+                if (selected.length > 0 && selected.length < 30) {
+                    // Only check last 5 selected questions for performance
+                    const recentSelected = selected.slice(-5);
+                    let maxTextSim = 0;
+                    for (const sq of recentSelected) {
+                        const sim = textSimilarity(q.question_text, sq.question_text);
+                        if (sim > maxTextSim) maxTextSim = sim;
+                    }
+                    if (maxTextSim > 0.5) w *= 0.2; // very similar text — heavy penalty
+                    else if (maxTextSim > 0.3) w *= 0.5;
                 }
 
                 // Global type balancing
@@ -932,16 +954,80 @@
         // Target: MCQ ~52%, MSQ ~16%, NAT ~32%
         const correctedSet = autoCorrectTypeDistribution(finalSet, allQuestions, selectedIds);
 
+        // PHASE 6.6: MARKS CORRECTION (new in v6)
+        // Ensure total marks = exactly 100 by swapping 1m↔2m questions
+        const finalCorrectedSet = autoCorrectMarks(correctedSet, allQuestions, selectedIds, totalMarks);
+
         // ============================================================
         // PHASE 7: COMPUTE REALISM SCORE & LOG
         // ============================================================
-        const stats = computePaperStats(correctedSet);
-        stats.realismScore = computeRealismScore(correctedSet);
+        const stats = computePaperStats(finalCorrectedSet);
+        stats.realismScore = computeRealismScore(finalCorrectedSet);
         if (typeof console !== 'undefined' && console.debug) {
-            console.debug('🎯 GATE v5 Paper Generated:', stats);
+            console.debug('🎯 GATE v6 Paper Generated:', stats);
         }
 
-        return correctedSet;
+        return finalCorrectedSet;
+    }
+
+    // ============ MARKS AUTO-CORRECTION ============
+    // Ensures total marks = exactly target by swapping 1m↔2m within same subject
+    function autoCorrectMarks(questions, allQuestions, selectedIds, targetMarks) {
+        const currentMarks = questions.reduce((s, q) => s + (q.marks || 1), 0);
+        if (currentMarks === targetMarks) return questions;
+
+        const result = [...questions];
+        const usedIds = new Set(result.map(q => q.question_id));
+
+        if (currentMarks > targetMarks) {
+            const excess = currentMarks - targetMarks;
+            for (let i = 0; i < result.length && excess > 0; i++) {
+                if (result[i].marks !== 2 || result[i].subject === 'general-aptitude') continue;
+                const replacement = allQuestions.find(rq =>
+                    rq.marks === 1 &&
+                    (rq.subject === result[i].subject ||
+                     (GATE_PATTERN.subject_groups?.['programming-and-data-structures']?.includes(result[i].subject) &&
+                      GATE_PATTERN.subject_groups?.['programming-and-data-structures']?.includes(rq.subject))) &&
+                    !usedIds.has(rq.question_id)
+                );
+                if (replacement) {
+                    result[i] = { ...replacement,
+                        _contentHash: hashContent(replacement.question_text),
+                        _difficulty: estimateDifficulty(replacement, buildTrendAnalysis()),
+                        _qualityScore: qualityScore(replacement),
+                        _isHotTopic: HOT_TOPICS.has(`${replacement.subject}/${replacement.chapter}`),
+                        _concepts: extractConcepts(replacement.question_text),
+                    };
+                    usedIds.add(replacement.question_id);
+                    excess -= 1;
+                }
+            }
+        } else if (currentMarks < targetMarks) {
+            const deficit = targetMarks - currentMarks;
+            for (let i = 0; i < result.length && deficit > 0; i++) {
+                if (result[i].marks !== 1 || result[i].subject === 'general-aptitude') continue;
+                const replacement = allQuestions.find(rq =>
+                    rq.marks === 2 &&
+                    (rq.subject === result[i].subject ||
+                     (GATE_PATTERN.subject_groups?.['programming-and-data-structures']?.includes(result[i].subject) &&
+                      GATE_PATTERN.subject_groups?.['programming-and-data-structures']?.includes(rq.subject))) &&
+                    !usedIds.has(rq.question_id)
+                );
+                if (replacement) {
+                    result[i] = { ...replacement,
+                        _contentHash: hashContent(replacement.question_text),
+                        _difficulty: estimateDifficulty(replacement, buildTrendAnalysis()),
+                        _qualityScore: qualityScore(replacement),
+                        _isHotTopic: HOT_TOPICS.has(`${replacement.subject}/${replacement.chapter}`),
+                        _concepts: extractConcepts(replacement.question_text),
+                    };
+                    usedIds.add(replacement.question_id);
+                    deficit -= 1;
+                }
+            }
+        }
+
+        return result;
     }
 
     // ============ TYPE DISTRIBUTION AUTO-CORRECTION ============

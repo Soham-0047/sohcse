@@ -718,7 +718,7 @@ function toggleExplanation(qid, btn) {
     else { state.expandedExplanations.add(qid); el.classList.remove('hidden'); btn.classList.add('expanded'); btn.innerHTML = `<span class="chevron">▶</span> Hide Explanation`; renderMathIn(el); }
 }
 
-function sanitize(html) { if (!html) return ''; return DOMPurify.sanitize(html, { ADD_TAGS: ['sup', 'sub', 'u', 's'], ADD_ATTR: ['target'] }); }
+function sanitize(html) { if (!html) return ''; return DOMPurify.sanitize(html, { ADD_TAGS: ['sup','sub','u','s','strong','em','br','p','span','div','ul','ol','li','code','pre','table','tr','td','th','thead','tbody'], ADD_ATTR: ['target','class','style','colspan','rowspan'] }); }
 
 // Math rendering with retry — handles the case where KaTeX auto-render
 // hasn't loaded yet (deferred scripts). Retries every 100ms up to 5 seconds.
