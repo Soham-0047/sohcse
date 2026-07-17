@@ -1007,90 +1007,17 @@ function initRippleEffect() {
     });
 }
 
-// ============ Onboarding Tour ============
+// ============ Onboarding Tour (removed — was causing click-blocking bug) ============
+// Replaced with a simple welcome toast that doesn't block the UI
 function initOnboarding() {
     if (localStorage.getItem('sohcse_onboarded')) return;
+    localStorage.setItem('sohcse_onboarded', '1');
     
-    const steps = [
-        {
-            icon: '👋',
-            title: 'Welcome to SOH CSE!',
-            desc: 'Your complete GATE CSE preparation platform. Everything you need — study materials, PYQs, videos, AI tutor — all in one place.',
-            features: [
-                ['📖', '13 Concept Notes'],
-                ['📝', '2,736 PYQs with Solutions'],
-                ['🎥', 'In-app Video Player'],
-                ['🤖', 'AI Tutor (5 modes)'],
-            ]
-        },
-        {
-            icon: '⌨️',
-            title: 'Powerful Keyboard Shortcuts',
-            desc: 'Navigate instantly without touching your mouse. Press ? anytime to see all shortcuts.',
-            features: [
-                ['Ctrl+K', 'Command Palette'],
-                ['Ctrl+/', 'Global Search'],
-                ['Ctrl+J', 'Dark Mode'],
-                ['Ctrl+H', 'Hide Navbar'],
-            ]
-        },
-        {
-            icon: '🎨',
-            title: 'Premium Features',
-            desc: 'Dark mode, focus mode, progress tracking, flashcards, quizzes, formula book, GATE calculator, and more — all free, all in-app.',
-            features: [
-                ['🌙', 'Dark Mode'],
-                ['🎯', 'Focus Mode'],
-                ['📊', 'Progress Dashboard'],
-                ['🎴', 'Spaced Repetition'],
-            ]
-        },
-    ];
-
-    let currentStep = 0;
-    
-    const overlay = document.createElement('div');
-    overlay.className = 'onboarding-overlay';
-    overlay.id = 'onboardingOverlay';
-    document.body.appendChild(overlay);
-
-    function renderStep() {
-        const step = steps[currentStep];
-        const dots = steps.map((_, i) => `<div class="onboarding-dot ${i === currentStep ? 'active' : ''}"></div>`).join('');
-        
-        overlay.innerHTML = `
-            <div class="onboarding-card">
-                <div class="ob-icon">${step.icon}</div>
-                <div class="onboarding-dots">${dots}</div>
-                <h2>${step.title}</h2>
-                <p>${step.desc}</p>
-                <div class="ob-features">
-                    ${step.features.map(f => `<div class="ob-feature"><span>${f[0]}</span><span>${f[1]}</span></div>`).join('')}
-                </div>
-                <div class="ob-actions">
-                    ${currentStep > 0 ? '<button class="btn btn-ghost btn-sm" onclick="window._obPrev()">← Back</button>' : ''}
-                    ${currentStep < steps.length - 1 
-                        ? `<button class="btn btn-primary btn-sm" onclick="window._obNext()">Next →</button>` 
-                        : `<button class="btn btn-primary btn-sm" onclick="window._obFinish()">🚀 Get Started</button>`}
-                    <button class="btn btn-ghost btn-sm" onclick="window._obSkip()">Skip</button>
-                </div>
-            </div>
-        `;
-    }
-
-    window._obNext = () => { if (currentStep < steps.length - 1) { currentStep++; renderStep(); } };
-    window._obPrev = () => { if (currentStep > 0) { currentStep--; renderStep(); } };
-    window._obSkip = () => { overlay.classList.remove('open'); localStorage.setItem('sohcse_onboarded', '1'); };
-    window._obFinish = () => { 
-        overlay.classList.remove('open'); 
-        localStorage.setItem('sohcse_onboarded', '1');
-        if (window.showToast) window.showToast('🎉 Welcome aboard! Press ? for shortcuts.', 'success', 4000);
-    };
-
-    // Show after 1.5s delay
+    // Simple non-blocking welcome toast
     setTimeout(() => {
-        overlay.classList.add('open');
-        renderStep();
+        if (window.showToast) {
+            window.showToast('👋 Welcome to SOH CSE! Press Ctrl+K for quick navigation • ⚙️ Configure API keys in Settings', 'info', 6000);
+        }
     }, 1500);
 }
 
