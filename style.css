@@ -2758,64 +2758,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
     50% { background-position: 100% 50%; }
 }
 
-/* ============ Onboarding Tour ============ */
-.onboarding-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 6000;
-    background: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(4px);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-}
-.onboarding-overlay.open { display: flex; animation: fadeIn 0.3s; }
-.onboarding-card {
-    background: var(--bg-card);
-    border-radius: var(--r-2xl);
-    padding: 32px;
-    max-width: 480px;
-    width: 100%;
-    text-align: center;
-    box-shadow: var(--shadow-xl);
-    animation: onboardingIn 0.4s var(--ease-spring);
-}
-@keyframes onboardingIn {
-    from { opacity: 0; transform: scale(0.85) translateY(20px); }
-    to { opacity: 1; transform: scale(1) translateY(0); }
-}
-.onboarding-card .ob-icon { font-size: 3rem; margin-bottom: 14px; }
-.onboarding-card h2 { font-size: 1.4rem; color: var(--text); margin-bottom: 8px; }
-.onboarding-card p { font-size: 0.9rem; color: var(--text-muted); line-height: 1.6; margin-bottom: 20px; }
-.onboarding-card .ob-features {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    margin-bottom: 24px;
-    text-align: left;
-}
-.onboarding-card .ob-feature {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.82rem;
-    color: var(--text-2);
-    padding: 8px 12px;
-    background: var(--bg-light);
-    border-radius: var(--r-sm);
-}
-.onboarding-card .ob-feature span:first-child { font-size: 1.2rem; }
-.onboarding-card .ob-actions { display: flex; gap: 10px; justify-content: center; }
-.onboarding-dots { display: flex; gap: 6px; justify-content: center; margin-bottom: 16px; }
-.onboarding-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--border);
-    transition: all 0.3s;
-}
-.onboarding-dot.active { background: var(--primary); width: 24px; border-radius: 4px; }
+/* ============ Onboarding Tour (removed — was causing click-blocking bug) ============ */
 
 /* ============ Quick Access FAB (Floating Action Button) ============ */
 .quick-fab {
@@ -4074,44 +4017,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
     to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-/* ============ Onboarding tour overlay ============ */
-.onboarding-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(4px);
-    z-index: 9998;
-    pointer-events: none;
-}
-.onboarding-tooltip {
-    position: fixed;
-    background: var(--bg-card);
-    border: 2px solid var(--primary);
-    border-radius: var(--r-lg);
-    padding: 16px 20px;
-    box-shadow: var(--shadow-xl);
-    z-index: 9999;
-    max-width: 320px;
-    pointer-events: all;
-}
-.onboarding-tooltip::before {
-    content: '';
-    position: absolute;
-    width: 16px;
-    height: 16px;
-    background: var(--bg-card);
-    border-left: 2px solid var(--primary);
-    border-top: 2px solid var(--primary);
-    transform: rotate(45deg);
-    top: -10px;
-    left: 24px;
-}
-.onboarding-title { font-weight: 700; font-size: 1rem; margin-bottom: 4px; color: var(--text); }
-.onboarding-desc { font-size: 0.86rem; color: var(--text-2); margin-bottom: 12px; line-height: 1.5; }
-.onboarding-actions { display: flex; justify-content: space-between; align-items: center; }
-.onboarding-dots { display: flex; gap: 6px; }
-.onboarding-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border); }
-.onboarding-dot.active { background: var(--primary); }
+/* ============ Onboarding Tour (removed — was causing click-blocking bug) ============ */
 
 /* ============ Better hover for cards (depth) ============ */
 .feature-card, .subject-card, .metric-card, .qa-card {
