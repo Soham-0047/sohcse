@@ -126,28 +126,34 @@ body {
     transition: color 0.3s var(--ease-out);
 }
 
-/* Animated aurora background */
+/* Static aurora background (was animated — caused lag on low-end devices) */
 body::before {
     content: '';
     position: fixed;
-    inset: -50%;
+    inset: 0;
     background:
-        radial-gradient(ellipse 600px 400px at 20% 30%, rgba(255, 234, 167, 0.15), transparent 50%),
-        radial-gradient(ellipse 500px 500px at 80% 70%, rgba(102, 126, 234, 0.18), transparent 50%),
-        radial-gradient(ellipse 400px 300px at 50% 50%, rgba(240, 147, 251, 0.1), transparent 50%);
+        radial-gradient(ellipse 600px 400px at 20% 30%, rgba(255, 234, 167, 0.12), transparent 50%),
+        radial-gradient(ellipse 500px 500px at 80% 70%, rgba(102, 126, 234, 0.15), transparent 50%),
+        radial-gradient(ellipse 400px 300px at 50% 50%, rgba(240, 147, 251, 0.08), transparent 50%);
     z-index: -1;
-    animation: aurora 20s ease-in-out infinite;
     pointer-events: none;
+    /* No animation — much better performance */
 }
 [data-theme="dark"] body::before {
     background:
-        radial-gradient(ellipse 600px 400px at 20% 30%, rgba(129, 140, 248, 0.08), transparent 50%),
-        radial-gradient(ellipse 500px 500px at 80% 70%, rgba(168, 85, 247, 0.06), transparent 50%),
-        radial-gradient(ellipse 400px 300px at 50% 50%, rgba(34, 211, 238, 0.05), transparent 50%);
+        radial-gradient(ellipse 600px 400px at 20% 30%, rgba(129, 140, 248, 0.06), transparent 50%),
+        radial-gradient(ellipse 500px 500px at 80% 70%, rgba(168, 85, 247, 0.05), transparent 50%),
+        radial-gradient(ellipse 400px 300px at 50% 50%, rgba(34, 211, 238, 0.04), transparent 50%);
 }
-@keyframes aurora {
-    0%, 100% { transform: rotate(0deg) scale(1); }
-    50% { transform: rotate(180deg) scale(1.1); }
+/* Aurora animation only on devices that explicitly want it (high-end) */
+@media (prefers-reduced-motion: no-preference) and (min-width: 1024px) {
+    body::before {
+        animation: aurora-subtle 30s ease-in-out infinite;
+    }
+    @keyframes aurora-subtle {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.85; }
+    }
 }
 
 ::-webkit-scrollbar { width: 10px; height: 10px; }
@@ -4619,4 +4625,127 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
     }
     body { background: white !important; color: black !important; }
     .section-card { box-shadow: none !important; border: 1px solid #ccc !important; }
+}
+
+/* ==========================================================================
+   PERFORMANCE OPTIMIZATIONS (v5)
+   Reduces lag on low-end devices and mobile
+   ========================================================================== */
+
+/* Reduce backdrop-filter blur on smaller screens (major lag source) */
+@media (max-width: 1024px) {
+    .topnav,
+    .ai-chat-panel,
+    .cmd-palette,
+    .bottom-sheet-content,
+    .review-modal-content,
+    .in-app-browser-overlay,
+    .floating-calc,
+    .glass-card,
+    .metric-card,
+    .feature-card,
+    .section-card {
+        backdrop-filter: blur(8px) saturate(150%);
+        -webkit-backdrop-filter: blur(8px) saturate(150%);
+    }
+}
+
+@media (max-width: 768px) {
+    /* Disable backdrop-filter entirely on mobile — biggest perf win */
+    .topnav,
+    .ai-chat-panel,
+    .cmd-palette,
+    .bottom-sheet-content,
+    .review-modal-content,
+    .in-app-browser-overlay,
+    .floating-calc,
+    .glass-card,
+    .metric-card,
+    .feature-card,
+    .section-card,
+    .footer {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
+
+    /* Reduce shadow complexity on mobile */
+    .feature-card,
+    .subject-card,
+    .metric-card,
+    .section-card {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
+    }
+
+    /* Disable expensive hover effects on touch devices */
+    .feature-card::after,
+    .subject-card::after {
+        display: none !important;
+    }
+
+    /* Reduce transition durations */
+    * {
+        transition-duration: 0.15s !important;
+        animation-duration: 0.3s !important;
+    }
+}
+
+/* ============ GPU acceleration for animated elements ============ */
+.fab-container, .floating-calc, .bottom-sheet-content,
+.xp-notification, .achievement-popup, .toast,
+.cmd-palette, .review-modal-content {
+    will-change: transform, opacity;
+}
+
+/* ============ Disable animations for reduced motion ============ */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+    body::before { animation: none !important; }
+    .aurora { animation: none !important; }
+}
+
+/* ============ Content-visibility for long pages (perf) ============ */
+.section-card,
+.feature-card,
+.subject-card,
+.question-card,
+.metric-card {
+    content-visibility: auto;
+    contain-intrinsic-size: 200px;
+}
+
+/* ============ Mock test exam-timer-btn active state ============ */
+.exam-timer-btn.active {
+    background: var(--grad-brand);
+    color: white;
+}
+
+/* ============ Sidebar scrollbar (subtle) ============ */
+.exam-sidebar::-webkit-scrollbar { width: 6px; }
+.exam-sidebar::-webkit-scrollbar-track { background: transparent; }
+.exam-sidebar::-webkit-scrollbar-thumb { background: rgba(128, 128, 128, 0.3); border-radius: 3px; }
+
+/* ============ Palette grid (compact for 65 questions) ============ */
+.palette-grid {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 4px;
+    max-height: 280px;
+    overflow-y: auto;
+    padding: 4px;
+}
+@media (max-width: 900px) {
+    .palette-grid {
+        grid-template-columns: repeat(12, 1fr);
+        max-height: 180px;
+    }
+}
+
+/* ============ Loading state for exam (prevents layout shift) ============ */
+#appRoot {
+    min-height: 200px;
 }

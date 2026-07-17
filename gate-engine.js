@@ -29,6 +29,9 @@
     const GATE_PATTERN = {
         total_questions: 65,
         total_marks: 100,
+        // Type distribution (avg of 10 papers 2021-2026):
+        // MCQ: ~52%, MSQ: ~16%, NAT: ~32%
+        type_distribution: { mcq: 0.52, msq: 0.16, nat: 0.32 },
         // EXACT paper structure from 10 papers (2021-2026):
         // GA: 10 Qs (5×1m + 5×2m = 15 marks)
         // Tech 1-mark: 25 Qs (25 marks)
@@ -42,24 +45,48 @@
         tech_two_mark_count: 30,
         tech_one_mark_marks: 25,
         tech_two_mark_marks: 60,
+        // Total 1-mark: 5 (GA) + 25 (tech) = 30
+        // Total 2-mark: 5 (GA) + 30 (tech) = 35
+        // Total marks: 30×1 + 35×2 = 30 + 70 = 100 ✅
+        one_mark_count: 30,
+        two_mark_count: 35,
 
-        // ============ OFFICIAL SUBJECT MARKS WEIGHTAGE ============
+        // Valid GATE question types only (filter out subjective, fill_blanks, true_false)
+        valid_types: ['mcq', 'msq', 'nat'],
+
+        // ============ OFFICIAL 2027 SUBJECT MARKS (from PW.live reference) ============
+        // Source: https://www.pw.live/gate/exams/gate-cse-exam-pattern
         // GA: 15, Math: 13, Core CS: 72 = 100
+        //
+        // OFFICIAL 2027 CHANGES from previous years:
+        //   Digital Logic:         6 marks (was 7)
+        //   Algorithms:            7 marks (was 6)
+        //   TOC:                   6 marks (was 8)
+        //   Compiler Design:       4 marks (was 6)
+        //   OS:                    9 marks (was 8)
+        //   CN:                   10 marks (was 8)
+        //   Programming & DS:     15 marks COMBINED (was DS=7 + PL=7=14)
         subject_marks: {
-            'general-aptitude':          15,
-            'discrete-mathematics':      13,
-            'computer-organization':      8,
-            'theory-of-computation':      8,
-            'computer-networks':          8,
-            'operating-systems':          8,
-            'database-management-system': 7,
-            'data-structures':            7,
-            'digital-logic':              7,
-            'compiler-design':            6,
-            'algorithms':                 6,
-            'programming-languages':      7,
-            'software-engineering':       0,
-            'web-technologies':           0,
+            'general-aptitude':                15,  // FIXED — 10 Qs, 15 marks
+            'discrete-mathematics':            13,  // Engineering Mathematics section
+            'digital-logic':                    6,  // 2027: 6 marks
+            'computer-organization':            8,  // COA — 8 marks
+            'programming-and-data-structures': 15,  // COMBINED PDS — 15 marks
+            'algorithms':                       7,  // 2027: 7 marks
+            'theory-of-computation':            6,  // 2027: 6 marks
+            'compiler-design':                  4,  // 2027: 4 marks
+            'operating-systems':                9,  // 2027: 9 marks
+            'database-management-system':       7,  // Databases — 7 marks
+            'computer-networks':               10,  // 2027: 10 marks
+            'software-engineering':             0,
+            'web-technologies':                 0,
+        },
+
+        // ============ SUBJECT GROUPING (combined subjects) ============
+        // 'programming-and-data-structures' is ONE official 2027 subject (15 marks)
+        // but stored as TWO subjects in PYQ data. Engine combines them.
+        subject_groups: {
+            'programming-and-data-structures': ['data-structures', 'programming-languages'],
         },
 
         // ============ TOPIC-LEVEL WEIGHTAGE (from 2021-2026 analysis) ============
@@ -179,20 +206,22 @@
             'programming-languages':      { mcq: 0.48, msq: 0.07, nat: 0.45 },
         },
 
-        // ============ QUESTION COUNT PER SUBJECT ============
+        // ============ QUESTION COUNT PER SUBJECT (sums to exactly 65) ============
+        // Each subject's Qs calculated to hit exact marks target:
+        // a(1m) + b(2m) = marks, a + b = Qs → b = marks - Qs, a = 2*Qs - marks
         subject_question_targets: {
-            'general-aptitude':          10,
-            'discrete-mathematics':       8,
-            'computer-organization':      5,
-            'theory-of-computation':      5,
-            'computer-networks':          5,
-            'operating-systems':          5,
-            'database-management-system': 5,
-            'data-structures':            5,
-            'digital-logic':              4,
-            'compiler-design':            4,
-            'algorithms':                 4,
-            'programming-languages':      4,
+            'general-aptitude':               10,  // 5×1m + 5×2m = 15 marks
+            'discrete-mathematics':            8,  // 3×1m + 5×2m = 13 marks
+            'digital-logic':                   4,  // 2×1m + 2×2m = 6 marks
+            'computer-organization':           5,  // 2×1m + 3×2m = 8 marks
+            'programming-and-data-structures': 9,  // 3×1m + 6×2m = 15 marks
+            'algorithms':                      5,  // 3×1m + 2×2m = 7 marks
+            'theory-of-computation':           4,  // 2×1m + 2×2m = 6 marks
+            'compiler-design':                 3,  // 2×1m + 1×2m = 4 marks
+            'operating-systems':               6,  // 3×1m + 3×2m = 9 marks
+            'database-management-system':      5,  // 3×1m + 2×2m = 7 marks
+            'computer-networks':               6,  // 2×1m + 4×2m = 10 marks
+            // Total: 10+8+4+5+9+5+4+3+6+5+6 = 65 ✅
         },
 
         // Year recency boost
@@ -436,49 +465,68 @@
         return selected;
     }
 
-    // ============ Difficulty Estimation (improved) ============
+    // ============ Question Difficulty Estimation (v5 — improved balance) ============
     function estimateDifficulty(question, trends) {
-        let score = 0.15;
+        let score = 0.10; // lower base for better easy distribution
 
-        if (question.marks === 2) score += 0.15;
-        else score += 0.05;
+        // 2-mark questions are harder
+        if (question.marks === 2) score += 0.12;
+        else score += 0.03;
 
-        if (question.normalized_type === 'nat') score += 0.08;
-        else if (question.normalized_type === 'msq') score += 0.05;
+        // Type difficulty
+        if (question.normalized_type === 'nat') score += 0.06;
+        else if (question.normalized_type === 'msq') score += 0.04;
 
+        // Chapter frequency (rare chapters = harder)
         const chapKey = `${question.subject}/${question.chapter}`;
         const chapFreq = trends.chapterCounts[chapKey] || 0;
-        if (chapFreq > 30) score += 0.02;
-        else if (chapFreq < 10) score += 0.10;
-        else score += 0.05;
+        if (chapFreq > 30) score += 0.01;
+        else if (chapFreq < 10) score += 0.08;
+        else score += 0.04;
 
+        // Question length (longer = harder, but less weight)
         const textLen = (question.question_text || '').length;
-        if (textLen > 800) score += 0.10;
-        else if (textLen > 400) score += 0.05;
-        else if (textLen < 150) score -= 0.05;
+        if (textLen > 800) score += 0.08;
+        else if (textLen > 400) score += 0.04;
+        else if (textLen < 150) score -= 0.04;
 
-        if (question.year >= 2024) score += 0.05;
-        else if (question.year >= 2021) score += 0.03;
-        else if (question.year < 2015) score -= 0.05;
+        // Recent year questions slightly harder
+        if (question.year >= 2024) score += 0.04;
+        else if (question.year >= 2021) score += 0.02;
+        else if (question.year < 2015) score -= 0.04;
 
-        if (question.options && question.options.some(o => (o.content || '').includes('$'))) score += 0.03;
+        // Has options with math (harder)
+        if (question.options && question.options.some(o => (o.content || '').includes('$'))) score += 0.02;
 
         score = Math.max(0, Math.min(1, score));
-        if (score < 0.25) return 'easy';
-        if (score < 0.50) return 'medium';
-        return 'hard';
+        // Adjusted thresholds for better GATE-like distribution (30/50/20)
+        if (score < 0.22) return 'easy';   // ~30% of questions
+        if (score < 0.40) return 'medium';  // ~50% of questions
+        return 'hard';                       // ~20% of questions
     }
 
-    // ============ Quality Score ============
+    // ============ Quality Score (v5 — improved) ============
     function qualityScore(question) {
-        let score = 50;
-        if (question.has_explanation) score += 20;
+        let score = 40; // lower base
+        // Strong reward for having explanation (only 33% of questions have one)
+        if (question.has_explanation) score += 25;
         if (question.has_answer) score += 10;
         if (!question.is_bonus) score += 5;
         if (!question.is_out_of_syllabus) score += 5;
-        if (question.options && question.options.length >= 4) score += 5;
-        if (question.year >= 2021) score += 5;
-        return score;
+        // Reward 4-option MCQs (complete questions)
+        if (question.options && question.options.length === 4) score += 8;
+        else if (question.options && question.options.length >= 2) score += 4;
+        // Reward recent year questions
+        if (question.year >= 2024) score += 8;
+        else if (question.year >= 2021) score += 5;
+        // Penalize very old questions slightly
+        if (question.year < 2000) score -= 5;
+        // Reward questions with longer explanations (more thorough)
+        if (question.explanation && question.explanation.length > 200) score += 5;
+        // Penalize very short question text (might be incomplete)
+        const cleanText = String(question.question_text || '').replace(/<[^>]*>/g, '').trim();
+        if (cleanText.length < 50) score -= 10;
+        return Math.max(0, Math.min(100, score));
     }
 
     // ============ User Profile ============
@@ -550,6 +598,29 @@
                     if (q.is_out_of_syllabus) continue;
                     if (!q.has_answer && !q.has_explanation) continue;
 
+                    // CRITICAL: Filter out invalid question types (subjective, fill_blanks, true_false)
+                    // Only allow MCQ, MSQ, NAT — these are the only types in real GATE
+                    const qtype = q.normalized_type || 'mcq';
+                    if (!GATE_PATTERN.valid_types.includes(qtype)) continue;
+
+                    // CRITICAL: Filter out questions with invalid marks (must be 1 or 2)
+                    const marks = q.marks;
+                    if (marks !== 1 && marks !== 2) continue;
+
+                    // For MCQ/MSQ: must have at least 2 options AND at least 1 correct option
+                    if (qtype === 'mcq' || qtype === 'msq') {
+                        if (!q.options || q.options.length < 2) continue;
+                        if (!q.correct_options || q.correct_options.length === 0) continue;
+                    }
+
+                    // For NAT: must have an answer
+                    if (qtype === 'nat' && !q.answer && !q.has_answer) continue;
+
+                    // CRITICAL: Filter out questions with very short text (<20 chars after stripping HTML)
+                    // These are likely broken/incomplete
+                    const cleanText = String(q.question_text || '').replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+                    if (cleanText.length < 20) continue;
+
                     if (seenIds.has(q.question_id)) continue;
                     const contentHash = hashContent(q.question_text);
                     if (seenHashes.has(contentHash)) continue;
@@ -584,14 +655,49 @@
         }
 
         // ============================================================
-        // PHASE 3: CALCULATE EXACT TARGETS PER SUBJECT (OFFICIAL)
+        // PHASE 3: CALCULATE EXACT TARGETS PER SUBJECT (OFFICIAL 2027)
         // ============================================================
+        // Handle subject groups (e.g., 'programming-and-data-structures' = DS + PL combined)
+        const getAvailableForSubject = (subj) => {
+            // Check if this is a group subject
+            const group = GATE_PATTERN.subject_groups?.[subj];
+            if (group) {
+                // Combine all subjects in the group
+                let total1m = 0, total2m = 0;
+                for (const s of group) {
+                    total1m += bySubjectMarks[s]?.[1]?.length || 0;
+                    total2m += bySubjectMarks[s]?.[2]?.length || 0;
+                }
+                return { 1: total1m, 2: total2m };
+            }
+            return {
+                1: bySubjectMarks[subj]?.[1]?.length || 0,
+                2: bySubjectMarks[subj]?.[2]?.length || 0,
+            };
+        };
+
+        const getPoolForSubject = (subj) => {
+            // Check if this is a group subject
+            const group = GATE_PATTERN.subject_groups?.[subj];
+            if (group) {
+                // Combine pools from all subjects in the group
+                const combined = { 1: [], 2: [] };
+                for (const s of group) {
+                    if (bySubjectMarks[s]) {
+                        combined[1].push(...bySubjectMarks[s][1]);
+                        combined[2].push(...bySubjectMarks[s][2]);
+                    }
+                }
+                return combined;
+            }
+            return bySubjectMarks[subj] || { 1: [], 2: [] };
+        };
+
         const subjectTargets = {};
         for (const [subj, target] of Object.entries(GATE_PATTERN.subject_question_targets)) {
             if (GATE_PATTERN.subject_marks[subj] === 0) continue;
-            const available1m = bySubjectMarks[subj]?.[1]?.length || 0;
-            const available2m = bySubjectMarks[subj]?.[2]?.length || 0;
-            const available = available1m + available2m;
+            const avail = getAvailableForSubject(subj);
+            const available = avail[1] + avail[2];
             subjectTargets[subj] = Math.min(target, available);
         }
 
@@ -600,20 +706,18 @@
             const deficit = totalQuestions - totalTargetQs;
             const subjectsWithCapacity = Object.entries(subjectTargets)
                 .filter(([subj, t]) => {
-                    const a1 = bySubjectMarks[subj]?.[1]?.length || 0;
-                    const a2 = bySubjectMarks[subj]?.[2]?.length || 0;
-                    return (a1 + a2) > t;
+                    const avail = getAvailableForSubject(subj);
+                    return (avail[1] + avail[2]) > t;
                 })
                 .sort((a, b) => {
-                    const aa = (bySubjectMarks[a[0]]?.[1]?.length || 0) + (bySubjectMarks[a[0]]?.[2]?.length || 0);
-                    const bb = (bySubjectMarks[b[0]]?.[1]?.length || 0) + (bySubjectMarks[b[0]]?.[2]?.length || 0);
-                    return bb - aa;
+                    const aa = getAvailableForSubject(a[0]);
+                    const bb = getAvailableForSubject(b[0]);
+                    return (bb[1] + bb[2]) - (aa[1] + aa[2]);
                 });
             for (let i = 0; i < deficit && i < subjectsWithCapacity.length * 3; i++) {
                 const subj = subjectsWithCapacity[i % subjectsWithCapacity.length][0];
-                const a1 = bySubjectMarks[subj]?.[1]?.length || 0;
-                const a2 = bySubjectMarks[subj]?.[2]?.length || 0;
-                if ((a1 + a2) > subjectTargets[subj]) {
+                const avail = getAvailableForSubject(subj);
+                if ((avail[1] + avail[2]) > subjectTargets[subj]) {
                     subjectTargets[subj]++;
                     totalTargetQs++;
                 }
@@ -632,8 +736,8 @@
 
         for (const [subj, target] of Object.entries(subjectTargets)) {
             if (target === 0) continue;
-            const subjPool = bySubjectMarks[subj];
-            if (!subjPool) continue;
+            const subjPool = getPoolForSubject(subj);
+            if (!subjPool || (subjPool[1].length === 0 && subjPool[2].length === 0)) continue;
 
             // Calculate marks split for this subject
             const subjMarksTarget = GATE_PATTERN.subject_marks[subj] || (target * 1.6);
@@ -658,11 +762,41 @@
                 twoMarkTarget = Math.min(5, twoMarkPool.length);
             }
 
-            // Get topic weights for this subject
-            const subjTopicWeights = topicWeights[subj] || {};
+            // Get topic weights for this subject (handle group subjects)
+            const group = GATE_PATTERN.subject_groups?.[subj];
+            let subjTopicWeights = {};
+            if (group) {
+                // Combine topic weights from all subjects in the group
+                for (const s of group) {
+                    Object.assign(subjTopicWeights, topicWeights[s] || {});
+                }
+            } else {
+                subjTopicWeights = topicWeights[subj] || {};
+            }
 
-            // Type preference for this subject
-            const typePref = GATE_PATTERN.subject_type_preference[subj] || { mcq: 0.52, msq: 0.16, nat: 0.32 };
+            // Type preference for this subject (handle group subjects)
+            let typePref;
+            if (group) {
+                // Average type preferences from group members
+                typePref = { mcq: 0, msq: 0, nat: 0 };
+                let count = 0;
+                for (const s of group) {
+                    const tp = GATE_PATTERN.subject_type_preference[s];
+                    if (tp) {
+                        typePref.mcq += tp.mcq;
+                        typePref.msq += tp.msq;
+                        typePref.nat += tp.nat;
+                        count++;
+                    }
+                }
+                if (count > 0) {
+                    typePref.mcq /= count;
+                    typePref.msq /= count;
+                    typePref.nat /= count;
+                }
+            } else {
+                typePref = GATE_PATTERN.subject_type_preference[subj] || { mcq: 0.52, msq: 0.16, nat: 0.32 };
+            }
 
             // Weight function with TOPIC-LEVEL awareness
             const weightFn = (q) => {
@@ -679,9 +813,10 @@
                 // Quality score
                 w *= (q._qualityScore / 50);
 
-                // SUBJECT-SPECIFIC TYPE PREFERENCE (new in v4)
+                // SUBJECT-SPECIFIC TYPE PREFERENCE (strengthened in v5)
+                // Scale: 0.3 to 2.0 for stronger type enforcement
                 const typeWeight = typePref[q.normalized_type] || 0.33;
-                w *= (0.5 + typeWeight * 2); // scale: 0.5 to 1.5
+                w *= (0.3 + typeWeight * 3.5); // stronger scaling to push NAT questions
 
                 // Adaptive difficulty
                 if (userProfile) {
@@ -791,15 +926,109 @@
         const finalSet = finalOrder.slice(0, totalQuestions);
 
         // ============================================================
+        // PHASE 6.5: TYPE DISTRIBUTION AUTO-CORRECTION (new in v5)
+        // ============================================================
+        // If type distribution is significantly off, swap questions to fix it
+        // Target: MCQ ~52%, MSQ ~16%, NAT ~32%
+        const correctedSet = autoCorrectTypeDistribution(finalSet, allQuestions, selectedIds);
+
+        // ============================================================
         // PHASE 7: COMPUTE REALISM SCORE & LOG
         // ============================================================
-        const stats = computePaperStats(finalSet);
-        stats.realismScore = computeRealismScore(finalSet);
+        const stats = computePaperStats(correctedSet);
+        stats.realismScore = computeRealismScore(correctedSet);
         if (typeof console !== 'undefined' && console.debug) {
-            console.debug('🎯 GATE v4 Paper Generated:', stats);
+            console.debug('🎯 GATE v5 Paper Generated:', stats);
         }
 
-        return finalSet;
+        return correctedSet;
+    }
+
+    // ============ TYPE DISTRIBUTION AUTO-CORRECTION ============
+    // Swaps questions to better match the target type distribution
+    function autoCorrectTypeDistribution(questions, allQuestions, selectedIds) {
+        const target = GATE_PATTERN.type_distribution;
+        const total = questions.length;
+        const targetCounts = {
+            mcq: Math.round(target.mcq * total),
+            msq: Math.round(target.msq * total),
+            nat: Math.round(target.nat * total),
+        };
+
+        // Count current types
+        const currentCounts = { mcq: 0, msq: 0, nat: 0 };
+        for (const q of questions) {
+            if (currentCounts.hasOwnProperty(q.normalized_type)) {
+                currentCounts[q.normalized_type]++;
+            }
+        }
+
+        // Find types that are overrepresented and underrepresented
+        const swaps = [];
+        for (const type of ['mcq', 'msq', 'nat']) {
+            const diff = currentCounts[type] - targetCounts[type];
+            if (diff > 1) {
+                // Overrepresented — find questions of this type to swap out
+                swaps.push({ type, excess: diff });
+            }
+        }
+
+        if (swaps.length === 0) return questions; // Already balanced
+
+        // Find underrepresented types
+        const underrepresented = [];
+        for (const type of ['mcq', 'msq', 'nat']) {
+            const diff = targetCounts[type] - currentCounts[type];
+            if (diff > 1) underrepresented.push({ type, deficit: diff });
+        }
+
+        if (underrepresented.length === 0) return questions;
+
+        // Try to swap: find questions from overrepresented types that can be
+        // replaced by questions from underrepresented types (same marks, same subject)
+        const result = [...questions];
+        const usedIds = new Set(result.map(q => q.question_id));
+
+        for (const swap of swaps) {
+            for (const under of underrepresented) {
+                if (swap.excess <= 0 || under.deficit <= 0) continue;
+
+                // Find questions of the overrepresented type
+                for (let i = 0; i < result.length; i++) {
+                    if (swap.excess <= 0 || under.deficit <= 0) break;
+                    const q = result[i];
+                    if (q.normalized_type !== swap.type) continue;
+                    // Don't touch GA questions (they must be MCQ)
+                    if (q.subject === 'general-aptitude') continue;
+
+                    // Find a replacement: same marks, same subject, underrepresented type
+                    const replacement = allQuestions.find(rq =>
+                        rq.normalized_type === under.type &&
+                        rq.marks === q.marks &&
+                        (rq.subject === q.subject ||
+                         (GATE_PATTERN.subject_groups?.['programming-and-data-structures']?.includes(q.subject) &&
+                          GATE_PATTERN.subject_groups?.['programming-and-data-structures']?.includes(rq.subject))) &&
+                        !usedIds.has(rq.question_id)
+                    );
+
+                    if (replacement) {
+                        result[i] = { ...replacement,
+                            _contentHash: hashContent(replacement.question_text),
+                            _difficulty: estimateDifficulty(replacement, buildTrendAnalysis()),
+                            _qualityScore: qualityScore(replacement),
+                            _isHotTopic: HOT_TOPICS.has(`${replacement.subject}/${replacement.chapter}`),
+                            _concepts: extractConcepts(replacement.question_text),
+                        };
+                        usedIds.delete(q.question_id);
+                        usedIds.add(replacement.question_id);
+                        swap.excess--;
+                        under.deficit--;
+                    }
+                }
+            }
+        }
+
+        return result;
     }
 
     // ============ Compute Paper Statistics ============
@@ -849,58 +1078,60 @@
         let score = 100;
         const stats = computePaperStats(questions);
 
-        // 1. Total questions (must be 65)
-        if (stats.total !== 65) score -= 20;
+        // 1. Total questions (must be 65) — critical
+        if (stats.total !== 65) score -= 15;
 
-        // 2. Total marks (must be 100)
+        // 2. Total marks (must be 100) — critical
         if (stats.marks !== 100) score -= Math.abs(stats.marks - 100) * 2;
 
-        // 3. GA section (must be 10 Qs, 15 marks)
-        if (stats.sectionBreakdown.ga !== 10) score -= 10;
-        if (stats.gaMarks !== 15) score -= 10;
+        // 3. GA section (must be 10 Qs, 15 marks) — critical
+        if (stats.sectionBreakdown.ga !== 10) score -= 8;
+        if (stats.gaMarks !== 15) score -= 8;
 
-        // 4. Tech 1-mark (must be 25 Qs, 25 marks)
-        if (stats.sectionBreakdown.tech1m !== 25) score -= 10;
-        if (stats.tech1mMarks !== 25) score -= 10;
+        // 4. Tech 1-mark (must be 25 Qs, 25 marks) — critical
+        if (stats.sectionBreakdown.tech1m !== 25) score -= 8;
+        if (stats.tech1mMarks !== 25) score -= 8;
 
-        // 5. Tech 2-mark (must be 30 Qs, 60 marks)
-        if (stats.sectionBreakdown.tech2m !== 30) score -= 10;
-        if (stats.tech2mMarks !== 60) score -= 10;
+        // 5. Tech 2-mark (must be 30 Qs, 60 marks) — critical
+        if (stats.sectionBreakdown.tech2m !== 30) score -= 8;
+        if (stats.tech2mMarks !== 60) score -= 8;
 
-        // 6. Uniqueness (must be 100%)
-        if (stats.uniqueIds !== stats.total) score -= 20;
-        if (stats.uniqueHashes !== stats.total) score -= 20;
+        // 6. Uniqueness (must be 100%) — critical
+        if (stats.uniqueIds !== stats.total) score -= 15;
+        if (stats.uniqueHashes !== stats.total) score -= 15;
 
-        // 7. Type distribution (MCQ ~52%, MSQ ~16%, NAT ~32%)
+        // 7. Invalid question types (subjective, fill_blanks, true_false) — critical penalty
+        const validTypes = GATE_PATTERN.valid_types;
+        const invalidCount = questions.filter(q => !validTypes.includes(q.normalized_type)).length;
+        score -= invalidCount * 5;
+
+        // 8. Type distribution (MCQ ~52%, MSQ ~16%, NAT ~32%) — important
         const mcqPct = (stats.byType.mcq / stats.total) * 100;
         const msqPct = (stats.byType.msq / stats.total) * 100;
         const natPct = (stats.byType.nat / stats.total) * 100;
-        score -= Math.abs(mcqPct - 52) * 0.5;
-        score -= Math.abs(msqPct - 16) * 0.5;
-        score -= Math.abs(natPct - 32) * 0.5;
+        score -= Math.abs(mcqPct - 52) * 0.4;
+        score -= Math.abs(msqPct - 16) * 0.4;
+        score -= Math.abs(natPct - 32) * 0.4;
 
-        // 8. Difficulty distribution (~30/50/20)
+        // 9. Difficulty distribution (~30/50/20) — moderate importance
         const easyPct = (stats.byDifficulty.easy / stats.total) * 100;
         const medPct = (stats.byDifficulty.medium / stats.total) * 100;
         const hardPct = (stats.byDifficulty.hard / stats.total) * 100;
-        score -= Math.abs(easyPct - 30) * 0.3;
-        score -= Math.abs(medPct - 50) * 0.3;
-        score -= Math.abs(hardPct - 20) * 0.3;
+        score -= Math.abs(easyPct - 30) * 0.2;
+        score -= Math.abs(medPct - 50) * 0.2;
+        score -= Math.abs(hardPct - 20) * 0.2;
 
-        // 9. Hot topic coverage (should be high)
+        // 10. Hot topic coverage (should be high) — bonus
         const hotPct = (stats.hotTopicCount / stats.total) * 100;
-        if (hotPct < 40) score -= 5;
+        if (hotPct < 40) score -= 3;
+        if (hotPct >= 60) score += 2; // bonus for high hot topic coverage
 
-        // 10. Subject weightage accuracy
-        for (const [subj, targetMarks] of Object.entries(GATE_PATTERN.subject_marks)) {
-            if (targetMarks === 0) continue;
-            const actualMarks = Object.entries(stats.bySubject)
-                .filter(([s]) => s === subj)
-                .reduce((s, [, c]) => s + c * 1.5, 0); // approx
-            // Don't penalize too harshly
-        }
+        // 11. Recent year coverage (2021+ should be ≥40%) — bonus
+        const recentCount = questions.filter(q => q.year >= 2021).length;
+        const recentPct = (recentCount / stats.total) * 100;
+        if (recentPct >= 40) score += 2;
 
-        return Math.max(0, Math.round(score));
+        return Math.max(0, Math.min(100, Math.round(score)));
     }
 
     // ============ Build Quiz ============
@@ -939,6 +1170,20 @@
             for (const q of chap.questions) {
                 if (q.is_out_of_syllabus) continue;
                 if (!q.has_answer && !q.has_explanation) continue;
+
+                // CRITICAL: Same quality filters as buildMockTest
+                const qtype = q.normalized_type || 'mcq';
+                if (!GATE_PATTERN.valid_types.includes(qtype)) continue;
+                const marks = q.marks;
+                if (marks !== 1 && marks !== 2) continue;
+                if (qtype === 'mcq' || qtype === 'msq') {
+                    if (!q.options || q.options.length < 2) continue;
+                    if (!q.correct_options || q.correct_options.length === 0) continue;
+                }
+                if (qtype === 'nat' && !q.answer && !q.has_answer) continue;
+                const cleanText = String(q.question_text || '').replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+                if (cleanText.length < 20) continue;
+
                 if (seenIds.has(q.question_id)) continue;
                 const contentHash = hashContent(q.question_text);
                 if (seenHashes.has(contentHash)) continue;

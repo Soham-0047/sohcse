@@ -17,7 +17,7 @@
 /* GATE Exam-style Layout */
 .exam-layout {
     display: grid;
-    grid-template-columns: 1fr 300px;
+    grid-template-columns: 1fr 280px;
     gap: 0;
     min-height: calc(100vh - 64px);
 }
@@ -25,15 +25,113 @@
 .exam-sidebar {
     background: var(--bg-card);
     border-left: 1px solid var(--border);
-    padding: 16px;
+    padding: 14px;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 12px;
+    max-height: calc(100vh - 64px);
 }
 @media (max-width: 900px) {
     .exam-layout { grid-template-columns: 1fr; }
-    .exam-sidebar { border-left: none; border-top: 1px solid var(--border); max-height: 300px; }
+    .exam-sidebar {
+        border-left: none;
+        border-top: 1px solid var(--border);
+        max-height: 240px;
+    }
+    .exam-sidebar .palette-grid { grid-template-columns: repeat(10, 1fr); }
+}
+
+/* ============ Floating Calculator (always accessible) ============ */
+.floating-calc {
+    position: fixed;
+    bottom: 80px;
+    right: 24px;
+    z-index: 1000;
+    width: 280px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.25);
+    transform: translateY(20px) scale(0.95);
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 0.25s var(--ease-out), opacity 0.2s;
+}
+.floating-calc.visible {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+    pointer-events: all;
+}
+.floating-calc-header {
+    background: var(--grad-brand);
+    color: white;
+    padding: 10px 14px;
+    border-radius: 14px 14px 0 0;
+    font-size: 0.82rem;
+    font-weight: 700;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: move;
+    user-select: none;
+}
+.floating-calc-close {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.floating-calc-close:hover { background: rgba(255, 255, 255, 0.35); }
+.floating-calc-body { padding: 10px; }
+.floating-calc .side-calc-display {
+    background: #0f172a;
+    color: #4ade80;
+    padding: 12px 14px;
+    border-radius: 8px;
+    font-family: 'Courier New', monospace;
+    text-align: right;
+    font-size: 1.3rem;
+    min-height: 44px;
+    margin-bottom: 8px;
+    word-break: break-all;
+    font-weight: 700;
+}
+.floating-calc .side-calc-buttons {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 4px;
+}
+.floating-calc .calc-key {
+    padding: 10px 2px;
+    border: none;
+    border-radius: 6px;
+    background: var(--bg-light);
+    color: var(--text);
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.1s, transform 0.05s;
+    font-family: inherit;
+}
+.floating-calc .calc-key:hover { background: var(--primary); color: white; }
+.floating-calc .calc-key:active { transform: scale(0.94); }
+.floating-calc .calc-key.op { background: rgba(102, 126, 234, 0.12); color: var(--primary); }
+.floating-calc .calc-key.eq { background: var(--grad-brand); color: white; grid-column: span 2; }
+.floating-calc .calc-key.clear { background: rgba(239, 68, 68, 0.12); color: var(--danger); }
+@media (max-width: 600px) {
+    .floating-calc {
+        width: calc(100vw - 32px);
+        right: 16px;
+        bottom: 90px;
+    }
 }
 
 /* Exam Timer Bar */
@@ -452,7 +550,7 @@ let mockState = {
     timeLeft: TIME_LIMIT,
     startTime: null,
     timerInterval: null,
-    calcVisible: true,
+    calcVisible: false,
     calcExpr: '',
     calcDisplay: '0',
 };
@@ -482,26 +580,26 @@ function renderSetup() {
                         <div class="setup-pattern-card"><div class="setup-pattern-value">−1/3</div><div class="setup-pattern-label">Neg. Mark</div></div>
                     </div>
 
-                    <!-- Official Subject Weightage Table -->
+                    <!-- Official 2027 Subject Weightage Table -->
                     <div style="margin-bottom:20px;">
-                        <div style="font-size:0.82rem;font-weight:700;color:var(--text);margin-bottom:8px;">🎯 Official Subject Weightage (2021-2026 analysis)</div>
+                        <div style="font-size:0.82rem;font-weight:700;color:var(--text);margin-bottom:8px;">🎯 Official GATE CSE 2027 Subject Weightage</div>
+                        <div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:8px;">Source: <a href="https://www.pw.live/gate/exams/gate-cse-exam-pattern" target="_blank" rel="noopener" style="color:var(--primary);">PW.live GATE CSE Exam Pattern</a></div>
                         <table class="cutoff-table" style="font-size:0.78rem;">
                             <thead>
                                 <tr><th>Section</th><th>Subject</th><th>Marks</th><th>Qs</th></tr>
                             </thead>
                             <tbody>
-                                <tr style="background:rgba(102,126,234,0.05);"><td rowspan="1"><strong>GA</strong></td><td>General Aptitude</td><td><strong>15</strong></td><td>10</td></tr>
-                                <tr style="background:rgba(244,114,182,0.05);"><td rowspan="1"><strong>Math</strong></td><td>Discrete Mathematics</td><td><strong>13</strong></td><td>8</td></tr>
-                                <tr style="background:rgba(16,185,129,0.05);"><td rowspan="10"><strong>Core CS (72)</strong></td><td>Operating Systems</td><td><strong>8</strong></td><td>5</td></tr>
-                                <tr style="background:rgba(16,185,129,0.05);"><td>Theory of Computation</td><td><strong>8</strong></td><td>5</td></tr>
-                                <tr style="background:rgba(16,185,129,0.05);"><td>Computer Organization</td><td><strong>8</strong></td><td>5</td></tr>
-                                <tr style="background:rgba(16,185,129,0.05);"><td>Computer Networks</td><td><strong>8</strong></td><td>5</td></tr>
-                                <tr style="background:rgba(16,185,129,0.05);"><td>Database Management</td><td><strong>7</strong></td><td>5</td></tr>
-                                <tr style="background:rgba(16,185,129,0.05);"><td>Data Structures</td><td><strong>7</strong></td><td>5</td></tr>
-                                <tr style="background:rgba(16,185,129,0.05);"><td>Digital Logic</td><td><strong>7</strong></td><td>4</td></tr>
-                                <tr style="background:rgba(16,185,129,0.05);"><td>Programming & C</td><td><strong>7</strong></td><td>4</td></tr>
-                                <tr style="background:rgba(16,185,129,0.05);"><td>Algorithms</td><td><strong>6</strong></td><td>4</td></tr>
-                                <tr style="background:rgba(16,185,129,0.05);"><td>Compiler Design</td><td><strong>6</strong></td><td>4</td></tr>
+                                <tr style="background:rgba(102,126,234,0.05);"><td><strong>GA</strong></td><td>General Aptitude</td><td><strong>15</strong></td><td>10</td></tr>
+                                <tr style="background:rgba(244,114,182,0.05);"><td><strong>Math</strong></td><td>Engineering Mathematics (Discrete)</td><td><strong>13</strong></td><td>8</td></tr>
+                                <tr style="background:rgba(16,185,129,0.05);"><td rowspan="9"><strong>Core CS (72)</strong></td><td>Computer Networks</td><td><strong>10</strong></td><td>6</td></tr>
+                                <tr style="background:rgba(16,185,129,0.05);"><td>Operating System</td><td><strong>9</strong></td><td>6</td></tr>
+                                <tr style="background:rgba(16,185,129,0.05);"><td>Computer Organization & Architecture</td><td><strong>8</strong></td><td>5</td></tr>
+                                <tr style="background:rgba(16,185,129,0.05);"><td>Programming & Data Structures</td><td><strong>15</strong></td><td>9</td></tr>
+                                <tr style="background:rgba(16,185,129,0.05);"><td>Algorithms</td><td><strong>7</strong></td><td>5</td></tr>
+                                <tr style="background:rgba(16,185,129,0.05);"><td>Databases</td><td><strong>7</strong></td><td>5</td></tr>
+                                <tr style="background:rgba(16,185,129,0.05);"><td>Digital Logic</td><td><strong>6</strong></td><td>4</td></tr>
+                                <tr style="background:rgba(16,185,129,0.05);"><td>Theory of Computation</td><td><strong>6</strong></td><td>4</td></tr>
+                                <tr style="background:rgba(16,185,129,0.05);"><td>Compiler Design</td><td><strong>4</strong></td><td>3</td></tr>
                                 <tr style="background:var(--bg-light);"><td colspan="2"><strong>TOTAL</strong></td><td><strong>100</strong></td><td><strong>65</strong></td></tr>
                             </tbody>
                         </table>
@@ -801,7 +899,7 @@ function renderExam() {
                 <div class="exam-timer-time" id="timerTime">3:00:00</div>
             </div>
             <div class="exam-timer-actions">
-                <button class="exam-timer-btn" onclick="toggleCalc()">🧮 Calculator</button>
+                <button class="exam-timer-btn ${mockState.calcVisible ? 'active' : ''}" onclick="toggleCalc()" id="calcToggleBtn">🧮 ${mockState.calcVisible ? 'Hide Calc' : 'Calculator'}</button>
                 <button class="exam-timer-btn submit" onclick="if(confirm('Submit test? You have answered ${Object.keys(mockState.answers).length} of ${mockState.questions.length} questions.')) submitMockTest()">✓ Submit</button>
             </div>
         </div>
@@ -824,7 +922,7 @@ function renderExam() {
                                     ? (Array.isArray(userAns) && userAns.includes(opt.identifier))
                                     : (userAns === opt.identifier);
                                 return `
-                                    <div class="exam-option ${isSelected ? 'selected' : ''}" onclick="selectAnswer('${opt.identifier}', ${isMSQ})">
+                                    <div class="exam-option ${isSelected ? 'selected' : ''}" data-identifier="${opt.identifier}" onclick="selectAnswer('${opt.identifier}', ${isMSQ})">
                                         <div class="${isMSQ ? 'exam-option-checkbox' : 'exam-option-radio'}"></div>
                                         <div class="exam-option-content q-content">${sanitize(opt.content)}</div>
                                     </div>
@@ -879,52 +977,161 @@ function renderExam() {
                     </div>
                 </div>
 
-                <!-- Side Calculator -->
-                <div class="side-calc ${mockState.calcVisible ? '' : 'collapsed'}" id="sideCalc">
-                    <div class="side-calc-header">
-                        🧮 Calculator
-                        <button class="side-calc-toggle" onclick="toggleCalc()">${mockState.calcVisible ? 'Hide' : 'Show'}</button>
-                    </div>
-                    <div class="side-calc-display" id="calcDisplay">0</div>
-                    <div class="side-calc-buttons">
-                        <button class="calc-key clear" onclick="calcClear()">C</button>
-                        <button class="calc-key op" onclick="calcInput('(')">(</button>
-                        <button class="calc-key op" onclick="calcInput(')')">)</button>
-                        <button class="calc-key op" onclick="calcBackspace()">⌫</button>
-                        <button class="calc-key op" onclick="calcInput('/')">÷</button>
-                        <button class="calc-key" onclick="calcInput('7')">7</button>
-                        <button class="calc-key" onclick="calcInput('8')">8</button>
-                        <button class="calc-key" onclick="calcInput('9')">9</button>
-                        <button class="calc-key op" onclick="calcInput('*')">×</button>
-                        <button class="calc-key" onclick="calcFn('sqrt')">√</button>
-                        <button class="calc-key" onclick="calcInput('4')">4</button>
-                        <button class="calc-key" onclick="calcInput('5')">5</button>
-                        <button class="calc-key" onclick="calcInput('6')">6</button>
-                        <button class="calc-key op" onclick="calcInput('-')">−</button>
-                        <button class="calc-key" onclick="calcFn('ln')">ln</button>
-                        <button class="calc-key" onclick="calcInput('1')">1</button>
-                        <button class="calc-key" onclick="calcInput('2')">2</button>
-                        <button class="calc-key" onclick="calcInput('3')">3</button>
-                        <button class="calc-key op" onclick="calcInput('+')">+</button>
-                        <button class="calc-key" onclick="calcFn('log')">log</button>
-                        <button class="calc-key" onclick="calcInput('0')">0</button>
-                        <button class="calc-key" onclick="calcInput('.')">.</button>
-                        <button class="calc-key" onclick="calcFn('pow')">x²</button>
-                        <button class="calc-key eq" onclick="calcEquals()" style="grid-column:span 2;">=</button>
-                    </div>
+                <!-- Side Calculator removed from sidebar — now a floating panel -->
+                <div style="text-align:center;padding:8px;color:var(--text-muted);font-size:0.74rem;">
+                    💡 Click <strong>🧮 Calculator</strong> in the top bar to open the calculator
                 </div>
             </div>
         </div>
     `;
+    // Inject floating calculator (always accessible from anywhere)
+    injectFloatingCalculator();
     updateTimer();
     renderMath();
+}
+
+// ============ Floating Calculator (always accessible) ============
+function injectFloatingCalculator() {
+    // Remove existing
+    const existing = document.getElementById('floatingCalc');
+    if (existing) existing.remove();
+
+    const calc = document.createElement('div');
+    calc.id = 'floatingCalc';
+    calc.className = 'floating-calc';
+    calc.innerHTML = `
+        <div class="floating-calc-header" id="calcDragHandle">
+            <span>🧮 Calculator</span>
+            <button class="floating-calc-close" onclick="toggleCalc()" aria-label="Close calculator">✕</button>
+        </div>
+        <div class="floating-calc-body">
+            <div class="side-calc-display" id="calcDisplay">0</div>
+            <div class="side-calc-buttons">
+                <button class="calc-key clear" onclick="calcClear()">C</button>
+                <button class="calc-key op" onclick="calcInput('(')">(</button>
+                <button class="calc-key op" onclick="calcInput(')')">)</button>
+                <button class="calc-key op" onclick="calcBackspace()">⌫</button>
+                <button class="calc-key op" onclick="calcInput('/')">÷</button>
+                <button class="calc-key" onclick="calcInput('7')">7</button>
+                <button class="calc-key" onclick="calcInput('8')">8</button>
+                <button class="calc-key" onclick="calcInput('9')">9</button>
+                <button class="calc-key op" onclick="calcInput('*')">×</button>
+                <button class="calc-key" onclick="calcFn('sqrt')">√</button>
+                <button class="calc-key" onclick="calcInput('4')">4</button>
+                <button class="calc-key" onclick="calcInput('5')">5</button>
+                <button class="calc-key" onclick="calcInput('6')">6</button>
+                <button class="calc-key op" onclick="calcInput('-')">−</button>
+                <button class="calc-key" onclick="calcFn('ln')">ln</button>
+                <button class="calc-key" onclick="calcInput('1')">1</button>
+                <button class="calc-key" onclick="calcInput('2')">2</button>
+                <button class="calc-key" onclick="calcInput('3')">3</button>
+                <button class="calc-key op" onclick="calcInput('+')">+</button>
+                <button class="calc-key" onclick="calcFn('log')">log</button>
+                <button class="calc-key" onclick="calcInput('0')">0</button>
+                <button class="calc-key" onclick="calcInput('.')">.</button>
+                <button class="calc-key" onclick="calcFn('pow')">x²</button>
+                <button class="calc-key eq" onclick="calcEquals()">=</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(calc);
+
+    // Make draggable
+    makeCalcDraggable(calc);
+
+    // Show if calcVisible
+    if (mockState.calcVisible) {
+        requestAnimationFrame(() => calc.classList.add('visible'));
+    }
+}
+
+function makeCalcDraggable(calc) {
+    const handle = document.getElementById('calcDragHandle');
+    if (!handle) return;
+    let isDragging = false;
+    let startX, startY, startLeft, startTop;
+
+    handle.addEventListener('mousedown', (e) => {
+        if (e.target.classList.contains('floating-calc-close')) return;
+        isDragging = true;
+        const rect = calc.getBoundingClientRect();
+        startX = e.clientX;
+        startY = e.clientY;
+        startLeft = rect.left;
+        startTop = rect.top;
+        calc.style.transition = 'none';
+        e.preventDefault();
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+        const newLeft = Math.max(0, Math.min(window.innerWidth - calc.offsetWidth, startLeft + dx));
+        const newTop = Math.max(0, Math.min(window.innerHeight - calc.offsetHeight, startTop + dy));
+        calc.style.left = newLeft + 'px';
+        calc.style.top = newTop + 'px';
+        calc.style.right = 'auto';
+        calc.style.bottom = 'auto';
+    });
+
+    document.addEventListener('mouseup', () => {
+        if (isDragging) {
+            isDragging = false;
+            calc.style.transition = '';
+        }
+    });
+
+    // Touch support
+    handle.addEventListener('touchstart', (e) => {
+        if (e.target.classList.contains('floating-calc-close')) return;
+        isDragging = true;
+        const rect = calc.getBoundingClientRect();
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+        startLeft = rect.left;
+        startTop = rect.top;
+        calc.style.transition = 'none';
+    }, { passive: true });
+
+    document.addEventListener('touchmove', (e) => {
+        if (!isDragging) return;
+        const dx = e.touches[0].clientX - startX;
+        const dy = e.touches[0].clientY - startY;
+        const newLeft = Math.max(0, Math.min(window.innerWidth - calc.offsetWidth, startLeft + dx));
+        const newTop = Math.max(0, Math.min(window.innerHeight - calc.offsetHeight, startTop + dy));
+        calc.style.left = newLeft + 'px';
+        calc.style.top = newTop + 'px';
+        calc.style.right = 'auto';
+        calc.style.bottom = 'auto';
+    }, { passive: true });
+
+    document.addEventListener('touchend', () => {
+        if (isDragging) {
+            isDragging = false;
+            calc.style.transition = '';
+        }
+    });
 }
 
 // ============ Side Calculator ============
 function toggleCalc() {
     mockState.calcVisible = !mockState.calcVisible;
-    const calc = document.getElementById('sideCalc');
-    if (calc) calc.classList.toggle('collapsed', !mockState.calcVisible);
+    const calc = document.getElementById('floatingCalc');
+    if (calc) {
+        if (mockState.calcVisible) {
+            calc.classList.add('visible');
+        } else {
+            calc.classList.remove('visible');
+        }
+    }
+    // Update button text if visible
+    const btns = document.querySelectorAll('.exam-timer-btn');
+    btns.forEach(b => {
+        if (b.textContent.includes('Calculator')) {
+            b.textContent = mockState.calcVisible ? '🧮 Hide Calc' : '🧮 Calculator';
+        }
+    });
 }
 
 function calcInput(val) {
@@ -988,27 +1195,97 @@ function selectAnswer(identifier, isMSQ) {
     } else {
         mockState.answers[mockState.currentQ] = identifier;
     }
-    renderExam();
+    // Update only the option visuals (not full re-render)
+    updateOptionSelection();
+    updatePaletteCell(mockState.currentQ);
 }
 
-function setNatAnswer(val) { mockState.answers[mockState.currentQ] = val.trim(); }
+function setNatAnswer(val) {
+    mockState.answers[mockState.currentQ] = val.trim();
+    // Don't re-render on every keystroke — just update palette
+    updatePaletteCell(mockState.currentQ);
+}
 
 function clearAnswer() {
     delete mockState.answers[mockState.currentQ];
-    renderExam();
+    // Update options and palette without full re-render
+    updateOptionSelection();
+    updatePaletteCell(mockState.currentQ);
 }
 
 function toggleMark() {
     if (mockState.marked.has(mockState.currentQ)) mockState.marked.delete(mockState.currentQ);
     else mockState.marked.add(mockState.currentQ);
-    renderExam();
+    // Only update palette cell + mark button, not full re-render
+    updatePaletteCell(mockState.currentQ);
+    updateMarkButton();
 }
 
 function goTo(idx) {
     if (idx < 0 || idx >= mockState.questions.length) return;
+    // Update previous palette cell (remove current highlight)
+    const prevCell = document.querySelector('.palette-cell.current');
+    if (prevCell) prevCell.classList.remove('current');
     mockState.currentQ = idx;
+    mockState.visited.add(idx);
+    // Full re-render only when changing question (necessary to show new Q)
     renderExam();
-    document.querySelector('.exam-main').scrollTop = 0;
+    const main = document.querySelector('.exam-main');
+    if (main) main.scrollTop = 0;
+}
+
+// ============ Lightweight DOM updates (avoid full re-render) ============
+function updateOptionSelection() {
+    const userAns = mockState.answers[mockState.currentQ];
+    const isMSQ = mockState.questions[mockState.currentQ].normalized_type === 'msq';
+    document.querySelectorAll('.exam-option').forEach(opt => {
+        const identifier = opt.dataset.identifier;
+        if (!identifier) return;
+        const isSelected = isMSQ
+            ? (Array.isArray(userAns) && userAns.includes(identifier))
+            : (userAns === identifier);
+        opt.classList.toggle('selected', isSelected);
+    });
+}
+
+function updatePaletteCell(idx) {
+    const cells = document.querySelectorAll('.palette-cell');
+    const cell = cells[idx];
+    if (!cell) return;
+    const answered = mockState.answers[idx] !== undefined && mockState.answers[idx] !== '';
+    const marked = mockState.marked.has(idx);
+    cell.classList.remove('answered', 'marked', 'answered-marked', 'not-answered');
+    if (answered && marked) cell.classList.add('answered-marked');
+    else if (answered) cell.classList.add('answered');
+    else if (marked) cell.classList.add('marked');
+    else if (mockState.visited.has(idx)) cell.classList.add('not-answered');
+
+    // Update legend count
+    const legend = document.querySelector('.palette-legend');
+    if (legend) {
+        const answeredCount = Object.keys(mockState.answers).filter(k => mockState.answers[k] !== undefined && mockState.answers[k] !== '').length;
+        const answeredItem = legend.children[0];
+        if (answeredItem) answeredItem.innerHTML = `<div class="palette-legend-dot" style="background:var(--correct);"></div>Answered (${answeredCount})`;
+        const markedItem = legend.children[2];
+        if (markedItem) markedItem.innerHTML = `<div class="palette-legend-dot" style="background:var(--warning);"></div>Marked (${mockState.marked.size})`;
+    }
+
+    // Update submit button answer count
+    const submitBtn = document.querySelector('.exam-timer-btn.submit');
+    if (submitBtn) {
+        const answeredCount = Object.keys(mockState.answers).filter(k => mockState.answers[k] !== undefined && mockState.answers[k] !== '').length;
+        submitBtn.onclick = () => {
+            if (confirm(`Submit test? You have answered ${answeredCount} of ${mockState.questions.length} questions.`)) submitMockTest();
+        };
+    }
+}
+
+function updateMarkButton() {
+    const markBtn = document.querySelector('[onclick="toggleMark()"]');
+    if (markBtn) {
+        const isMarked = mockState.marked.has(mockState.currentQ);
+        markBtn.textContent = isMarked ? '🔖 Unmark' : '🔖 Mark for Review';
+    }
 }
 
 function goToNext() {
