@@ -721,11 +721,17 @@ function toggleExplanation(qid, btn) {
 function sanitize(html) { if (!html) return ''; return DOMPurify.sanitize(html, { ADD_TAGS: ['sup','sub','u','s','strong','em','br','p','span','div','ul','ol','li','code','pre','table','tr','td','th','thead','tbody'], ADD_ATTR: ['target','class','style','colspan','rowspan'] }); }
 
 // Math rendering with retry — handles the case where KaTeX auto-render
-// hasn't loaded yet (deferred scripts). Retries every 100ms up to 5 seconds.
+// hasn't loaded yet (deferred scripts). Retries every 200ms up to 5 seconds.
 let _katexReady = false;
 let _katexRetryQueue = [];
+let _katexRetryCount = 0;
+const _katexMaxRetries = 25; // 25 * 200ms = 5 seconds max
 
 function renderMathIn(el) {
+    if (!el) return;
+    // Skip if already rendered (has katex elements inside)
+    if (el.querySelector('.katex') || el.dataset.katexRendered) return;
+    
     if (typeof renderMathInElement === 'function') {
         _katexReady = true;
         try {
@@ -739,6 +745,7 @@ function renderMathIn(el) {
                 throwOnError: false,
                 ignoredTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
             });
+            el.dataset.katexRendered = '1'; // Mark as rendered
         } catch(e) { console.warn('KaTeX render error:', e); }
     } else if (!_katexReady) {
         // KaTeX not loaded yet — add to retry queue
@@ -748,11 +755,15 @@ function renderMathIn(el) {
 
 // Check periodically if KaTeX has loaded, then process the retry queue
 function _katexRetryLoop() {
+    if (_katexRetryCount >= _katexMaxRetries) return; // Stop after 5 seconds
+    _katexRetryCount++;
+    
     if (typeof renderMathInElement === 'function') {
         _katexReady = true;
-        // Process all queued elements
+        // Process ONLY queued elements (not all .q-content on page)
         while (_katexRetryQueue.length > 0) {
             const el = _katexRetryQueue.shift();
+            if (!el || el.dataset.katexRendered || el.querySelector('.katex')) continue;
             try {
                 renderMathInElement(el, {
                     delimiters: [
@@ -764,26 +775,12 @@ function _katexRetryLoop() {
                     throwOnError: false,
                     ignoredTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
                 });
+                el.dataset.katexRendered = '1';
             } catch(e) {}
         }
-        // Also re-render any .q-content elements that might have been missed
-        document.querySelectorAll('.q-content').forEach(el => {
-            try {
-                renderMathInElement(el, {
-                    delimiters: [
-                        { left: '$$', right: '$$', display: true },
-                        { left: '$', right: '$', display: false },
-                        { left: '\\(', right: '\\)', display: false },
-                        { left: '\\[', right: '\\]', display: true }
-                    ],
-                    throwOnError: false,
-                    ignoredTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
-                });
-            } catch(e) {}
-        });
     } else {
-        // Retry in 100ms, up to 50 times (5 seconds total)
-        setTimeout(_katexRetryLoop, 100);
+        // Retry in 200ms
+        setTimeout(_katexRetryLoop, 200);
     }
 }
 
