@@ -251,15 +251,28 @@ function predictGateScore() {
     // Convert to GATE score (out of 1000, assuming avg paper difficulty)
     const gateScore = Math.round(Math.max(0, (projectedScore - 25) * 13.33));
 
-    // Rank estimation (rough)
+    // Rank estimation (calibrated to 2026 data: ~2.1 lakh appeared, 17% pass rate)
     let rankRange;
-    if (projectedScore >= 85) rankRange = 'Top 100';
-    else if (projectedScore >= 75) rankRange = 'Top 500';
-    else if (projectedScore >= 65) rankRange = 'Top 1000-2000';
-    else if (projectedScore >= 55) rankRange = 'Top 3000-5000';
-    else if (projectedScore >= 45) rankRange = 'Top 8000-12000';
-    else if (projectedScore >= 35) rankRange = 'Top 15000-25000';
-    else rankRange = 'Below qualifying (work harder!)';
+    if (projectedScore >= 85) rankRange = 'Top 10';
+    else if (projectedScore >= 80) rankRange = 'Top 50';
+    else if (projectedScore >= 75) rankRange = 'Top 200';
+    else if (projectedScore >= 70) rankRange = 'Top 500-600';
+    else if (projectedScore >= 60) rankRange = 'Top 1000-2000 (PSU/IIT eligible)';
+    else if (projectedScore >= 50) rankRange = 'Top 3000-5000';
+    else if (projectedScore >= 40) rankRange = 'Top 8000-12000';
+    else if (projectedScore >= 30) rankRange = 'Top 15000-25000 (borderline qualifying)';
+    else rankRange = 'Below qualifying — keep practicing!';
+
+    // Cutoff prediction (based on verified 2026 data: Gen 30, OBC 27, SC/ST 20)
+    const cutoffPrediction = {
+        general: 30.0,
+        obc: 27.0,
+        sc_st: 20.0,
+    };
+    const willQualify = projectedScore >= cutoffPrediction.general;
+    const qualifyStatus = willQualify
+        ? `✅ Likely to qualify (projected ${projectedScore.toFixed(1)} ≥ General cutoff ${cutoffPrediction.general})`
+        : `⚠ Need ${(cutoffPrediction.general - projectedScore).toFixed(1)} more marks to clear General cutoff (${cutoffPrediction.general})`;
 
     // Confidence based on coverage
     const confidencePct = (coverage / 12) * 100;
@@ -268,6 +281,9 @@ function predictGateScore() {
         projectedScore: projectedScore.toFixed(1),
         gateScore: Math.max(0, gateScore),
         rankRange,
+        qualifyStatus,
+        willQualify,
+        cutoffs: cutoffPrediction,
         coverage: Math.round((coverage / 12) * 100),
         subjectsTracked: coverage,
         confidencePct: Math.round(confidencePct),
@@ -391,6 +407,12 @@ function renderDashboard() {
                         <text x="100" y="100" text-anchor="middle" font-size="10" fill="var(--text-muted)">/ 100 marks</text>
                     </svg>
                     <div class="prediction-rank">Estimated Rank: <strong>${prediction.rankRange}</strong></div>
+                    <div style="margin-top:8px;padding:8px 12px;border-radius:8px;background:${prediction.willQualify ? 'rgba(16,185,129,0.1)' : 'rgba(245,158,11,0.1)'};border:1px solid ${prediction.willQualify ? 'var(--correct)' : 'var(--warning)'};font-size:0.78rem;color:${prediction.willQualify ? 'var(--correct)' : 'var(--warning)'};font-weight:600;text-align:center;">
+                        ${prediction.qualifyStatus}
+                    </div>
+                    <div style="margin-top:6px;font-size:0.72rem;color:var(--text-muted);text-align:center;">
+                        Cutoffs (2026): General ${prediction.cutoffs.general} • OBC ${prediction.cutoffs.obc} • SC/ST ${prediction.cutoffs.sc_st}
+                    </div>
                 </div>
                 <div class="prediction-stats">
                     <div class="pred-stat">

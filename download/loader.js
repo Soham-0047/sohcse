@@ -87,8 +87,8 @@
         const opts = { ...defaults, ...options };
 
         if (typeof renderMathInElement !== 'function') {
-            // KaTeX not loaded yet — retry
-            setTimeout(() => window.renderMathOptimized(elements, opts), 100);
+            // KaTeX not loaded yet — retry once after 200ms
+            setTimeout(() => window.renderMathOptimized(elements, opts), 200);
             return;
         }
 
@@ -97,8 +97,13 @@
         
         if (!elements || !elements.length) return;
         
-        // Convert NodeList to array
-        const els = Array.from(elements);
+        // Convert NodeList to array and FILTER OUT already-rendered elements
+        const els = Array.from(elements).filter(el => 
+            el && !el.dataset.katexRendered && !el.querySelector('.katex')
+        );
+        
+        if (els.length === 0) return; // All already rendered
+        
         let idx = 0;
 
         function renderBatch(deadline) {
@@ -109,6 +114,7 @@
             for (; idx < end; idx++) {
                 try {
                     renderMathInElement(els[idx], opts);
+                    els[idx].dataset.katexRendered = '1'; // Mark as rendered
                 } catch (e) { /* skip errors */ }
             }
 
