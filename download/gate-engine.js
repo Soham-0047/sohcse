@@ -613,8 +613,29 @@
             for (const a of (trackerData.attempts || [])) {
                 if (a.timestamp > cutoff && a.question_id) recentIds.add(a.question_id);
             }
+            // Also check mock test history (avoid repeating questions from recent mock tests)
+            const mockHistory = JSON.parse(localStorage.getItem('sohcse_mock_history') || '[]');
+            for (const entry of mockHistory) {
+                if (entry.timestamp > cutoff && entry.questionIds) {
+                    for (const qid of entry.questionIds) recentIds.add(qid);
+                }
+            }
             return recentIds;
         } catch { return new Set(); }
+    }
+
+    // ============ Track mock test question IDs for freshness ============
+    function trackMockTestQuestions(questions) {
+        try {
+            const history = JSON.parse(localStorage.getItem('sohcse_mock_history') || '[]');
+            history.push({
+                timestamp: Date.now(),
+                questionIds: questions.map(q => q.question_id),
+            });
+            // Keep only last 10 mock tests
+            if (history.length > 10) history.shift();
+            localStorage.setItem('sohcse_mock_history', JSON.stringify(history));
+        } catch {}
     }
 
     // ============ BUILD GATE-REALISTIC MOCK TEST (v4) ============
@@ -1592,6 +1613,7 @@
         buildTrendAnalysis,
         computePaperStats,
         computeRealismScore,
+        trackMockTestQuestions,
         hashContent,
         textSimilarity,
         extractConcepts,
@@ -1601,6 +1623,7 @@
         fisherYatesShuffle,
         weightedSample,
         getUserProfile,
+        interleaveSubjects,
     };
 
 })();
