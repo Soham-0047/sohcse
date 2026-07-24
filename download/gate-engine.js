@@ -978,24 +978,44 @@
         }
 
         // ============================================================
-        // PHASE 6: GATE PAPER STRUCTURE WITH DIFFICULTY CURVE
+        // PHASE 6: GATE PAPER STRUCTURE — EXACT REAL GATE ORDERING
         // ============================================================
-        // GATE paper order: GA → Tech 1-mark → Tech 2-mark
-        // Within each section, order by difficulty (easy → medium → hard)
+        // Real GATE paper structure (verified from 2021-2026 papers):
+        //   Q1-Q10:  General Aptitude (5×1m + 5×2m = 15 marks)
+        //   Q11-Q35: Technical 1-mark (25 questions = 25 marks)
+        //   Q36-Q65: Technical 2-mark (30 questions = 60 marks)
+        //
+        // Within each section, subjects are INTERLEAVED (not grouped).
+        // Real GATE doesn't put all Algorithms together then all OS —
+        // it mixes subjects to test breadth across the paper.
+        // Difficulty generally progresses easy→medium→hard within sections.
         let gaQuestions = selected.filter(q => q.subject === 'general-aptitude');
         let techQuestions = selected.filter(q => q.subject !== 'general-aptitude');
 
         const techOneMark = techQuestions.filter(q => q.marks === 1);
         const techTwoMark = techQuestions.filter(q => q.marks === 2);
 
-        // Sort each section by difficulty (easy first, hard last) — GATE style
+        // GA: Sort by difficulty (easy first), then interleave 1m and 2m
+        // Real GATE GA: Q1-5 are 1-mark, Q6-10 are 2-mark
+        const gaOneMark = gaQuestions.filter(q => q.marks === 1);
+        const gaTwoMark = gaQuestions.filter(q => q.marks === 2);
         const diffOrder = { easy: 0, medium: 1, hard: 2 };
-        gaQuestions.sort((a, b) => (diffOrder[a._difficulty] || 1) - (diffOrder[b._difficulty] || 1));
+        gaOneMark.sort((a, b) => (diffOrder[a._difficulty] || 1) - (diffOrder[b._difficulty] || 1));
+        gaTwoMark.sort((a, b) => (diffOrder[a._difficulty] || 1) - (diffOrder[b._difficulty] || 1));
+        gaQuestions = [...gaOneMark, ...gaTwoMark];
+
+        // Tech 1-mark & 2-mark: INTERLEAVE subjects + sort by difficulty
+        // Real GATE alternates subjects within each marks section
         techOneMark.sort((a, b) => (diffOrder[a._difficulty] || 1) - (diffOrder[b._difficulty] || 1));
         techTwoMark.sort((a, b) => (diffOrder[a._difficulty] || 1) - (diffOrder[b._difficulty] || 1));
 
-        // Final paper: GA → Tech1m → Tech2m
-        const finalOrder = [...gaQuestions, ...techOneMark, ...techTwoMark];
+        // Interleave subjects: distribute questions so no two adjacent
+        // questions are from the same subject (like real GATE)
+        const interleaved1m = interleaveSubjects(techOneMark);
+        const interleaved2m = interleaveSubjects(techTwoMark);
+
+        // Final paper: GA(10) → Tech1m(25) → Tech2m(30)
+        const finalOrder = [...gaQuestions, ...interleaved1m, ...interleaved2m];
         const finalSet = finalOrder.slice(0, totalQuestions);
 
         // ============================================================
@@ -1019,6 +1039,39 @@
         }
 
         return finalCorrectedSet;
+    }
+
+    // ============ INTERLEAVE SUBJECTS (v7 — real GATE paper ordering) ============
+    // Distributes questions so no two adjacent questions are from the same subject.
+    // Real GATE papers interleave subjects within each marks section.
+    function interleaveSubjects(questions) {
+        if (questions.length <= 1) return questions;
+
+        // Group by subject
+        const bySubject = {};
+        for (const q of questions) {
+            const subj = q.subject;
+            if (!bySubject[subj]) bySubject[subj] = [];
+            bySubject[subj].push(q);
+        }
+
+        // Sort subject groups by size (largest first) for better interleaving
+        const groups = Object.values(bySubject).sort((a, b) => b.length - a.length);
+        const result = [];
+
+        // Round-robin: pick one from each group in turn
+        let picked = true;
+        while (picked) {
+            picked = false;
+            for (const group of groups) {
+                if (group.length > 0) {
+                    result.push(group.shift());
+                    picked = true;
+                }
+            }
+        }
+
+        return result;
     }
 
     // ============ MARKS AUTO-CORRECTION ============
