@@ -516,44 +516,50 @@
         return selected;
     }
 
-    // ============ Question Difficulty Estimation (v5 — improved balance) ============
+    // ============ Question Difficulty Estimation (v8 — better 30/50/20 calibration) ============
     function estimateDifficulty(question, trends) {
-        let score = 0.10; // lower base for better easy distribution
+        let score = 0.05; // very low base for wider easy range
 
-        // 2-mark questions are harder
-        if (question.marks === 2) score += 0.12;
-        else score += 0.03;
+        // 2-mark questions are harder (stronger signal)
+        if (question.marks === 2) score += 0.15;
+        else score += 0.02;
 
-        // Type difficulty
-        if (question.normalized_type === 'nat') score += 0.06;
-        else if (question.normalized_type === 'msq') score += 0.04;
+        // Type difficulty (stronger differentiation)
+        if (question.normalized_type === 'nat') score += 0.08;
+        else if (question.normalized_type === 'msq') score += 0.05;
+        else score += 0.01; // MCQ slightly easier
 
         // Chapter frequency (rare chapters = harder)
         const chapKey = `${question.subject}/${question.chapter}`;
         const chapFreq = trends.chapterCounts[chapKey] || 0;
-        if (chapFreq > 30) score += 0.01;
-        else if (chapFreq < 10) score += 0.08;
-        else score += 0.04;
+        if (chapFreq > 30) score += 0.02;
+        else if (chapFreq < 10) score += 0.10;
+        else score += 0.05;
 
-        // Question length (longer = harder, but less weight)
+        // Question length (longer = harder)
         const textLen = (question.question_text || '').length;
-        if (textLen > 800) score += 0.08;
-        else if (textLen > 400) score += 0.04;
-        else if (textLen < 150) score -= 0.04;
+        if (textLen > 800) score += 0.10;
+        else if (textLen > 400) score += 0.06;
+        else if (textLen > 200) score += 0.03;
+        else if (textLen < 150) score -= 0.06; // very short = likely easy
 
-        // Recent year questions slightly harder
-        if (question.year >= 2024) score += 0.04;
-        else if (question.year >= 2021) score += 0.02;
-        else if (question.year < 2015) score -= 0.04;
+        // Recent year questions slightly harder (GATE getting tougher)
+        if (question.year >= 2024) score += 0.05;
+        else if (question.year >= 2021) score += 0.03;
+        else if (question.year >= 2015) score += 0.01;
+        else score -= 0.05; // very old = likely easier/different style
 
         // Has options with math (harder)
-        if (question.options && question.options.some(o => (o.content || '').includes('$'))) score += 0.02;
+        if (question.options && question.options.some(o => (o.content || '').includes('$'))) score += 0.03;
+
+        // Has explanation (slightly harder questions tend to have explanations)
+        if (question.has_explanation) score += 0.02;
 
         score = Math.max(0, Math.min(1, score));
-        // Adjusted thresholds for better GATE-like distribution (30/50/20)
-        if (score < 0.22) return 'easy';   // ~30% of questions
-        if (score < 0.40) return 'medium';  // ~50% of questions
-        return 'hard';                       // ~20% of questions
+        // Widened thresholds for better GATE-like distribution (~30/50/20)
+        if (score < 0.20) return 'easy';   // ~30% — very short, 1-mark, old, MCQ
+        if (score < 0.45) return 'medium';  // ~50% — moderate length, mixed types
+        return 'hard';                       // ~20% — 2-mark, NAT, long, recent
     }
 
     // ============ Quality Score (v5 — improved) ============
@@ -890,7 +896,7 @@
                 const typeWeight = typePref[q.normalized_type] || 0.33;
                 w *= (0.3 + typeWeight * 3.5); // stronger scaling to push NAT questions
 
-                // Adaptive difficulty
+                // Adaptive difficulty (v8 — better 30/50/20 enforcement)
                 if (userProfile) {
                     const pref = userProfile.difficultyPreference;
                     if (pref === 'hard' && q._difficulty === 'hard') w *= 1.3;
@@ -902,11 +908,26 @@
                     const isStrong = userProfile.strongSubjects.some(s => s.subject === q.subject);
                     if (isWeak) w *= 1.2;
                     else if (isStrong) w *= 0.9;
-                } else {
-                    const rand = Math.random();
-                    if (rand < 0.3 && q._difficulty === 'easy') w *= 1.2;
-                    else if (rand < 0.8 && q._difficulty === 'medium') w *= 1.2;
                 }
+                
+                // Dynamic difficulty balancing (v8 — tracks selected counts)
+                // Target: ~30% easy, ~50% medium, ~20% hard
+                const diffCount = { easy: 0, medium: 0, hard: 0 };
+                for (const sq of selected) diffCount[sq._difficulty]++;
+                const selTotal = selected.length || 1;
+                const easyRatio = diffCount.easy / selTotal;
+                const medRatio = diffCount.medium / selTotal;
+                const hardRatio = diffCount.hard / selTotal;
+                
+                // Boost underrepresented difficulty levels
+                if (q._difficulty === 'easy' && easyRatio < 0.30) w *= 1.4;
+                else if (q._difficulty === 'medium' && medRatio < 0.50) w *= 1.2;
+                else if (q._difficulty === 'hard' && hardRatio < 0.20) w *= 1.5;
+                
+                // Penalize overrepresented difficulty levels
+                if (q._difficulty === 'easy' && easyRatio > 0.35) w *= 0.5;
+                else if (q._difficulty === 'medium' && medRatio > 0.60) w *= 0.6;
+                else if (q._difficulty === 'hard' && hardRatio > 0.25) w *= 0.4;
 
                 // Chapter diversity
                 const fullChapKey = `${q.subject}/${q.chapter}`;
