@@ -1586,30 +1586,69 @@ function renderPlaylistsTab() {
 }
 
 function renderPlaylistCard(pl) {
+    const totalVids = pl.videos.length;
+    const firstThumb = pl.videos.find(v => v.thumb)?.thumb;
     return `
         <div class="playlist-card-premium">
             <div class="playlist-header-premium">
                 <div class="playlist-icon-premium">🎵</div>
                 <div class="playlist-name">${escapeHtml(pl.name)}</div>
-                <div class="playlist-count-premium">${pl.videos.length}</div>
-                <div class="playlist-actions-premium">
-                    <button class="playlist-act-btn" onclick="playCustomPlaylist('${pl.id}')">▶ Play</button>
-                    <button class="playlist-act-btn" onclick="if(confirm('Delete playlist?')) { deleteCustomPlaylist('${pl.id}'); renderBrowse(); }">🗑</button>
-                </div>
+                <div class="playlist-count-premium">${totalVids}</div>
             </div>
-            ${pl.videos.length > 0 ? pl.videos.slice(0, 5).map(v => `
+            <div class="playlist-actions-premium" style="margin-bottom:10px;">
+                <button class="playlist-act-btn" style="background:var(--grad-brand);color:white;border-color:transparent;font-weight:700;padding:8px 16px;" onclick="playCustomPlaylist('${pl.id}')">▶ Play All</button>
+                <button class="playlist-act-btn" onclick="expandPlaylist('${pl.id}')" title="Show all videos">📋 Expand</button>
+                <button class="playlist-act-btn danger" onclick="if(confirm('Delete playlist \"${pl.name}\"?')) { deleteCustomPlaylist('${pl.id}'); renderBrowse(); }">🗑 Delete</button>
+            </div>
+            ${totalVids > 0 ? pl.videos.slice(0, 5).map(v => `
                 <div class="playlist-video-row" onclick="playVideoDirect(${JSON.stringify(v).replace(/'/g, "&#39;")})">
-                    <div class="pvr-thumb">${v.type === 'search' ? '🔍' : '▶'}</div>
+                    <div class="pvr-thumb">${v.thumb ? `<img src="${v.thumb}" style="width:100%;height:100%;object-fit:cover;border-radius:4px;" onerror="this.style.display='none';this.parentElement.innerHTML='▶'">` : '▶'}</div>
                     <div class="pvr-info">
                         <div class="pvr-title">${escapeHtml(v.title)}</div>
                         <div class="pvr-channel">${escapeHtml(v.channel || '')}</div>
                     </div>
-                    <button class="pvr-remove" onclick="event.stopPropagation(); removeFromCustomPlaylist('${pl.id}', '${v.id}'); renderBrowse();">×</button>
+                    <button class="pvr-remove" onclick="event.stopPropagation(); removeFromCustomPlaylist('${pl.id}', '${v.id}'); renderBrowse();" title="Remove">×</button>
                 </div>
-            `).join('') : '<p style="font-size:0.82rem;color:var(--text-muted);padding:8px 0;">No videos yet.</p>'}
-            ${pl.videos.length > 5 ? `<p style="font-size:0.76rem;color:var(--text-muted);padding:8px;">+ ${pl.videos.length - 5} more...</p>` : ''}
+            `).join('') : '<p style="font-size:0.82rem;color:var(--text-muted);padding:12px 0;text-align:center;">No videos yet. Add videos from Curated or Search tabs.</p>'}
+            ${totalVids > 5 ? `<div style="text-align:center;padding:8px;font-size:0.78rem;color:var(--primary);font-weight:600;cursor:pointer;" onclick="expandPlaylist('${pl.id}')">+ ${totalVids - 5} more videos →</div>` : ''}
         </div>
     `;
+}
+
+function expandPlaylist(plId) {
+    const pl = getCustomPlaylists().find(p => p.id === plId);
+    if (!pl) return;
+    
+    const existing = document.getElementById('playlistExpandModal');
+    if (existing) existing.remove();
+    
+    const modal = document.createElement('div');
+    modal.id = 'playlistExpandModal';
+    modal.style.cssText = 'position:fixed;inset:0;z-index:5000;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;padding:20px;';
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+    
+    modal.innerHTML = `
+        <div style="background:var(--bg-card);border-radius:16px;padding:24px;max-width:500px;width:100%;max-height:80vh;overflow-y:auto;box-shadow:var(--shadow-xl);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                <h3 style="font-size:1.1rem;color:var(--text);">🎵 ${escapeHtml(pl.name)} (${pl.videos.length})</h3>
+                <button onclick="document.getElementById('playlistExpandModal').remove()" style="background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--text-muted);">✕</button>
+            </div>
+            <button class="btn btn-primary btn-sm" style="width:100%;margin-bottom:14px;" onclick="document.getElementById('playlistExpandModal').remove(); playCustomPlaylist('${pl.id}')">▶ Play All</button>
+            <div style="display:flex;flex-direction:column;gap:6px;">
+                ${pl.videos.map((v, i) => `
+                    <div class="playlist-video-row" onclick="document.getElementById('playlistExpandModal').remove(); playVideoDirect(${JSON.stringify(v).replace(/'/g, "&#39;")})">
+                        <div class="pvr-thumb" style="width:40px;height:30px;">${v.thumb ? `<img src="${v.thumb}" style="width:100%;height:100%;object-fit:cover;border-radius:4px;" onerror="this.style.display='none';this.parentElement.innerHTML='▶'">` : '▶'}</div>
+                        <div class="pvr-info">
+                            <div class="pvr-title">${i + 1}. ${escapeHtml(v.title)}</div>
+                            <div class="pvr-channel">${escapeHtml(v.channel || '')}</div>
+                        </div>
+                        <button class="pvr-remove" onclick="event.stopPropagation(); removeFromCustomPlaylist('${pl.id}', '${v.id}'); document.getElementById('playlistExpandModal').remove(); renderBrowse();" title="Remove">×</button>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
 }
 
 function renderBookmarksTab() {
@@ -1648,8 +1687,8 @@ function renderVideoCard(p) {
                 ${p.views ? `<div class="video-card-channel" style="font-size:0.72rem;color:var(--text-light);">👁 ${p.views}</div>` : ''}
                 ${p.description ? `<div class="video-card-desc">${escapeHtml(p.description)}</div>` : ''}
                 <div class="video-card-actions">
-                    <button class="video-card-action" onclick='event.stopPropagation(); playPlaylist(${pJson})'>${isVideo ? '▶ Play' : (isSearch ? '🔍 Search' : '▶ Play')}</button>
-                    <button class="video-card-action ${inPlaylist ? 'added' : ''}" onclick='event.stopPropagation(); showAddToPlaylist(${pJson})'>${inPlaylist ? '✓ Added' : '➕ Add'}</button>
+                    <button class="video-card-action" onclick='event.stopPropagation(); playPlaylist(${pJson})'>▶ Play</button>
+                    <button class="video-card-action ${inPlaylist ? 'added' : ''}" onclick='event.stopPropagation(); showPlaylistDropdown(${pJson})'>${inPlaylist ? '✓ Added' : '➕ Add'}</button>
                     <button class="video-card-action ${isBm ? 'saved' : ''}" onclick='event.stopPropagation(); toggleBookmarkUI(${pJson})'>${isBm ? '❤' : '🤍'}</button>
                 </div>
             </div>
@@ -1710,11 +1749,18 @@ function createPlaylistFromInput() {
 
 function playCustomPlaylist(plId) {
     const pl = getCustomPlaylists().find(p => p.id === plId);
-    if (!pl || pl.videos.length === 0) { alert('Playlist is empty'); return; }
-    state.queue = pl.videos;
+    if (!pl || pl.videos.length === 0) {
+        if (window.showToast) window.showToast('Playlist is empty. Add videos first.', 'warning');
+        return;
+    }
+    // Set up queue with all videos in the playlist
+    state.queue = [...pl.videos];
     state.currentVideoIndex = 0;
     state.currentPlaylist = pl.videos[0];
-    playCurrentInQueue();
+    addRecent(pl.videos[0]);
+    if (typeof window.trackStudyActivity === 'function') window.trackStudyActivity(window.location.href, `🎥 ${pl.videos[0].title}`, '🎥');
+    renderPlayer();
+    if (window.showToast) window.showToast(`▶ Playing "${pl.name}" (${pl.videos.length} videos)`, 'info', 3000);
 }
 
 function playVideoDirect(meta) {
@@ -1730,6 +1776,8 @@ function playPlaylist(meta) {
     state.currentPlaylist = meta;
     addRecent(meta);
     if (typeof window.trackStudyActivity === 'function') window.trackStudyActivity(window.location.href, `🎥 ${meta.title}`, '🎥');
+    
+    // Build queue from same subject's other playlists
     const subj = VIDEO_CATALOG[state.subject];
     if (subj) {
         state.queue = subj.playlists.filter(p => p.id !== meta.id).slice(0, 6);
@@ -1738,6 +1786,14 @@ function playPlaylist(meta) {
         state.queue = [];
         state.currentVideoIndex = -1;
     }
+    renderPlayer();
+}
+
+function playVideoDirect(meta) {
+    state.queue = [meta];
+    state.currentVideoIndex = 0;
+    state.currentPlaylist = meta;
+    addRecent(meta);
     renderPlayer();
 }
 
