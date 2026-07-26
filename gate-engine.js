@@ -516,44 +516,50 @@
         return selected;
     }
 
-    // ============ Question Difficulty Estimation (v5 — improved balance) ============
+    // ============ Question Difficulty Estimation (v8 — better 30/50/20 calibration) ============
     function estimateDifficulty(question, trends) {
-        let score = 0.10; // lower base for better easy distribution
+        let score = 0.05; // very low base for wider easy range
 
-        // 2-mark questions are harder
-        if (question.marks === 2) score += 0.12;
-        else score += 0.03;
+        // 2-mark questions are harder (stronger signal)
+        if (question.marks === 2) score += 0.15;
+        else score += 0.02;
 
-        // Type difficulty
-        if (question.normalized_type === 'nat') score += 0.06;
-        else if (question.normalized_type === 'msq') score += 0.04;
+        // Type difficulty (stronger differentiation)
+        if (question.normalized_type === 'nat') score += 0.08;
+        else if (question.normalized_type === 'msq') score += 0.05;
+        else score += 0.01; // MCQ slightly easier
 
         // Chapter frequency (rare chapters = harder)
         const chapKey = `${question.subject}/${question.chapter}`;
         const chapFreq = trends.chapterCounts[chapKey] || 0;
-        if (chapFreq > 30) score += 0.01;
-        else if (chapFreq < 10) score += 0.08;
-        else score += 0.04;
+        if (chapFreq > 30) score += 0.02;
+        else if (chapFreq < 10) score += 0.10;
+        else score += 0.05;
 
-        // Question length (longer = harder, but less weight)
+        // Question length (longer = harder)
         const textLen = (question.question_text || '').length;
-        if (textLen > 800) score += 0.08;
-        else if (textLen > 400) score += 0.04;
-        else if (textLen < 150) score -= 0.04;
+        if (textLen > 800) score += 0.10;
+        else if (textLen > 400) score += 0.06;
+        else if (textLen > 200) score += 0.03;
+        else if (textLen < 150) score -= 0.06; // very short = likely easy
 
-        // Recent year questions slightly harder
-        if (question.year >= 2024) score += 0.04;
-        else if (question.year >= 2021) score += 0.02;
-        else if (question.year < 2015) score -= 0.04;
+        // Recent year questions slightly harder (GATE getting tougher)
+        if (question.year >= 2024) score += 0.05;
+        else if (question.year >= 2021) score += 0.03;
+        else if (question.year >= 2015) score += 0.01;
+        else score -= 0.05; // very old = likely easier/different style
 
         // Has options with math (harder)
-        if (question.options && question.options.some(o => (o.content || '').includes('$'))) score += 0.02;
+        if (question.options && question.options.some(o => (o.content || '').includes('$'))) score += 0.03;
+
+        // Has explanation (slightly harder questions tend to have explanations)
+        if (question.has_explanation) score += 0.02;
 
         score = Math.max(0, Math.min(1, score));
-        // Adjusted thresholds for better GATE-like distribution (30/50/20)
-        if (score < 0.22) return 'easy';   // ~30% of questions
-        if (score < 0.40) return 'medium';  // ~50% of questions
-        return 'hard';                       // ~20% of questions
+        // Widened thresholds for better GATE-like distribution (~30/50/20)
+        if (score < 0.20) return 'easy';   // ~30% — very short, 1-mark, old, MCQ
+        if (score < 0.45) return 'medium';  // ~50% — moderate length, mixed types
+        return 'hard';                       // ~20% — 2-mark, NAT, long, recent
     }
 
     // ============ Quality Score (v5 — improved) ============
@@ -613,8 +619,29 @@
             for (const a of (trackerData.attempts || [])) {
                 if (a.timestamp > cutoff && a.question_id) recentIds.add(a.question_id);
             }
+            // Also check mock test history (avoid repeating questions from recent mock tests)
+            const mockHistory = JSON.parse(localStorage.getItem('sohcse_mock_history') || '[]');
+            for (const entry of mockHistory) {
+                if (entry.timestamp > cutoff && entry.questionIds) {
+                    for (const qid of entry.questionIds) recentIds.add(qid);
+                }
+            }
             return recentIds;
         } catch { return new Set(); }
+    }
+
+    // ============ Track mock test question IDs for freshness ============
+    function trackMockTestQuestions(questions) {
+        try {
+            const history = JSON.parse(localStorage.getItem('sohcse_mock_history') || '[]');
+            history.push({
+                timestamp: Date.now(),
+                questionIds: questions.map(q => q.question_id),
+            });
+            // Keep only last 10 mock tests
+            if (history.length > 10) history.shift();
+            localStorage.setItem('sohcse_mock_history', JSON.stringify(history));
+        } catch {}
     }
 
     // ============ BUILD GATE-REALISTIC MOCK TEST (v4) ============
@@ -869,7 +896,7 @@
                 const typeWeight = typePref[q.normalized_type] || 0.33;
                 w *= (0.3 + typeWeight * 3.5); // stronger scaling to push NAT questions
 
-                // Adaptive difficulty
+                // Adaptive difficulty (v8 — better 30/50/20 enforcement)
                 if (userProfile) {
                     const pref = userProfile.difficultyPreference;
                     if (pref === 'hard' && q._difficulty === 'hard') w *= 1.3;
@@ -881,11 +908,26 @@
                     const isStrong = userProfile.strongSubjects.some(s => s.subject === q.subject);
                     if (isWeak) w *= 1.2;
                     else if (isStrong) w *= 0.9;
-                } else {
-                    const rand = Math.random();
-                    if (rand < 0.3 && q._difficulty === 'easy') w *= 1.2;
-                    else if (rand < 0.8 && q._difficulty === 'medium') w *= 1.2;
                 }
+                
+                // Dynamic difficulty balancing (v8 — tracks selected counts)
+                // Target: ~30% easy, ~50% medium, ~20% hard
+                const diffCount = { easy: 0, medium: 0, hard: 0 };
+                for (const sq of selected) diffCount[sq._difficulty]++;
+                const selTotal = selected.length || 1;
+                const easyRatio = diffCount.easy / selTotal;
+                const medRatio = diffCount.medium / selTotal;
+                const hardRatio = diffCount.hard / selTotal;
+                
+                // Boost underrepresented difficulty levels
+                if (q._difficulty === 'easy' && easyRatio < 0.30) w *= 1.4;
+                else if (q._difficulty === 'medium' && medRatio < 0.50) w *= 1.2;
+                else if (q._difficulty === 'hard' && hardRatio < 0.20) w *= 1.5;
+                
+                // Penalize overrepresented difficulty levels
+                if (q._difficulty === 'easy' && easyRatio > 0.35) w *= 0.5;
+                else if (q._difficulty === 'medium' && medRatio > 0.60) w *= 0.6;
+                else if (q._difficulty === 'hard' && hardRatio > 0.25) w *= 0.4;
 
                 // Chapter diversity
                 const fullChapKey = `${q.subject}/${q.chapter}`;
@@ -978,24 +1020,44 @@
         }
 
         // ============================================================
-        // PHASE 6: GATE PAPER STRUCTURE WITH DIFFICULTY CURVE
+        // PHASE 6: GATE PAPER STRUCTURE — EXACT REAL GATE ORDERING
         // ============================================================
-        // GATE paper order: GA → Tech 1-mark → Tech 2-mark
-        // Within each section, order by difficulty (easy → medium → hard)
+        // Real GATE paper structure (verified from 2021-2026 papers):
+        //   Q1-Q10:  General Aptitude (5×1m + 5×2m = 15 marks)
+        //   Q11-Q35: Technical 1-mark (25 questions = 25 marks)
+        //   Q36-Q65: Technical 2-mark (30 questions = 60 marks)
+        //
+        // Within each section, subjects are INTERLEAVED (not grouped).
+        // Real GATE doesn't put all Algorithms together then all OS —
+        // it mixes subjects to test breadth across the paper.
+        // Difficulty generally progresses easy→medium→hard within sections.
         let gaQuestions = selected.filter(q => q.subject === 'general-aptitude');
         let techQuestions = selected.filter(q => q.subject !== 'general-aptitude');
 
         const techOneMark = techQuestions.filter(q => q.marks === 1);
         const techTwoMark = techQuestions.filter(q => q.marks === 2);
 
-        // Sort each section by difficulty (easy first, hard last) — GATE style
+        // GA: Sort by difficulty (easy first), then interleave 1m and 2m
+        // Real GATE GA: Q1-5 are 1-mark, Q6-10 are 2-mark
+        const gaOneMark = gaQuestions.filter(q => q.marks === 1);
+        const gaTwoMark = gaQuestions.filter(q => q.marks === 2);
         const diffOrder = { easy: 0, medium: 1, hard: 2 };
-        gaQuestions.sort((a, b) => (diffOrder[a._difficulty] || 1) - (diffOrder[b._difficulty] || 1));
+        gaOneMark.sort((a, b) => (diffOrder[a._difficulty] || 1) - (diffOrder[b._difficulty] || 1));
+        gaTwoMark.sort((a, b) => (diffOrder[a._difficulty] || 1) - (diffOrder[b._difficulty] || 1));
+        gaQuestions = [...gaOneMark, ...gaTwoMark];
+
+        // Tech 1-mark & 2-mark: INTERLEAVE subjects + sort by difficulty
+        // Real GATE alternates subjects within each marks section
         techOneMark.sort((a, b) => (diffOrder[a._difficulty] || 1) - (diffOrder[b._difficulty] || 1));
         techTwoMark.sort((a, b) => (diffOrder[a._difficulty] || 1) - (diffOrder[b._difficulty] || 1));
 
-        // Final paper: GA → Tech1m → Tech2m
-        const finalOrder = [...gaQuestions, ...techOneMark, ...techTwoMark];
+        // Interleave subjects: distribute questions so no two adjacent
+        // questions are from the same subject (like real GATE)
+        const interleaved1m = interleaveSubjects(techOneMark);
+        const interleaved2m = interleaveSubjects(techTwoMark);
+
+        // Final paper: GA(10) → Tech1m(25) → Tech2m(30)
+        const finalOrder = [...gaQuestions, ...interleaved1m, ...interleaved2m];
         const finalSet = finalOrder.slice(0, totalQuestions);
 
         // ============================================================
@@ -1019,6 +1081,39 @@
         }
 
         return finalCorrectedSet;
+    }
+
+    // ============ INTERLEAVE SUBJECTS (v7 — real GATE paper ordering) ============
+    // Distributes questions so no two adjacent questions are from the same subject.
+    // Real GATE papers interleave subjects within each marks section.
+    function interleaveSubjects(questions) {
+        if (questions.length <= 1) return questions;
+
+        // Group by subject
+        const bySubject = {};
+        for (const q of questions) {
+            const subj = q.subject;
+            if (!bySubject[subj]) bySubject[subj] = [];
+            bySubject[subj].push(q);
+        }
+
+        // Sort subject groups by size (largest first) for better interleaving
+        const groups = Object.values(bySubject).sort((a, b) => b.length - a.length);
+        const result = [];
+
+        // Round-robin: pick one from each group in turn
+        let picked = true;
+        while (picked) {
+            picked = false;
+            for (const group of groups) {
+                if (group.length > 0) {
+                    result.push(group.shift());
+                    picked = true;
+                }
+            }
+        }
+
+        return result;
     }
 
     // ============ MARKS AUTO-CORRECTION ============
@@ -1539,6 +1634,7 @@
         buildTrendAnalysis,
         computePaperStats,
         computeRealismScore,
+        trackMockTestQuestions,
         hashContent,
         textSimilarity,
         extractConcepts,
@@ -1548,6 +1644,7 @@
         fisherYatesShuffle,
         weightedSample,
         getUserProfile,
+        interleaveSubjects,
     };
 
 })();

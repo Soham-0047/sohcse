@@ -1360,71 +1360,129 @@ function saveYTKeyAndSearch() {
 function showPlaylistDropdown(video) {
     const pls = getCustomPlaylists();
     
-    // Create a dropdown overlay
+    // Remove existing
     const existing = document.getElementById('playlistDropdown');
     if (existing) existing.remove();
     
+    // Store the video object globally for the modal to access
+    window._currentPlaylistVideo = video;
+    
+    // Build the video data object safely (no string interpolation in onclick)
+    const videoData = {
+        id: video.id,
+        title: video.title || 'Untitled',
+        channel: video.channel || '',
+        type: video.type || 'video',
+        searchQuery: video.searchQuery || '',
+        thumb: video.thumb || getThumbUrl(video) || '',
+        duration: video.duration || '',
+        views: video.views || '',
+    };
+    
     const dropdown = document.createElement('div');
     dropdown.id = 'playlistDropdown';
-    dropdown.style.cssText = 'position:fixed;inset:0;z-index:5000;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;padding:20px;';
+    dropdown.style.cssText = 'position:fixed;inset:0;z-index:5000;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px);';
     dropdown.onclick = (e) => { if (e.target === dropdown) dropdown.remove(); };
     
     const card = document.createElement('div');
-    card.style.cssText = 'background:var(--bg-card);border-radius:16px;padding:24px;max-width:400px;width:100%;box-shadow:var(--shadow-xl);';
+    card.style.cssText = 'background:var(--bg-card);border-radius:16px;padding:24px;max-width:440px;width:100%;box-shadow:var(--shadow-xl);max-height:85vh;overflow-y:auto;';
+    
+    // Video preview at top
+    const videoPreview = `
+        <div style="display:flex;gap:12px;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--border-soft);">
+            <div style="width:80px;height:50px;border-radius:8px;overflow:hidden;flex-shrink:0;background:var(--bg-light);">
+                ${videoData.thumb ? `<img src="${videoData.thumb}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none';this.parentElement.innerHTML='▶'">` : '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:1.2rem;">▶</div>'}
+            </div>
+            <div style="flex:1;min-width:0;">
+                <div style="font-size:0.86rem;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${escapeHtml(videoData.title)}</div>
+                <div style="font-size:0.74rem;color:var(--text-muted);margin-top:2px;">${escapeHtml(videoData.channel)}</div>
+            </div>
+        </div>
+    `;
     
     if (pls.length === 0) {
         card.innerHTML = `
-            <h3 style="font-size:1rem;margin-bottom:12px;color:var(--text);">🎵 Add to Playlist</h3>
-            <p style="font-size:0.84rem;color:var(--text-muted);margin-bottom:16px;">No playlists yet. Create one:</p>
-            <input type="text" id="quickPlName" placeholder="Playlist name" style="width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:0.86rem;font-family:inherit;background:var(--bg-light);color:var(--text);margin-bottom:10px;">
+            ${videoPreview}
+            <h3 style="font-size:1rem;margin-bottom:8px;color:var(--text);">🎵 Add to Playlist</h3>
+            <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:14px;">No playlists yet. Create your first one:</p>
+            <input type="text" id="quickPlName" placeholder="e.g., 'Revision Videos', 'Algorithms'" style="width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:0.86rem;font-family:inherit;background:var(--bg-light);color:var(--text);margin-bottom:10px;" onkeydown="if(event.key==='Enter') document.getElementById('quickPlCreateBtn').click()">
             <div style="display:flex;gap:8px;">
-                <button class="btn btn-primary btn-sm" style="flex:1;" onclick="
-                    var name = document.getElementById('quickPlName').value.trim();
-                    if (!name) { alert('Enter a name'); return; }
-                    var pl = createCustomPlaylist(name);
-                    addToCustomPlaylist(pl.id, { id: '${video.id}', title: ${JSON.stringify(video.title)}, channel: ${JSON.stringify(video.channel || '')}, type: '${video.type || 'video'}', searchQuery: ${JSON.stringify(video.searchQuery || '')}, thumb: getThumbUrl(video) });
-                    document.getElementById('playlistDropdown').remove();
-                    if (window.showToast) window.showToast('✅ Added to \"' + name + '\"', 'success');
-                ">Create & Add</button>
+                <button class="btn btn-primary btn-sm" id="quickPlCreateBtn" style="flex:1;">✅ Create & Add</button>
                 <button class="btn btn-ghost btn-sm" onclick="document.getElementById('playlistDropdown').remove();">Cancel</button>
             </div>
         `;
-    } else {
-        card.innerHTML = `
-            <h3 style="font-size:1rem;margin-bottom:12px;color:var(--text);">🎵 Add to Playlist</h3>
-            <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px;max-height:300px;overflow-y:auto;">
-                ${pls.map(pl => {
-                    const has = pl.videos.some(v => v.id === video.id);
-                    return `
-                        <button onclick="
-                            ${has ? '' : `addToCustomPlaylist('${pl.id}', { id: '${video.id}', title: ${JSON.stringify(video.title)}, channel: ${JSON.stringify(video.channel || '')}, type: '${video.type || 'video'}', searchQuery: ${JSON.stringify(video.searchQuery || '')}, thumb: getThumbUrl(video) });`}
-                            document.getElementById('playlistDropdown').remove();
-                            if (window.showToast) window.showToast('${has ? 'Already in' : '✅ Added to'} ${pl.name.replace(/'/g, "\\'")}', '${has ? 'warning' : 'success'}');
-                        " style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1px solid var(--border);border-radius:10px;background:var(--bg-light);color:var(--text);cursor:pointer;font-family:inherit;font-size:0.86rem;text-align:left;width:100%;">
-                            <span style="font-size:1.1rem;">${has ? '✅' : '🎵'}</span>
-                            <span style="flex:1;">${escapeHtml(pl.name)}</span>
-                            <span style="font-size:0.72rem;color:var(--text-muted);">${pl.videos.length} videos</span>
-                        </button>
-                    `;
-                }).join('')}
-            </div>
-            <div style="display:flex;gap:8px;align-items:center;">
-                <input type="text" id="quickPlName" placeholder="New playlist name..." style="flex:1;padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:0.82rem;font-family:inherit;background:var(--bg-light);color:var(--text);">
-                <button class="btn btn-primary btn-sm" onclick="
-                    var name = document.getElementById('quickPlName').value.trim();
-                    if (!name) { alert('Enter a name'); return; }
-                    var pl = createCustomPlaylist(name);
-                    addToCustomPlaylist(pl.id, { id: '${video.id}', title: ${JSON.stringify(video.title)}, channel: ${JSON.stringify(video.channel || '')}, type: '${video.type || 'video'}', searchQuery: ${JSON.stringify(video.searchQuery || '')}, thumb: getThumbUrl(video) });
-                    document.getElementById('playlistDropdown').remove();
-                    if (window.showToast) window.showToast('✅ Created \"' + name + '\" and added video', 'success');
-                ">+ New</button>
-            </div>
-            <button style="width:100%;margin-top:10px;padding:8px;border:none;background:none;color:var(--text-muted);cursor:pointer;font-family:inherit;font-size:0.82rem;" onclick="document.getElementById('playlistDropdown').remove();">Cancel</button>
-        `;
+        dropdown.appendChild(card);
+        document.body.appendChild(dropdown);
+        
+        // Add event listener (no inline JS — avoids quote issues)
+        document.getElementById('quickPlCreateBtn').onclick = function() {
+            const name = document.getElementById('quickPlName').value.trim();
+            if (!name) { alert('Enter a playlist name'); return; }
+            const pl = createCustomPlaylist(name);
+            addToCustomPlaylist(pl.id, videoData);
+            dropdown.remove();
+            renderBrowse();
+            if (window.showToast) window.showToast(`✅ Created "${name}" and added video`, 'success');
+        };
+        return;
     }
+    
+    // Has playlists — show list
+    card.innerHTML = `
+        ${videoPreview}
+        <h3 style="font-size:1rem;margin-bottom:12px;color:var(--text);">🎵 Add to Playlist</h3>
+        <div id="playlistList" style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px;max-height:280px;overflow-y:auto;">
+            ${pls.map(pl => {
+                const has = pl.videos.some(v => v.id === videoData.id);
+                return `<div class="pl-add-item" data-pl-id="${pl.id}" data-has="${has}" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1.5px solid var(--border);border-radius:10px;background:var(--bg-light);cursor:pointer;font-size:0.86rem;transition:all 0.2s;">
+                    <span style="font-size:1.1rem;">${has ? '✅' : '🎵'}</span>
+                    <span style="flex:1;color:var(--text);font-weight:600;">${escapeHtml(pl.name)}</span>
+                    <span style="font-size:0.72rem;color:var(--text-muted);">${pl.videos.length} videos</span>
+                </div>`;
+            }).join('')}
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+            <input type="text" id="quickPlName" placeholder="New playlist name..." style="flex:1;padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:0.82rem;font-family:inherit;background:var(--bg-light);color:var(--text);" onkeydown="if(event.key==='Enter') document.getElementById('quickPlNewBtn').click()">
+            <button class="btn btn-primary btn-sm" id="quickPlNewBtn">+ New</button>
+        </div>
+        <button style="width:100%;margin-top:6px;padding:8px;border:none;background:none;color:var(--text-muted);cursor:pointer;font-family:inherit;font-size:0.82rem;" onclick="document.getElementById('playlistDropdown').remove();">Cancel</button>
+    `;
     
     dropdown.appendChild(card);
     document.body.appendChild(dropdown);
+    
+    // Add event listeners to playlist items (proper DOM events — no inline JS)
+    document.querySelectorAll('.pl-add-item').forEach(item => {
+        item.onmouseover = function() { this.style.borderColor = 'var(--primary)'; this.style.background = 'rgba(102,126,234,0.05)'; };
+        item.onmouseout = function() { this.style.borderColor = 'var(--border)'; this.style.background = 'var(--bg-light)'; };
+        item.onclick = function() {
+            const plId = this.dataset.plId;
+            const has = this.dataset.has === 'true';
+            if (has) {
+                if (window.showToast) window.showToast('Already in this playlist', 'warning');
+                return;
+            }
+            const pl = getCustomPlaylists().find(p => p.id === plId);
+            addToCustomPlaylist(plId, videoData);
+            dropdown.remove();
+            renderBrowse();
+            if (window.showToast) window.showToast(`✅ Added to "${pl.name}"`, 'success');
+        };
+    });
+    
+    // New playlist button
+    document.getElementById('quickPlNewBtn').onclick = function() {
+        const name = document.getElementById('quickPlName').value.trim();
+        if (!name) { alert('Enter a playlist name'); return; }
+        const pl = createCustomPlaylist(name);
+        addToCustomPlaylist(pl.id, videoData);
+        dropdown.remove();
+        renderBrowse();
+        if (window.showToast) window.showToast(`✅ Created "${name}" and added video`, 'success');
+    };
+    
+    // Focus the input
+    setTimeout(() => document.getElementById('quickPlName')?.focus(), 100);
 }
 
 // ============ Auto-time-adjust for notes ============
@@ -1570,46 +1628,136 @@ function renderSearchTab() {
 function renderPlaylistsTab() {
     const pls = getCustomPlaylists();
     return `
-        <div class="search-hero" style="padding:16px;">
+        <div class="search-hero" style="padding:16px;margin-bottom:16px;">
             <h3 style="font-size:0.95rem;margin-bottom:8px;">🎵 Create New Playlist</h3>
-            <div style="display:flex;gap:8px;">
+            <div style="display:flex;gap:8px;margin-bottom:12px;">
                 <input type="text" id="newPlaylistName" placeholder="Playlist name (e.g., 'Revision Videos')"
                     style="flex:1;padding:10px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:0.86rem;font-family:inherit;background:var(--bg-light);color:var(--text);"
                     onkeydown="if(event.key==='Enter') createPlaylistFromInput()">
                 <button class="btn btn-primary btn-sm" onclick="createPlaylistFromInput()">+ Create</button>
             </div>
+            <h3 style="font-size:0.95rem;margin-bottom:8px;margin-top:14px;">📋 Add YouTube Video by URL</h3>
+            <p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:8px;">Paste any YouTube video or playlist URL to add it to a playlist.</p>
+            <div style="display:flex;gap:8px;">
+                <input type="text" id="ytUrlInput" placeholder="https://www.youtube.com/watch?v=..."
+                    style="flex:1;padding:10px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:0.86rem;font-family:inherit;background:var(--bg-light);color:var(--text);"
+                    onkeydown="if(event.key==='Enter') addYouTubeUrl()">
+                <button class="btn btn-primary btn-sm" onclick="addYouTubeUrl()">+ Add</button>
+            </div>
         </div>
-        ${pls.length === 0 ? `<div class="empty-state"><div class="empty-icon">🎵</div><h3>No playlists yet</h3><p>Create one above, then add videos from search or curated lists.</p></div>` : `
+        ${pls.length === 0 ? `<div class="empty-state"><div class="empty-icon">🎵</div><h3>No playlists yet</h3><p>Create one above, then add videos from search, curated lists, or paste a YouTube URL.</p></div>` : `
             ${pls.map(pl => renderPlaylistCard(pl)).join('')}
         `}
     `;
 }
 
+function addYouTubeUrl() {
+    const url = document.getElementById('ytUrlInput').value.trim();
+    if (!url) return;
+    
+    const parsed = parseYouTubeUrl(url);
+    if (!parsed) {
+        if (window.showToast) window.showToast('❌ Invalid YouTube URL. Paste a video or playlist link.', 'error', 4000);
+        return;
+    }
+    
+    const pls = getCustomPlaylists();
+    if (pls.length === 0) {
+        // No playlists — create one
+        const name = prompt('Create a playlist to add this video:');
+        if (!name) return;
+        const pl = createCustomPlaylist(name);
+        const videoData = {
+            id: parsed.id,
+            title: parsed.type === 'playlist' ? `YouTube Playlist (${parsed.id.substring(0, 10)}...)` : `YouTube Video (${parsed.id})`,
+            channel: 'YouTube',
+            type: parsed.type,
+            thumb: parsed.type === 'video' ? `https://img.youtube.com/vi/${parsed.id}/mqdefault.jpg` : '',
+        };
+        addToCustomPlaylist(pl.id, videoData);
+        if (window.showToast) window.showToast(`✅ Added to "${name}"`, 'success');
+        renderBrowse();
+        return;
+    }
+    
+    // Build video data
+    const videoData = {
+        id: parsed.id,
+        title: parsed.type === 'playlist' ? `YouTube Playlist (${parsed.id.substring(0, 10)}...)` : `YouTube Video (${parsed.id})`,
+        channel: 'YouTube',
+        type: parsed.type,
+        thumb: parsed.type === 'video' ? `https://img.youtube.com/vi/${parsed.id}/mqdefault.jpg` : '',
+    };
+    
+    // Show the playlist dropdown (reuse the same modal)
+    showPlaylistDropdown(videoData);
+    document.getElementById('ytUrlInput').value = '';
+}
+
 function renderPlaylistCard(pl) {
+    const totalVids = pl.videos.length;
+    const firstThumb = pl.videos.find(v => v.thumb)?.thumb;
     return `
         <div class="playlist-card-premium">
             <div class="playlist-header-premium">
                 <div class="playlist-icon-premium">🎵</div>
                 <div class="playlist-name">${escapeHtml(pl.name)}</div>
-                <div class="playlist-count-premium">${pl.videos.length}</div>
-                <div class="playlist-actions-premium">
-                    <button class="playlist-act-btn" onclick="playCustomPlaylist('${pl.id}')">▶ Play</button>
-                    <button class="playlist-act-btn" onclick="if(confirm('Delete playlist?')) { deleteCustomPlaylist('${pl.id}'); renderBrowse(); }">🗑</button>
-                </div>
+                <div class="playlist-count-premium">${totalVids}</div>
             </div>
-            ${pl.videos.length > 0 ? pl.videos.slice(0, 5).map(v => `
+            <div class="playlist-actions-premium" style="margin-bottom:10px;">
+                <button class="playlist-act-btn" style="background:var(--grad-brand);color:white;border-color:transparent;font-weight:700;padding:8px 16px;" onclick="playCustomPlaylist('${pl.id}')">▶ Play All</button>
+                <button class="playlist-act-btn" onclick="expandPlaylist('${pl.id}')" title="Show all videos">📋 Expand</button>
+                <button class="playlist-act-btn danger" onclick="if(confirm('Delete playlist \"${pl.name}\"?')) { deleteCustomPlaylist('${pl.id}'); renderBrowse(); }">🗑 Delete</button>
+            </div>
+            ${totalVids > 0 ? pl.videos.slice(0, 5).map(v => `
                 <div class="playlist-video-row" onclick="playVideoDirect(${JSON.stringify(v).replace(/'/g, "&#39;")})">
-                    <div class="pvr-thumb">${v.type === 'search' ? '🔍' : '▶'}</div>
+                    <div class="pvr-thumb">${v.thumb ? `<img src="${v.thumb}" style="width:100%;height:100%;object-fit:cover;border-radius:4px;" onerror="this.style.display='none';this.parentElement.innerHTML='▶'">` : '▶'}</div>
                     <div class="pvr-info">
                         <div class="pvr-title">${escapeHtml(v.title)}</div>
                         <div class="pvr-channel">${escapeHtml(v.channel || '')}</div>
                     </div>
-                    <button class="pvr-remove" onclick="event.stopPropagation(); removeFromCustomPlaylist('${pl.id}', '${v.id}'); renderBrowse();">×</button>
+                    <button class="pvr-remove" onclick="event.stopPropagation(); removeFromCustomPlaylist('${pl.id}', '${v.id}'); renderBrowse();" title="Remove">×</button>
                 </div>
-            `).join('') : '<p style="font-size:0.82rem;color:var(--text-muted);padding:8px 0;">No videos yet.</p>'}
-            ${pl.videos.length > 5 ? `<p style="font-size:0.76rem;color:var(--text-muted);padding:8px;">+ ${pl.videos.length - 5} more...</p>` : ''}
+            `).join('') : '<p style="font-size:0.82rem;color:var(--text-muted);padding:12px 0;text-align:center;">No videos yet. Add videos from Curated or Search tabs.</p>'}
+            ${totalVids > 5 ? `<div style="text-align:center;padding:8px;font-size:0.78rem;color:var(--primary);font-weight:600;cursor:pointer;" onclick="expandPlaylist('${pl.id}')">+ ${totalVids - 5} more videos →</div>` : ''}
         </div>
     `;
+}
+
+function expandPlaylist(plId) {
+    const pl = getCustomPlaylists().find(p => p.id === plId);
+    if (!pl) return;
+    
+    const existing = document.getElementById('playlistExpandModal');
+    if (existing) existing.remove();
+    
+    const modal = document.createElement('div');
+    modal.id = 'playlistExpandModal';
+    modal.style.cssText = 'position:fixed;inset:0;z-index:5000;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;padding:20px;';
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+    
+    modal.innerHTML = `
+        <div style="background:var(--bg-card);border-radius:16px;padding:24px;max-width:500px;width:100%;max-height:80vh;overflow-y:auto;box-shadow:var(--shadow-xl);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                <h3 style="font-size:1.1rem;color:var(--text);">🎵 ${escapeHtml(pl.name)} (${pl.videos.length})</h3>
+                <button onclick="document.getElementById('playlistExpandModal').remove()" style="background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--text-muted);">✕</button>
+            </div>
+            <button class="btn btn-primary btn-sm" style="width:100%;margin-bottom:14px;" onclick="document.getElementById('playlistExpandModal').remove(); playCustomPlaylist('${pl.id}')">▶ Play All</button>
+            <div style="display:flex;flex-direction:column;gap:6px;">
+                ${pl.videos.map((v, i) => `
+                    <div class="playlist-video-row" onclick="document.getElementById('playlistExpandModal').remove(); playVideoDirect(${JSON.stringify(v).replace(/'/g, "&#39;")})">
+                        <div class="pvr-thumb" style="width:40px;height:30px;">${v.thumb ? `<img src="${v.thumb}" style="width:100%;height:100%;object-fit:cover;border-radius:4px;" onerror="this.style.display='none';this.parentElement.innerHTML='▶'">` : '▶'}</div>
+                        <div class="pvr-info">
+                            <div class="pvr-title">${i + 1}. ${escapeHtml(v.title)}</div>
+                            <div class="pvr-channel">${escapeHtml(v.channel || '')}</div>
+                        </div>
+                        <button class="pvr-remove" onclick="event.stopPropagation(); removeFromCustomPlaylist('${pl.id}', '${v.id}'); document.getElementById('playlistExpandModal').remove(); renderBrowse();" title="Remove">×</button>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
 }
 
 function renderBookmarksTab() {
@@ -1648,8 +1796,8 @@ function renderVideoCard(p) {
                 ${p.views ? `<div class="video-card-channel" style="font-size:0.72rem;color:var(--text-light);">👁 ${p.views}</div>` : ''}
                 ${p.description ? `<div class="video-card-desc">${escapeHtml(p.description)}</div>` : ''}
                 <div class="video-card-actions">
-                    <button class="video-card-action" onclick='event.stopPropagation(); playPlaylist(${pJson})'>${isVideo ? '▶ Play' : (isSearch ? '🔍 Search' : '▶ Play')}</button>
-                    <button class="video-card-action ${inPlaylist ? 'added' : ''}" onclick='event.stopPropagation(); showAddToPlaylist(${pJson})'>${inPlaylist ? '✓ Added' : '➕ Add'}</button>
+                    <button class="video-card-action" onclick='event.stopPropagation(); playPlaylist(${pJson})'>▶ Play</button>
+                    <button class="video-card-action ${inPlaylist ? 'added' : ''}" onclick='event.stopPropagation(); showPlaylistDropdown(${pJson})'>${inPlaylist ? '✓ Added' : '➕ Add'}</button>
                     <button class="video-card-action ${isBm ? 'saved' : ''}" onclick='event.stopPropagation(); toggleBookmarkUI(${pJson})'>${isBm ? '❤' : '🤍'}</button>
                 </div>
             </div>
@@ -1710,11 +1858,18 @@ function createPlaylistFromInput() {
 
 function playCustomPlaylist(plId) {
     const pl = getCustomPlaylists().find(p => p.id === plId);
-    if (!pl || pl.videos.length === 0) { alert('Playlist is empty'); return; }
-    state.queue = pl.videos;
+    if (!pl || pl.videos.length === 0) {
+        if (window.showToast) window.showToast('Playlist is empty. Add videos first.', 'warning');
+        return;
+    }
+    // Set up queue with all videos in the playlist
+    state.queue = [...pl.videos];
     state.currentVideoIndex = 0;
     state.currentPlaylist = pl.videos[0];
-    playCurrentInQueue();
+    addRecent(pl.videos[0]);
+    if (typeof window.trackStudyActivity === 'function') window.trackStudyActivity(window.location.href, `🎥 ${pl.videos[0].title}`, '🎥');
+    renderPlayer();
+    if (window.showToast) window.showToast(`▶ Playing "${pl.name}" (${pl.videos.length} videos)`, 'info', 3000);
 }
 
 function playVideoDirect(meta) {
@@ -1730,6 +1885,8 @@ function playPlaylist(meta) {
     state.currentPlaylist = meta;
     addRecent(meta);
     if (typeof window.trackStudyActivity === 'function') window.trackStudyActivity(window.location.href, `🎥 ${meta.title}`, '🎥');
+    
+    // Build queue from same subject's other playlists
     const subj = VIDEO_CATALOG[state.subject];
     if (subj) {
         state.queue = subj.playlists.filter(p => p.id !== meta.id).slice(0, 6);
@@ -1738,6 +1895,14 @@ function playPlaylist(meta) {
         state.queue = [];
         state.currentVideoIndex = -1;
     }
+    renderPlayer();
+}
+
+function playVideoDirect(meta) {
+    state.queue = [meta];
+    state.currentVideoIndex = 0;
+    state.currentPlaylist = meta;
+    addRecent(meta);
     renderPlayer();
 }
 
