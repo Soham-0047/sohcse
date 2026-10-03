@@ -57,6 +57,7 @@
 <script defer src="./gamification.js"></script>
 <script src="./analytics.js"></script>
 <script defer src="./loader.js"></script>
+<script src="./study-plan-data.js"></script>
 <script src="./pwa.js"></script>
 <script>
 const TASKS_KEY = 'sohcse_planner_tasks_v1';
@@ -194,6 +195,10 @@ function renderPlanner() {
                 <h3 style="margin-top:18px;">🤖 AI Study Plan</h3>
                 <p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:8px;">Let AI generate a personalized plan based on your goals.</p>
                 <button class="btn btn-primary btn-sm" style="width:100%;" onclick="generateAIPlan()">✨ Generate AI Plan</button>
+
+                <h3 style="margin-top:18px;">📅 120-Day Study Plan (Target: 65-70)</h3>
+                <p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:8px;">Structured plan based on official 2027 weightage + PYQ trends.</p>
+                <button class="btn btn-primary btn-sm" style="width:100%;" onclick="show120DayPlan()">📋 View 120-Day Plan</button>
             </div>
 
             <!-- Main -->
@@ -422,6 +427,83 @@ function generateAIPlan() {
             }
         }, 300);
     }
+}
+
+function show120DayPlan() {
+    if (typeof STUDY_PLAN_120_DAYS === 'undefined') {
+        alert('Study plan data not loaded.');
+        return;
+    }
+    const plan = STUDY_PLAN_120_DAYS;
+
+    const existing = document.getElementById('dayPlanModal');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'dayPlanModal';
+    modal.style.cssText = 'position:fixed;inset:0;z-index:5000;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(4px);';
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+
+    let phasesHtml = plan.phases.map(p => `
+        <div style="margin-bottom:18px;padding:16px;background:var(--bg-light);border-radius:12px;border-left:4px solid var(--primary);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <h4 style="margin:0;color:var(--text);font-size:0.95rem;">Phase ${p.phase}: ${p.name}</h4>
+                <span style="font-size:0.72rem;color:var(--text-muted);background:var(--bg-card);padding:2px 8px;border-radius:4px;">${p.days}</span>
+            </div>
+            <p style="font-size:0.80rem;color:var(--text-2);margin-bottom:6px;"><strong>Focus:</strong> ${p.focus}</p>
+            <p style="font-size:0.80rem;color:var(--text-2);margin-bottom:8px;"><strong>Goal:</strong> ${p.goal}</p>
+            <div style="font-size:0.74rem;color:var(--text-muted);margin-bottom:6px;">📋 Daily: ${p.daily_schedule.morning} + ${p.daily_schedule.afternoon} + ${p.daily_schedule.evening}</div>
+            <div style="display:grid;gap:4px;">
+                ${p.weeks.map(w => `<div style="font-size:0.76rem;padding:4px 8px;background:var(--bg-card);border-radius:6px;">
+                    <strong>Week ${w.week}:</strong> ${w.subject} — ${w.topics.join(', ')}
+                    <span style="color:var(--primary);">(${w.pyq_target} PYQs${w.mock_target > 0 ? ', ' + w.mock_target + ' mock' : ''})</span>
+                </div>`).join('')}
+            </div>
+        </div>
+    `).join('');
+
+    let breakdownHtml = Object.entries(plan.target_breakdown).map(([subj, info]) => `
+        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border-soft);">
+            <div>
+                <span style="font-size:0.82rem;color:var(--text);font-weight:600;">${subj}</span>
+                <div style="font-size:0.72rem;color:var(--text-muted);">${info.strategy}</div>
+            </div>
+            <span style="font-size:1.1rem;font-weight:800;color:var(--primary);">${info.target}m</span>
+        </div>
+    `).join('');
+
+    let highYieldHtml = plan.high_yield_topics.map(t => `
+        <div style="padding:6px 10px;background:var(--bg-light);border-radius:6px;margin-bottom:4px;font-size:0.78rem;">
+            <strong>${t.subject.replace(/-/g, ' ')}/${t.topic.replace(/-/g, ' ')}</strong>
+            <span style="color:var(--text-muted);"> — ${t.reason}</span>
+        </div>
+    `).join('');
+
+    modal.innerHTML = `
+        <div style="background:var(--bg-card);border-radius:16px;padding:24px;max-width:600px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-xl);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                <div>
+                    <h3 style="font-size:1.2rem;color:var(--text);">📅 120-Day Study Plan</h3>
+                    <p style="font-size:0.82rem;color:var(--text-muted);">Target: ${plan.target}</p>
+                </div>
+                <button onclick="document.getElementById('dayPlanModal').remove()" style="background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--text-muted);">✕</button>
+            </div>
+
+            <h4 style="font-size:0.92rem;margin-bottom:8px;color:var(--text);">🎯 Score Breakdown (Target: 72/100)</h4>
+            <div style="margin-bottom:18px;">${breakdownHtml}</div>
+
+            <h4 style="font-size:0.92rem;margin-bottom:8px;color:var(--text);">🔥 High-Yield Topics (Must Master)</h4>
+            <div style="margin-bottom:18px;">${highYieldHtml}</div>
+
+            <h4 style="font-size:0.92rem;margin-bottom:8px;color:var(--text);">📋 Phase-by-Phase Plan</h4>
+            ${phasesHtml}
+
+            <div style="background:linear-gradient(135deg,rgba(102,126,234,0.05),rgba(118,75,162,0.05));border-radius:10px;padding:14px;margin-top:8px;text-align:center;">
+                <p style="font-size:0.82rem;color:var(--text-2);">💡 Practice 10 GA questions daily + review flashcards nightly. Take a full mock test every week from Day 40 onwards.</p>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
 }
 
 function escapeHtml(s) {
