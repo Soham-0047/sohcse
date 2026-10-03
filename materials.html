@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Study Materials — SOH CSE</title>
+<meta name="description" content="Browse 70+ GATE CSE study materials — textbooks, notes, handouts, and short notes — organized by subject with instant search.">
+<link rel="stylesheet" href="./style.css">
+<link rel="manifest" href="./manifest.json">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23667eea'/%3E%3Ctext x='50' y='70' font-size='60' font-weight='bold' fill='white' text-anchor='middle' font-family='Arial'%3EG%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+
+<nav class="topnav">
+    <div class="topnav-inner">
+        <a href="./index.html" class="topnav-brand">
+            <div class="brand-mark">G</div>
+            <div class="brand-text">SOH CSE <small>GATE Preparation Hub</small></div>
+        </a>
+        <button class="topnav-menu-btn" onclick="document.querySelector('.topnav-links').classList.toggle('open')" aria-label="Toggle menu">
+            <span></span><span></span><span></span>
+        </button>
+        <div class="topnav-links">
+            <a href="./index.html" class="topnav-link">🏠 Home</a>
+            <a href="./learn.html" class="topnav-link">📖 Learn</a>
+            <a href="./syllabus.html" class="topnav-link">📋 Syllabus</a>
+            <a href="./materials.html" class="topnav-link active">📚 Materials</a>
+            <a href="./pyq.html" class="topnav-link">📝 PYQs</a>
+            <a href="./mocktest.html" class="topnav-link">🎯 Mock Test</a>
+            <a href="./videos.html" class="topnav-link">🎥 Videos</a>
+            <a href="./calculator.html" class="topnav-link">🧮 Calculator</a>
+            <a href="./formulas.html" class="topnav-link">📐 Formulas</a>
+            <a href="./timer.html" class="topnav-link">⏱ Timer</a>
+            <a href="./notes.html" class="topnav-link">📓 Notes</a>
+            <a href="./flashcards.html" class="topnav-link">🎴 Flashcards</a>
+            <a href="./quiz.html" class="topnav-link">🎯 Quiz</a>
+            <a href="./progress.html" class="topnav-link">📊 Progress</a>
+            <a href="./planner.html" class="topnav-link">📅 Planner</a>
+            <a href="./resources.html" class="topnav-link">🚀 Resources</a>
+        </div>
+    </div>
+</nav>
+
+<div class="app-container">
+    <div class="app-sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-header-text">
+                <h2>📚 Study Materials</h2>
+                <p>Textbooks, notes & handouts</p>
+            </div>
+            <div class="sidebar-stats" id="sidebarStats">Loading…</div>
+        </div>
+        <div class="breadcrumb" id="breadcrumb">
+            <span class="breadcrumb-item" onclick="navigateToPath([])">🏠 Home</span>
+        </div>
+        <div class="sidebar-content">
+            <input type="text" class="search-box" id="searchBox" placeholder="🔍 Search files & folders..." oninput="onSearch()">
+            <button class="back-button" onclick="goBack()" id="backBtn" style="display:none;">← <span>Back</span></button>
+            <div id="navigation"></div>
+        </div>
+    </div>
+    <button class="toggle-sidebar-btn" onclick="toggleSidebar()" title="Toggle sidebar">◀</button>
+    <div class="app-content">
+        <div class="pdf-controls" id="pdfControls" style="display:none;">
+            <button class="control-btn" onclick="toggleFullscreen()" title="Fullscreen">⛶</button>
+            <button class="control-btn" onclick="hideViewer()" title="Close PDF">✕</button>
+        </div>
+        <div class="welcome-screen" id="welcomeScreen">
+            <div class="welcome-icon">📚</div>
+            <h2>Welcome to Study Materials</h2>
+            <p>Select a folder or PDF from the sidebar to start reading. Use search to instantly find any file across all subjects.</p>
+            <div class="welcome-actions">
+                <a href="./pyq.html" class="btn btn-ghost btn-sm">📝 Practice PYQs →</a>
+                <a href="./videos.html" class="btn btn-ghost btn-sm">🎥 Video Lectures →</a>
+                <a href="./resources.html" class="btn btn-ghost btn-sm">🚀 GATE 2027 Resources →</a>
+            </div>
+
+            <!-- PW Short Notes Section -->
+            <div style="width:100%;max-width:800px;margin-top:30px;text-align:left;">
+                <div class="section-eyebrow" style="display:inline-block;margin-bottom:12px;">✍️ Free Short Notes by PhysicsWallah</div>
+                <h3 style="font-size:1.1rem;margin-bottom:6px;color:var(--text);">Subject-wise Short Notes (Free PDFs)</h3>
+                <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:16px;">High-quality free short notes from PhysicsWallah for all 12 GATE CSE subjects. Click "View" to read inside the app, or "Download" to save.</p>
+                <div class="pw-notes-grid" id="pwNotesGrid"></div>
+            </div>
+        </div>
+        <div class="loading-screen" id="loadingScreen" style="display:none;">
+            <div class="spinner"></div>
+            <p>Loading PDF…</p>
+        </div>
+        <iframe class="pdf-viewer" id="pdfViewer" style="display:none;" title="PDF Viewer"></iframe>
+    </div>
+</div>
+
+<script defer src="./config.js"></script>
+<script defer src="./admin-client.js"></script>
+<script defer src="./chatbot.js"></script>
+<script defer src="./tracker.js"></script>
+<script defer src="./gamification.js"></script>
+<script defer src="./loader.js"></script>
+<script src="./pwa.js"></script>
+<script src="./pw_notes_data.js"></script>
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+const fileStructure = {
+    "Algorithms": { "Algo Handout.pdf": "pdf", "Algorithms Notes.pdf": "pdf", "Cormen.pdf": "pdf", "Sahani.pdf": "pdf" },
+    "Aptitude": { "GRE Aptitute.pdf": "pdf", "Jagan Sir.pdf": "pdf", "NA Notes 1.pdf": "pdf", "NA V1.pdf": "pdf", "RS Agarwal.pdf": "pdf", "Questions": { "NA Day 01.pdf": "pdf", "NA Day 02.pdf": "pdf", "NA Day 03.pdf": "pdf", "NA Day 04.pdf": "pdf", "NA Day 05.pdf": "pdf", "NA Day 06.pdf": "pdf", "NA Day 07.pdf": "pdf", "NA Day 08.pdf": "pdf", "NA Day 09.pdf": "pdf", "NA Day 10.pdf": "pdf", "NA Day 11.pdf": "pdf", "NA Day 12.pdf": "pdf", "NA Day 13.pdf": "pdf", "NA Day 14.pdf": "pdf", "NA Day 15.pdf": "pdf", "NA Day 16.pdf": "pdf" } },
+    "CD": { "CD Ace material questions.pdf": "pdf", "CD Notes.pdf": "pdf", "CD Short Notes.pdf": "pdf", "Ullman & Aho CD.pdf": "pdf" },
+    "CNW": { "CN Notes.pdf": "pdf" },
+    "CO": { "Carl Hamacher.pdf": "pdf", "CO Shared Notes.pdf": "pdf", "Hennessy and Patterson.pdf": "pdf", "Morris Mano.pdf": "pdf", "VD Sir Notes.pdf": "pdf" },
+    "DBMS": { "Chapter8_25-08-19.pdf": "pdf", "DBMS Notes.pdf": "pdf", "DBMS_BY_RAGHU_RAMAKRISHNAN.pdf": "pdf", "DBMS-1 Transactions.pdf": "pdf", "Korth.pdf": "pdf", "MSQs.pdf": "pdf", "Navathe.pdf": "pdf" },
+    "DLD": { "DLD Notes.pdf": "pdf", "Morris Mano.pdf": "pdf", "Zvi Kohavi.pdf": "pdf" },
+    "DMS": { "DMS ACE Material Questions.pdf": "pdf", "Grimaldi.pdf": "pdf", "Kenneth Rosen.pdf": "pdf", "Graph Theory": { "Graph Theory Notes.pdf": "pdf", "Graph Theory PQ.pdf": "pdf" }, "Logic": {}, "Set Theory": {} },
+    "DS": { "DS Notes.pdf": "pdf", "DS Shared notes.pdf": "pdf", "Sahani (1).pdf": "pdf", "Sahani.pdf": "pdf" },
+    "Eng. Mathematics": { "Sheldon Ross": "pdf" },
+    "English": { "Barrons-333-High-Freq-Words-With-Meanings.pdf": "pdf", "English1.pdf": "pdf", "English2.pdf": "pdf", "GATE VERBAL.mhtml": "html", "VerbalAbility_Classnotes.pdf": "pdf" },
+    "Gate Overflow": { "Vol 1.pdf": "pdf", "Vol 2.pdf": "pdf", "Vol 3.pdf": "pdf" },
+    "OS": { "Galvin.pdf": "pdf", "OS Handout.pdf": "pdf", "OS MM Notes.pdf": "pdf", "OS Notes 1.pdf": "pdf", "OS Notes 2.pdf": "pdf", "System Calls.pdf": "pdf", "Tanenbaum.pdf": "pdf" },
+    "PL": { "C Complete Reference.pdf": "pdf", "C Puzzles.pdf": "pdf", "Dennis Ritchie.pdf": "pdf", "PL notes.pdf": "pdf", "PL Short Notes.pdf": "pdf", "PL_Class Notes.pdf": "pdf" },
+    "RBR notes": { "CN.pdf": "pdf", "CO (1).pdf": "pdf", "CO.pdf": "pdf", "Combinatorics.pdf": "pdf", "Compilers.pdf": "pdf", "dbms.pdf": "pdf", "digital.pdf": "pdf", "Graph Theory.pdf": "pdf", "OS.pdf": "pdf", "Set Theory.pdf": "pdf", "TCS-Aptitude-Paid.pdf": "pdf", "tocc.pdf": "pdf" },
+    "Short Notes": { "Algorithms Short Notes.pdf": "pdf", "CN Short Notes.pdf": "pdf", "CO Short Notes.pdf": "pdf", "DBMS Short Notes.pdf": "pdf", "DLD Short Notes.pdf": "pdf", "DS Short Notes.pdf": "pdf", "Eng Maths Short Notes.pdf": "pdf" },
+    "TOC": { "Aho & Ullman.pdf": "pdf", "Countability.pdf": "pdf", "Peter Linz.pdf": "pdf", "TOC Complete Notes.pdf": "pdf", "TOC notes.pdf": "pdf" }
+};
+
+let currentPath = [];
+let allFiles = [];
+let sidebarCollapsed = false;
+
+function init() {
+    buildFileList();
+    updateStats();
+    renderNavigation();
+    renderPWNotes();
+}
+
+function renderPWNotes() {
+    const grid = document.getElementById('pwNotesGrid');
+    if (!grid || typeof PW_NOTES === 'undefined') return;
+    grid.innerHTML = PW_NOTES.map(note => `
+        <div class="pw-note-card" style="--card-grad: ${note.color};">
+            <div style="display:flex;align-items:center;gap:8px;">
+                <span class="pw-icon">${note.icon}</span>
+                <div style="flex:1;">
+                    <div class="pw-title">${note.title}</div>
+                    <div class="pw-source">by ${note.source}</div>
+                </div>
+            </div>
+            <p style="font-size:0.78rem;color:var(--text-muted);line-height:1.5;">${note.description}</p>
+            <div class="pw-actions">
+                <button class="view-btn" onclick="showExternalPDF('${note.url}', '${note.title.replace(/'/g, "\\'")}')">📖 View (PDF.js)</button>
+                <a href="${note.url}" download target="_blank" rel="noopener">⬇ Download</a>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Render external PDFs (like PW notes) using pdf.js
+// Works around X-Frame-Options: SAMEORIGIN that blocks iframe embedding
+let currentPdfDoc = null;
+let currentPdfPageNum = 1;
+let currentPdfTotalPages = 0;
+let currentPdfUrl = null;
+let currentPdfTitle = '';
+
+async function showExternalPDF(url, title) {
+    document.getElementById('welcomeScreen').style.display = 'none';
+    document.getElementById('loadingScreen').style.display = 'flex';
+    document.getElementById('loadingScreen').innerHTML = '<div class="spinner"></div><p>Loading PDF (rendering with PDF.js)…</p>';
+    document.getElementById('pdfViewer').style.display = 'none';
+    document.getElementById('pdfControls').style.display = 'flex';
+    document.getElementById('pdfControls').innerHTML = `
+        <button class="control-btn" onclick="prevPdfPage()" title="Previous page" id="pdfPrevBtn">←</button>
+        <span id="pdfPageInfo" style="font-size:0.82rem;color:var(--text-muted);padding:0 8px;">Page 0 / 0</span>
+        <button class="control-btn" onclick="nextPdfPage()" title="Next page" id="pdfNextBtn">→</button>
+        <input type="number" id="pdfPageInput" min="1" placeholder="Go to" style="width:60px;padding:4px 8px;border:1px solid var(--border);border-radius:6px;font-size:0.82rem;background:var(--bg-card);color:var(--text);" onchange="goToPdfPage(this.value)">
+        <button class="control-btn" onclick="zoomPdf(0.25)" title="Zoom in">➕</button>
+        <button class="control-btn" onclick="zoomPdf(-0.25)" title="Zoom out">➖</button>
+        <button class="control-btn" onclick="toggleFullscreen()" title="Fullscreen">⛶</button>
+        <a class="control-btn" href="${url}" download target="_blank" rel="noopener" title="Download">⬇</a>
+        <button class="control-btn" onclick="hideViewer()" title="Close PDF">✕</button>
+    `;
+
+    // Set AI context
+    if (typeof window.setAIContext === 'function') {
+        window.setAIContext(`Currently viewing: ${title} (PW Short Notes)`);
+    }
+
+    currentPdfUrl = url;
+    currentPdfTitle = title;
+
+    try {
+        // Fetch and render PDF using pdf.js (works around X-Frame-Options)
+        const loadingTask = pdfjsLib.getDocument({
+            url: url,
+            withCredentials: false,
+            // Some CORS setups need this
+            cMapUrl: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/cmaps/',
+            cMapPacked: true,
+        });
+
+        currentPdfDoc = await loadingTask.promise;
+        currentPdfTotalPages = currentPdfDoc.numPages;
+        currentPdfPageNum = 1;
+
+        // Extract text from first 5 pages for AI context
+        try {
+            let extractedText = '';
+            for (let p = 1; p <= Math.min(currentPdfTotalPages, 5); p++) {
+                const page = await currentPdfDoc.getPage(p);
+                const tc = await page.getTextContent();
+                extractedText += tc.items.map(i => i.str).join(' ') + '\n';
+            }
+            if (typeof window.setAIContext === 'function') {
+                window.setAIContext(`Currently viewing: ${title} (PW Short Notes, ${currentPdfTotalPages} pages)\n\nFirst pages content:\n${extractedText.substring(0, 1500)}`);
+            }
+        } catch (e) { console.warn('Text extraction failed:', e); }
+
+        // Hide loading, show canvas container
+        document.getElementById('loadingScreen').style.display = 'none';
+
+        // Create canvas-based viewer (replaces iframe)
+        const content = document.querySelector('.app-content');
+        let canvasContainer = document.getElementById('pdfCanvasContainer');
+        if (!canvasContainer) {
+            canvasContainer = document.createElement('div');
+            canvasContainer.id = 'pdfCanvasContainer';
+            canvasContainer.className = 'pdf-canvas-container';
+            canvasContainer.style.cssText = 'display:block;width:100%;height:calc(100vh - 60px);overflow:auto;background:#525659;padding:20px 0;';
+            content.appendChild(canvasContainer);
+        }
+        canvasContainer.style.display = 'block';
+        // Hide old iframe viewer
+        document.getElementById('pdfViewer').style.display = 'none';
+
+        // Render current page
+        await renderPdfPage();
+    } catch (err) {
+        console.error('PDF.js failed to load:', err);
+        document.getElementById('loadingScreen').style.display = 'none';
+        // Fallback: show download link
+        const content = document.querySelector('.app-content');
+        let fallback = document.getElementById('pdfFallback');
+        if (!fallback) {
+            fallback = document.createElement('div');
+            fallback.id = 'pdfFallback';
+            fallback.className = 'pdf-fallback';
+            fallback.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;text-align:center;min-height:60vh;';
+            content.appendChild(fallback);
+        }
+        fallback.style.display = 'flex';
+        fallback.innerHTML = `
+            <div style="font-size:3rem;margin-bottom:12px;">📄</div>
+            <h2 style="margin-bottom:8px;">PDF cannot be embedded</h2>
+            <p style="color:var(--text-muted);margin-bottom:18px;max-width:480px;">
+                This PDF (from ${currentPdfTitle}) cannot be rendered inside the app due to browser security restrictions.
+                You can still open or download it directly.
+            </p>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;">
+                <a href="${url}" target="_blank" rel="noopener" class="btn btn-primary btn-sm">↗ Open in New Tab</a>
+                <a href="${url}" download class="btn btn-secondary btn-sm">⬇ Download PDF</a>
+            </div>
+            <p style="font-size:0.74rem;color:var(--text-muted);margin-top:14px;max-width:480px;">
+                Technical details: ${err.message}
+            </p>
+        `;
+    }
+}
+
+let currentPdfScale = 1.3;
+
+async function renderPdfPage() {
+    if (!currentPdfDoc) return;
+    const page = await currentPdfDoc.getPage(currentPdfPageNum);
+
+    const container = document.getElementById('pdfCanvasContainer');
+    if (!container) return;
+    // Clear previous canvas
+    container.innerHTML = '';
+
+    const viewport = page.getViewport({ scale: currentPdfScale });
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+
+    // Render at device pixel ratio for crispness
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = viewport.width * dpr;
+    canvas.height = viewport.height * dpr;
+    canvas.style.width = viewport.width + 'px';
+    canvas.style.height = viewport.height + 'px';
+    canvas.style.display = 'block';
+    canvas.style.margin = '0 auto';
+    canvas.style.background = 'white';
+    canvas.style.boxShadow = '0 4px 20px rgba(0,0,0,0.3)';
+
+    ctx.scale(dpr, dpr);
+
+    container.appendChild(canvas);
+
+    await page.render({
+        canvasContext: ctx,
+        viewport: viewport,
+    }).promise;
+
+    // Update page info
+    const info = document.getElementById('pdfPageInfo');
+    if (info) info.textContent = `Page ${currentPdfPageNum} / ${currentPdfTotalPages}`;
+    const input = document.getElementById('pdfPageInput');
+    if (input) {
+        input.max = currentPdfTotalPages;
+        input.value = currentPdfPageNum;
+    }
+    // Scroll to top
+    container.scrollTop = 0;
+}
+
+async function nextPdfPage() {
+    if (!currentPdfDoc || currentPdfPageNum >= currentPdfTotalPages) return;
+    currentPdfPageNum++;
+    await renderPdfPage();
+}
+
+async function prevPdfPage() {
+    if (!currentPdfDoc || currentPdfPageNum <= 1) return;
+    currentPdfPageNum--;
+    await renderPdfPage();
+}
+
+async function goToPdfPage(n) {
+    n = parseInt(n, 10);
+    if (!currentPdfDoc || isNaN(n) || n < 1 || n > currentPdfTotalPages) return;
+    currentPdfPageNum = n;
+    await renderPdfPage();
+}
+
+async function zoomPdf(delta) {
+    currentPdfScale = Math.max(0.5, Math.min(3, currentPdfScale + delta));
+    await renderPdfPage();
+}
+
+function updateStats() {
+    let folderCount = 0, pdfCount = 0;
+    function count(obj) { for (const [, v] of Object.entries(obj)) { if (typeof v === 'object') { folderCount++; count(v); } else if (v === 'pdf') pdfCount++; } }
+    count(fileStructure);
+    document.getElementById('sidebarStats').innerHTML = `<strong>${folderCount}</strong> folders • <strong>${pdfCount}</strong> PDFs`;
+}
+
+function buildFileList() {
+    allFiles = [];
+    function traverse(obj, path = []) { for (const [name, v] of Object.entries(obj)) { if (typeof v === 'object') traverse(v, [...path, name]); else allFiles.push({ name, path, type: v }); } }
+    traverse(fileStructure);
+}
+
+function getCurrentDirectory() { let c = fileStructure; for (const s of currentPath) c = c[s]; return c; }
+
+function renderNavigation() {
+    const nav = document.getElementById('navigation');
+    const currentDir = getCurrentDirectory();
+    let html = '';
+    const entries = Object.entries(currentDir).sort(([a, aV], [b, bV]) => { if (typeof aV === 'object' && typeof bV === 'string') return -1; if (typeof aV === 'string' && typeof bV === 'object') return 1; return a.localeCompare(b); });
+    for (const [name, v] of entries) {
+        if (typeof v === 'object') {
+            const subCount = countItems(v);
+            html += `<div class="folder-item" onclick="enterFolder('${name.replace(/'/g, "\\'")}')"><div class="item-icon">📁</div><span>${name}</span><span class="count-badge" style="margin-left:auto;background:#f1f5f9;color:#64748b;font-size:0.65rem;padding:2px 7px;">${subCount}</span></div>`;
+        } else {
+            const icon = v === 'pdf' ? '📄' : '🌐';
+            html += `<div class="file-item" onclick="openFile('${name.replace(/'/g, "\\'")}')"><div class="item-icon">${icon}</div><span>${name}</span></div>`;
+        }
+    }
+    if (entries.length === 0) html = '<div style="text-align:center;color:#95a5a6;padding:30px 10px;font-size:0.85rem;">This folder is empty</div>';
+    nav.innerHTML = html;
+    updateBreadcrumb();
+    document.getElementById('backBtn').style.display = currentPath.length > 0 ? 'flex' : 'none';
+}
+
+function countItems(obj) { let n = 0; function walk(o) { for (const v of Object.values(o)) { if (typeof v === 'object') walk(v); else n++; } } walk(obj); return n; }
+
+function updateBreadcrumb() {
+    const bc = document.getElementById('breadcrumb');
+    let html = '<span class="breadcrumb-item" onclick="navigateToPath([])">🏠 Home</span>';
+    for (let i = 0; i < currentPath.length; i++) {
+        html += '<span class="breadcrumb-separator">›</span>';
+        const path = currentPath.slice(0, i + 1);
+        const pathStr = path.map(p => `'${p.replace(/'/g, "\\'")}'`).join(',');
+        if (i === currentPath.length - 1) html += `<span class="breadcrumb-current">${currentPath[i]}</span>`;
+        else html += `<span class="breadcrumb-item" onclick="navigateToPath([${pathStr}])">${currentPath[i]}</span>`;
+    }
+    bc.innerHTML = html;
+}
+
+function navigateToPath(path) { currentPath = path; renderNavigation(); hideViewer(); }
+function goBack() { if (currentPath.length > 0) { currentPath.pop(); renderNavigation(); hideViewer(); } }
+function enterFolder(name) { currentPath.push(name); renderNavigation(); hideViewer(); }
+function openFile(fileName) { const filePath = [...currentPath, fileName].join('/'); showPDF(filePath); }
+
+async function showPDF(filePath) {
+    document.getElementById('welcomeScreen').style.display = 'none';
+    document.getElementById('loadingScreen').style.display = 'flex';
+    document.getElementById('pdfViewer').style.display = 'none';
+    document.getElementById('pdfControls').style.display = 'flex';
+    const encodedPath = filePath.split('/').map(encodeURIComponent).join('/');
+    const url = './' + encodedPath;
+    try {
+        const pdf = await pdfjsLib.getDocument(url).promise;
+        let extractedText = '';
+        for (let p = 1; p <= Math.min(pdf.numPages, 5); p++) { const page = await pdf.getPage(p); const tc = await page.getTextContent(); extractedText += tc.items.map(i => i.str).join(' ') + '\n'; }
+        if (typeof window.setAIContext === 'function') window.setAIContext(`Currently viewing: ${filePath}\n\nFirst pages content:\n${extractedText.substring(0, 1500)}`);
+    } catch (e) { console.warn('PDF text extraction failed:', e); if (typeof window.setAIContext === 'function') window.setAIContext(`Currently viewing: ${filePath}`); }
+    document.getElementById('loadingScreen').style.display = 'none';
+    const viewer = document.getElementById('pdfViewer');
+    viewer.src = url;
+    viewer.style.display = 'block';
+}
+
+function hideViewer() {
+    document.getElementById('pdfViewer').style.display = 'none';
+    document.getElementById('pdfViewer').src = '';
+    document.getElementById('pdfControls').style.display = 'none';
+    document.getElementById('pdfControls').innerHTML = `
+        <button class="control-btn" onclick="toggleFullscreen()" title="Fullscreen">⛶</button>
+        <button class="control-btn" onclick="hideViewer()" title="Close PDF">✕</button>
+    `;
+    document.getElementById('loadingScreen').style.display = 'none';
+    document.getElementById('loadingScreen').innerHTML = '<div class="spinner"></div><p>Loading PDF…</p>';
+    document.getElementById('welcomeScreen').style.display = 'flex';
+    // Hide canvas container (PW notes)
+    const canvasContainer = document.getElementById('pdfCanvasContainer');
+    if (canvasContainer) {
+        canvasContainer.style.display = 'none';
+        canvasContainer.innerHTML = '';
+    }
+    // Hide fallback
+    const fallback = document.getElementById('pdfFallback');
+    if (fallback) fallback.style.display = 'none';
+    // Reset state
+    currentPdfDoc = null;
+    currentPdfPageNum = 1;
+    currentPdfTotalPages = 0;
+    if (typeof window.setAIContext === 'function') window.setAIContext('');
+}
+
+function toggleFullscreen() { const v = document.getElementById('pdfViewer'); if (v.requestFullscreen) v.requestFullscreen(); else if (v.webkitRequestFullscreen) v.webkitRequestFullscreen(); }
+
+function onSearch() {
+    const q = document.getElementById('searchBox').value.toLowerCase().trim();
+    const nav = document.getElementById('navigation');
+    if (!q) { renderNavigation(); return; }
+    const results = allFiles.filter(f => f.name.toLowerCase().includes(q) || f.path.some(p => p.toLowerCase().includes(q)));
+    if (results.length === 0) { nav.innerHTML = '<div style="text-align:center;color:#95a5a6;padding:30px 10px;font-size:0.85rem;">No files found</div>'; return; }
+    nav.innerHTML = results.map(f => `<div class="file-item" onclick="openSearchResult('${f.name.replace(/'/g, "\\'")}', ${JSON.stringify(f.path).replace(/"/g, '&quot;')})"><div class="item-icon">${f.type === 'pdf' ? '📄' : '🌐'}</div><span>${f.name}<br><small style="color:#95a5a6;font-size:0.72rem;">${f.path.join(' › ')}</small></span></div>`).join('');
+}
+
+function openSearchResult(fileName, path) { currentPath = path.slice(0, -1); document.getElementById('searchBox').value = ''; openFile(fileName); renderNavigation(); }
+function toggleSidebar() { sidebarCollapsed = !sidebarCollapsed; document.getElementById('sidebar').classList.toggle('collapsed', sidebarCollapsed); }
+
+init();
+</script>
+<script defer src="./nav.js"></script>
+<script defer src="./theme.js"></script>
+</body>
+</html>
