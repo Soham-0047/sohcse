@@ -61,12 +61,177 @@
 <script src="./pwa.js"></script>
 <script>
 const TASKS_KEY = 'sohcse_planner_tasks_v1';
+const PLAN_VERSION_KEY = 'sohcse_plan_version';
+
+// App version for cache invalidation (bump when data changes)
+const APP_VERSION = 'v9.2027';
 
 function getTasks() {
     try { return JSON.parse(localStorage.getItem(TASKS_KEY) || '[]'); } catch { return []; }
 }
 function saveTasks(tasks) {
     try { localStorage.setItem(TASKS_KEY, JSON.stringify(tasks)); } catch {}
+}
+
+// Version-based data refresh — does NOT clear localStorage
+// Only re-seeds planner tasks if the plan version has changed
+function checkAndRefreshData() {
+    const storedVersion = localStorage.getItem(PLAN_VERSION_KEY);
+    if (storedVersion !== APP_VERSION) {
+        console.log('🔄 New app version detected (' + APP_VERSION + '), refreshing study plan...');
+        // Save new version
+        localStorage.setItem(PLAN_VERSION_KEY, APP_VERSION);
+        // Re-seed planner with 120-day plan (preserves all other localStorage data)
+        generate120DayPlanTasks();
+        return true;
+    }
+    return false;
+}
+
+// Generate 120-day study plan tasks and populate the calendar
+function generate120DayPlanTasks() {
+    if (typeof STUDY_PLAN_120_DAYS === 'undefined') return;
+    
+    const plan = STUDY_PLAN_120_DAYS;
+    const tasks = getTasks();
+    let taskId = tasks.length > 0 ? Math.max(...tasks.map(t => t.id || 0)) + 1 : 1;
+    
+    const startDate = new Date();
+    let dayOffset = 0;
+    
+    plan.phases.forEach(phase => {
+        phase.weeks.forEach(week => {
+            // Each week = 7 days
+            for (let day = 0; day < 7; day++) {
+                const date = new Date(startDate);
+                date.setDate(date.getDate() + dayOffset);
+                const dateStr = date.toISOString().slice(0, 10);
+                
+                // Morning: Theory
+                tasks.push({
+                    id: taskId++,
+                    date: dateStr,
+                    title: `📖 Study: ${week.topics[day % week.topics.length]}`,
+                    subject: getSubjectFromPlan(week.subject),
+                    priority: 'high',
+                    duration: 120,
+                    completed: false,
+                    link: getStudyLink(week.subject, week.topics[day % week.topics.length]),
+                    planWeek: week.week,
+                    planPhase: phase.phase,
+                });
+                
+                // Afternoon: PYQ practice
+                const pyqCount = Math.ceil(week.pyq_target / 7);
+                tasks.push({
+                    id: taskId++,
+                    date: dateStr,
+                    title: `📝 Practice ${pyqCount} PYQs: ${week.subject.split('(')[0].trim()}`,
+                    subject: getSubjectFromPlan(week.subject),
+                    priority: 'high',
+                    duration: 90,
+                    completed: false,
+                    link: `./pyq.html?subject=${getSubjectFromPlan(week.subject)}`,
+                    planWeek: week.week,
+                    planPhase: phase.phase,
+                });
+                
+                // Evening: GA + Flashcards (skip on mock test days)
+                if (day < 5) { // Weekdays only
+                    tasks.push({
+                        id: taskId++,
+                        date: dateStr,
+                        title: '🧮 Practice 10 GA Questions',
+                        subject: 'general-aptitude',
+                        priority: 'medium',
+                        duration: 30,
+                        completed: false,
+                        link: './pyq.html?subject=general-aptitude',
+                        planWeek: week.week,
+                        planPhase: phase.phase,
+                    });
+                    
+                    tasks.push({
+                        id: taskId++,
+                        date: dateStr,
+                        title: '🎴 Review Flashcards (Spaced Repetition)',
+                        subject: 'all',
+                        priority: 'medium',
+                        duration: 30,
+                        completed: false,
+                        link: './flashcards.html',
+                        planWeek: week.week,
+                        planPhase: phase.phase,
+                    });
+                }
+                
+                // Mock test (if scheduled for this week)
+                if (week.mock_target > 0 && day === 6) { // Sunday = mock test day
+                    tasks.push({
+                        id: taskId++,
+                        date: dateStr,
+                        title: `🎯 Full Mock Test (Week ${week.week})`,
+                        subject: 'all',
+                        priority: 'high',
+                        duration: 180,
+                        completed: false,
+                        link: './mocktest.html',
+                        planWeek: week.week,
+                        planPhase: phase.phase,
+                    });
+                }
+                
+                dayOffset++;
+            }
+        });
+    });
+    
+    // Limit to 120 days worth of tasks
+    const maxDate = new Date(startDate);
+    maxDate.setDate(maxDate.getDate() + 120);
+    const filtered = tasks.filter(t => {
+        if (!t.date) return true; // Keep non-date tasks
+        return new Date(t.date) <= maxDate;
+    });
+    
+    saveTasks(filtered);
+    console.log(`✅ Generated ${filtered.length} study plan tasks for 120 days`);
+}
+
+function getSubjectFromPlan(planSubject) {
+    // Extract subject slug from plan subject string like "Programming & Data Structures (15m)"
+    const map = {
+        'programming': 'data-structures',
+        'computer networks': 'computer-networks',
+        'operating system': 'operating-systems',
+        'computer organization': 'computer-organization',
+        'algorithms': 'algorithms',
+        'databases': 'database-management-system',
+        'engineering mathematics': 'discrete-mathematics',
+        'theory of computation': 'theory-of-computation',
+        'digital logic': 'digital-logic',
+        'compiler design': 'compiler-design',
+    };
+    const lower = planSubject.toLowerCase();
+    for (const [key, val] of Object.entries(map)) {
+        if (lower.includes(key)) return val;
+    }
+    return 'all';
+}
+
+function getStudyLink(subject, topic) {
+    const subj = getSubjectFromPlan(subject);
+    // Try to find matching chapter in GATE_DATA
+    if (typeof window.GATE_DATA !== 'undefined') {
+        const subjData = window.GATE_DATA.subjects.find(s => s.subject === subj);
+        if (subjData) {
+            const chap = subjData.chapters.find(c => 
+                topic.toLowerCase().includes(c.chapter.replace(/-/g, ' ').toLowerCase().split(' ')[0])
+            );
+            if (chap) return `./pyq.html?subject=${subj}&chapter=${chap.chapter}`;
+        }
+    }
+    return `./pyq.html?subject=${subj}`;
 }
 
 let state = {
@@ -117,23 +282,32 @@ function renderWeeklyGoals() {
 }
 
 function init() {
-    // Seed with sample tasks on first visit
-    if (getTasks().length === 0) {
-        const today = new Date().toISOString().slice(0, 10);
-        const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
-        const dayAfter = new Date(Date.now() + 2 * 86400000).toISOString().slice(0, 10);
-        const sample = [
-            { id: 1, date: today, title: 'Study: Time Complexity Analysis', subject: 'algorithms', priority: 'high', duration: 90, completed: false },
-            { id: 2, date: today, title: 'Solve 10 PYQs on Linked Lists', subject: 'data-structures', priority: 'high', duration: 60, completed: false },
-            { id: 3, date: today, title: 'Watch: Banker\'s Algorithm video', subject: 'operating-systems', priority: 'medium', duration: 45, completed: true },
-            { id: 4, date: tomorrow, title: 'Study: ER Diagrams and Normalization', subject: 'database-management-system', priority: 'high', duration: 90, completed: false },
-            { id: 5, date: tomorrow, title: 'Practice: 15 Aptitude questions', subject: 'general-aptitude', priority: 'medium', duration: 30, completed: false },
-            { id: 6, date: dayAfter, title: 'Take full mock test', subject: 'all', priority: 'high', duration: 180, completed: false }
-        ];
-        saveTasks(sample);
+    // Check for app version update — refreshes plan WITHOUT clearing localStorage
+    const refreshed = checkAndRefreshData();
+    
+    // If no tasks exist (first visit or cleared), generate 120-day plan
+    if (getTasks().length === 0 || refreshed) {
+        if (typeof STUDY_PLAN_120_DAYS !== 'undefined') {
+            generate120DayPlanTasks();
+        } else {
+            // Fallback: seed basic tasks
+            seedBasicTasks();
+        }
     }
+    
     renderPlanner();
     renderWeeklyGoals();
+}
+
+function seedBasicTasks() {
+    const today = new Date().toISOString().slice(0, 10);
+    const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+    const sample = [
+        { id: 1, date: today, title: 'Study: Time Complexity Analysis', subject: 'algorithms', priority: 'high', duration: 90, completed: false, link: './pyq.html?subject=algorithms' },
+        { id: 2, date: today, title: 'Solve 10 PYQs on Linked Lists', subject: 'data-structures', priority: 'high', duration: 60, completed: false, link: './pyq.html?subject=data-structures' },
+        { id: 3, date: today, title: 'Practice 10 GA Questions', subject: 'general-aptitude', priority: 'medium', duration: 30, completed: false, link: './pyq.html?subject=general-aptitude' },
+    ];
+    saveTasks(sample);
 }
 
 function renderPlanner() {
@@ -288,12 +462,16 @@ function renderCalendar() {
         const dayTasks = tasks.filter(t => t.date === dateStr);
         const isToday = dateStr === today;
         const isSelected = dateStr === state.selectedDate;
+        const phase = dayTasks.length > 0 ? dayTasks[0].planPhase || '' : '';
+        const phaseColors = { 1: '#3b82f6', 2: '#f59e0b', 3: '#a855f7', 4: '#ef4444' };
+        const phaseColor = phaseColors[phase] || '';
         html += `
             <div class="calendar-day ${isToday ? 'today' : ''} ${dayTasks.length > 0 ? 'has-task' : ''}"
-                 style="${isSelected ? 'outline:2px solid var(--primary);outline-offset:1px;' : ''}"
+                 style="${isSelected ? 'outline:2px solid var(--primary);outline-offset:1px;' : ''} ${phaseColor ? `border-bottom:3px solid ${phaseColor};` : ''}"
                  onclick="selectDate('${dateStr}')">
                 <span class="day-num">${d}</span>
                 ${dayTasks.length > 0 ? `<div class="day-tasks">${dayTasks.filter(t => !t.completed).length} pending</div>` : ''}
+                ${phase ? `<div style="font-size:0.6rem;color:${phaseColor};font-weight:700;text-transform:uppercase;">P${phase}</div>` : ''}
             </div>
         `;
     }
@@ -308,9 +486,10 @@ function renderTaskItem(t) {
         'compiler-design': '🔧', 'digital-logic': '🔌',
         'computer-organization': '💻', 'general-aptitude': '🧮', 'all': '📚'
     };
+    const link = t.link || (t.subject ? `./pyq.html?subject=${t.subject}` : '#');
     return `
-        <div class="task-item ${t.completed ? 'completed' : ''}">
-            <div class="task-checkbox ${t.completed ? 'checked' : ''}" onclick="toggleTask(${t.id})">
+        <div class="task-item ${t.completed ? 'completed' : ''}" style="${t.link ? 'cursor:pointer;' : ''}" onclick="${t.link ? `window.location.href='${link}'` : ''}">
+            <div class="task-checkbox ${t.completed ? 'checked' : ''}" onclick="event.stopPropagation(); toggleTask(${t.id})">
                 ${t.completed ? '✓' : ''}
             </div>
             <div class="task-priority priority-${t.priority}"></div>
@@ -318,9 +497,11 @@ function renderTaskItem(t) {
                 <div class="task-title">${subjectIcons[t.subject] || '📝'} ${escapeHtml(t.title)}</div>
                 <div class="task-meta">
                     ${t.priority.toUpperCase()} • ${t.duration || 0} min • ${t.subject.replace(/-/g, ' ')}
+                    ${t.planWeek ? ` • Week ${t.planWeek}` : ''}
+                    ${t.link ? ' • Click to open →' : ''}
                 </div>
             </div>
-            <button class="note-delete" style="background:none;border:none;color:var(--text-light);cursor:pointer;font-size:1.2rem;padding:4px 8px;" onclick="deleteTask(${t.id})" title="Delete">×</button>
+            <button class="note-delete" style="background:none;border:none;color:var(--text-light);cursor:pointer;font-size:1.2rem;padding:4px 8px;" onclick="event.stopPropagation(); deleteTask(${t.id})" title="Delete">×</button>
         </div>
     `;
 }
