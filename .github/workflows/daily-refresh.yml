@@ -1,4 +1,4 @@
-name: Daily GATE CSE Data Refresh
+name: Daily GATE CSE Multi-Source Data Refresh
 
 on:
   schedule:
@@ -21,7 +21,7 @@ jobs:
       - name: Configure Git
         run: |
           git config user.name "Soham-0047"
-          git config user.email "soham0047@users.noreply.github.com"
+          git config user.email "Soham-0047@users.noreply.github.com"
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -32,193 +32,31 @@ jobs:
         run: |
           pip install requests beautifulsoup4 lxml
 
-      - name: Fetch latest GATE CSE questions from ExamSIDE
+      - name: Fetch questions from multiple sources (ExamSIDE + Mockers + GeeksforGeeks)
         id: fetch
-        run: |
-          python -c "
-          import requests
-          import json
-          import re
-          from bs4 import BeautifulSoup
-          import time
-          import sys
-
-          BASE_URL = 'https://questions.examside.com'
-          GATE_CSE_URL = f'{BASE_URL}/past-years/gate/gate-cse'
-
-          print('Fetching GATE CSE subjects...')
-          resp = requests.get(GATE_CSE_URL, timeout=30)
-          if resp.status_code != 200:
-              print(f'::warning::Failed to fetch ExamSIDE: {resp.status_code}')
-              sys.exit(0)  # Don't fail the workflow
-
-          soup = BeautifulSoup(resp.text, 'lxml')
-          subject_links = []
-          for a in soup.find_all('a', href=True):
-              href = a['href']
-              if '/past-years/gate/gate-cse/' in href and href != GATE_CSE_URL:
-                  subject_links.append({
-                      'url': BASE_URL + href if href.startswith('/') else href,
-                      'label': a.get_text(strip=True),
-                  })
-
-          # Deduplicate
-          seen = set()
-          subjects = []
-          for s in subject_links:
-              if s['url'] not in seen:
-                  seen.add(s['url'])
-                  subjects.append(s)
-
-          print(f'Found {len(subjects)} subjects')
-
-          # Load existing data to check for new questions
-          try:
-              with open('gate_cse_questions.json', 'r') as f:
-                  existing = json.load(f)
-              existing_ids = set()
-              for subj in existing.get('subjects', []):
-                  for chap in subj.get('chapters', []):
-                      for q in chap.get('questions', []):
-                          existing_ids.add(q.get('question_id'))
-              print(f'Existing questions: {len(existing_ids)}')
-          except:
-              existing_ids = set()
-              print('No existing data found, will create fresh')
-
-          # Fetch questions for each subject (limit to avoid timeout)
-          all_subjects = []
-          total_new = 0
-          for subj in subjects[:14]:  # Limit to 14 subjects
-              print(f'Fetching: {subj[\"label\"]}')
-              try:
-                  resp = requests.get(subj['url'], timeout=30)
-                  soup = BeautifulSoup(resp.text, 'lxml')
-
-                  # Find chapter links
-                  chapter_links = []
-                  for a in soup.find_all('a', href=True):
-                      href = a['href']
-                      if '/past-years/gate/gate-cse/' in href and href != subj['url']:
-                          chapter_links.append({
-                              'url': BASE_URL + href if href.startswith('/') else href,
-                              'label': a.get_text(strip=True),
-                          })
-
-                  chapters = []
-                  for chap in chapter_links[:8]:  # Limit chapters
-                      time.sleep(0.5)  # Be polite
-                      try:
-                          resp = requests.get(chap['url'], timeout=30)
-                          chap_soup = BeautifulSoup(resp.text, 'lxml')
-
-                          # Extract question links
-                          q_links = []
-                          for a in chap_soup.find_all('a', href=True):
-                              if '/past-years/gate/question/' in a['href']:
-                                  q_links.append(BASE_URL + a['href'] if a['href'].startswith('/') else a['href'])
-
-                          questions = []
-                          for q_url in q_links[:30]:  # Limit questions per chapter
-                              time.sleep(0.3)
-                              try:
-                                  q_resp = requests.get(q_url, timeout=20)
-                                  q_soup = BeautifulSoup(q_resp.text, 'lxml')
-
-                                  # Extract question ID from URL
-                                  qid_match = re.search(r'([a-zA-Z0-9]{10,20})(?:$|\?)', q_url)
-                                  qid = qid_match.group(1) if qid_match else q_url[-20:]
-
-                                  if qid in existing_ids:
-                                      continue  # Skip existing
-
-                                  # Extract question text
-                                  q_text = ''
-                                  q_content = q_soup.find('div', class_='question-content') or q_soup.find('div', class_='q-content')
-                                  if q_content:
-                                      q_text = str(q_content)
-
-                                  # Extract year from URL or page
-                                  year_match = re.search(r'gate-cse-(\d{4})', q_url)
-                                  year = int(year_match.group(1)) if year_match else 2025
-
-                                  questions.append({
-                                      'question_id': qid,
-                                      'year': year,
-                                      'question_text': q_text[:2000] if q_text else '',
-                                      'url': q_url,
-                                  })
-                                  total_new += 1
-                              except:
-                                  continue
-
-                          if questions:
-                              chapters.append({
-                                  'chapter': chap['url'].split('/')[-1],
-                                  'chapter_label': chap['label'],
-                                  'questions': questions,
-                              })
-                      except:
-                          continue
-
-                  if chapters:
-                      all_subjects.append({
-                          'subject': subj['url'].split('/')[-1],
-                          'subject_label': subj['label'],
-                          'chapters': chapters,
-                      })
-              except:
-                  continue
-
-          print(f'Total new questions found: {total_new}')
-
-          if total_new > 0:
-              # Merge with existing
-              if existing_ids:
-                  for new_subj in all_subjects:
-                      existing_subj = next((s for s in existing['subjects'] if s['subject'] == new_subj['subject']), None)
-                      if existing_subj:
-                          for new_chap in new_subj['chapters']:
-                              existing_chap = next((c for c in existing_subj['chapters'] if c['chapter'] == new_chap['chapter']), None)
-                              if existing_chap:
-                                  existing_chap['questions'].extend(new_chap['questions'])
-                              else:
-                                  existing_subj['chapters'].append(new_chap)
-                      else:
-                          existing['subjects'].append(new_subj)
-                  data = existing
-              else:
-                  data = {
-                      'source': GATE_CSE_URL,
-                      'scraped_at': __import__('datetime').datetime.now().isoformat(),
-                      'subjects': all_subjects,
-                  }
-
-              with open('gate_cse_questions.json', 'w') as f:
-                  json.dump(data, f, indent=2)
-
-              print(f'::set-output name=new_count::{total_new}')
-              print('Data updated successfully!')
-          else:
-              print('No new questions found. Data is up to date.')
-          "
+        run: python scripts/multi-source-fetcher.py
 
       - name: Check for changes
         id: changes
         run: |
           if git diff --quiet; then
-            echo "No changes detected"
             echo "has_changes=false" >> $GITHUB_OUTPUT
           else
-            echo "Changes detected"
             echo "has_changes=true" >> $GITHUB_OUTPUT
           fi
 
       - name: Commit and push updates
         if: steps.changes.outputs.has_changes == 'true'
         run: |
-          git add gate_cse_questions.json
-          git commit -m "📊 Daily data refresh: $(date -u '+%Y-%m-%d') — Auto-fetched latest GATE CSE PYQs from ExamSIDE"
+          git add -A
+          git commit -m "Daily multi-source refresh: $(date -u '+%Y-%m-%d')
+
+          Sources checked:
+          - ExamSIDE.com (existing PYQs)
+          - Mockers.in (free GATE CSE mock tests)
+          - GeeksforGeeks (topic-wise PYQ quizzes)
+
+          Auto-merged with deduplication via content hashing."
           git push
 
       - name: Create issue on failure
@@ -229,7 +67,7 @@ jobs:
             github.rest.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              title: `⚠️ Daily data refresh failed — ${new Date().toISOString().split('T')[0]}`,
-              body: 'The automated daily GATE CSE data refresh workflow failed. Check the [workflow logs](https://github.com/' + context.repo.owner + '/' + context.repo.repo + '/actions) for details.',
+              title: `Daily data refresh failed - ${new Date().toISOString().split('T')[0]}`,
+              body: 'The automated multi-source data refresh workflow failed. Check the [workflow logs](https://github.com/' + context.repo.owner + '/' + context.repo.repo + '/actions) for details.',
               labels: ['automated', 'data-refresh']
             })
