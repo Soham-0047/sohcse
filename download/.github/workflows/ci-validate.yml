@@ -1,0 +1,62 @@
+name: CI — Validate & Test
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Check JavaScript syntax
+        run: |
+          for f in *.js; do
+            node -c "$f" && echo "✅ $f" || { echo "❌ $f has syntax errors"; exit 1; }
+          done
+
+      - name: Check HTML files exist
+        run: |
+          for page in index.html dashboard.html pyq.html mocktest.html quiz.html \
+                       flashcards.html revision.html concept-map.html progress.html \
+                       planner.html videos.html learn.html syllabus.html materials.html \
+                       formulas.html timer.html notes.html calculator.html resources.html \
+                       settings.html; do
+            test -f "$page" && echo "✅ $page" || { echo "❌ Missing $page"; exit 1; }
+          done
+
+      - name: Validate GATE engine produces correct paper
+        run: |
+          node -e "
+          const fs = require('fs');
+          eval(fs.readFileSync('./gate_cse_data.js', 'utf8').replace('window.GATE_DATA', 'global.GATE_DATA'));
+          global.window = { GATE_DATA: global.GATE_DATA };
+          global.localStorage = { _data: {}, getItem: function(k){return this._data[k]||null;}, setItem: function(k,v){this._data[k]=v;}, removeItem: function(k){delete this._data[k];} };
+          global.window.getTotalStats = function() { return { totalAttempts: 0, accuracy: 0 }; };
+          global.window.getSubjectPerformance = function() { return {}; };
+          eval(fs.readFileSync('./gate-engine.js', 'utf8'));
+          const mock = global.window.SOH_QEngine.buildMockTest('mixed', { totalQuestions: 65, totalMarks: 100 });
+          const stats = global.window.SOH_QEngine.computePaperStats(mock);
+          console.log('Generated:', stats.total, 'questions,', stats.marks, 'marks');
+          if (stats.total !== 65) { console.error('❌ Expected 65 questions, got', stats.total); process.exit(1); }
+          if (stats.marks !== 100) { console.error('❌ Expected 100 marks, got', stats.marks); process.exit(1); }
+          if (stats.uniqueIds !== 65) { console.error('❌ Duplicate questions detected'); process.exit(1); }
+          console.log('✅ GATE engine validation passed!');
+          "
+
+      - name: Check file sizes
+        run: |
+          echo "=== File sizes ==="
+          ls -lhS *.js *.css *.html 2>/dev/null | head -20
+          echo ""
+          echo "=== Total project size ==="
+          du -sh . --exclude=.git
