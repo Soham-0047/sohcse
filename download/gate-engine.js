@@ -275,11 +275,45 @@
             // Total: 10+8+4+5+9+5+4+3+6+5+6 = 65 ✅
         },
 
-        // Year recency boost
+        // Year recency boost (newer questions weighted higher — 2027 relevance)
         year_boost: {
-            2026: 1.8, 2025: 1.7, 2024: 1.6, 2023: 1.5, 2022: 1.4,
+            2027: 2.0, 2026: 1.8, 2025: 1.7, 2024: 1.6, 2023: 1.5, 2022: 1.4,
             2021: 1.3, 2020: 1.2, 2019: 1.1, 2018: 1.0, 2017: 0.9,
             2016: 0.8, 2015: 0.7, 2014: 0.6, 2013: 0.55, 2012: 0.5, 2011: 0.45,
+        },
+
+        // Source quality weighting (multi-source intelligence)
+        // Different sources have different reliability for GATE prediction
+        source_weights: {
+            'examside': 1.0,       // Direct from ExamSIDE — highest quality
+            'mockers': 0.85,       // Mock tests — good for practice patterns
+            'geeksforgeeks': 0.80, // GFG PYQ quizzes — reliable but reformatted
+            'gateoverflow': 0.90,  // GateOverflow solutions — very authoritative
+            'madeeasy': 0.85,     // MadeEasy mock content
+            'goclasses': 0.85,    // Go Classes content
+            'pw': 0.80,           // PhysicsWallah content
+            'external': 0.70,     // Unknown source — lower priority
+        },
+
+        // 2027 syllabus changes — topics with UPDATED weightage
+        // Based on IIT Madras 2027 notification vs 2026
+        syllabus_2027_changes: {
+            'digital-logic': {
+                'change': 'Added: K-maps tabular method, Boolean algebra minimization explicitly',
+                'topics_boost': ['boolean-algebra', 'k-maps'],
+            },
+            'computer-networks': {
+                'change': 'Added: Distance vector & link state routing explicitly; DNS & HTTP emphasis',
+                'topics_boost': ['network-layer', 'application-layer-protocol'],
+            },
+            'compiler-design': {
+                'change': 'Added: Runtime environments, data flow analyses explicitly',
+                'topics_boost': ['code-generation-and-optimization'],
+            },
+            'operating-systems': {
+                'change': 'Consolidated: IPC + concurrency + synchronization in one line',
+                'topics_boost': ['synchronization-and-concurrency'],
+            },
         },
 
         // Difficulty distribution target
@@ -890,6 +924,20 @@
 
                 // Quality score
                 w *= (q._qualityScore / 50);
+
+                // SOURCE-AWARE WEIGHTING (v9 — multi-source intelligence)
+                // Questions from ExamSIDE (real PYQs) get full weight
+                // Questions from mock test sources get slightly lower weight
+                const sourceWeight = GATE_PATTERN.source_weights[q.source || 'examside'] || 1.0;
+                w *= sourceWeight;
+
+                // 2027 SYLLABUS BOOST (v9 — boost topics changed in 2027 syllabus)
+                const syllabusChange = GATE_PATTERN.syllabus_2027_changes[q.subject];
+                if (syllabusChange && syllabusChange.topics_boost) {
+                    if (syllabusChange.topics_boost.includes(q.chapter)) {
+                        w *= 1.15; // Boost 2027-revised topics
+                    }
+                }
 
                 // SUBJECT-SPECIFIC TYPE PREFERENCE (strengthened in v5)
                 // Scale: 0.3 to 2.0 for stronger type enforcement
