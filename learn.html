@@ -954,6 +954,430 @@ void quickSort(int arr[], int low, int high) {
 `
             }
         }
+    },
+    'compiler-design': {
+        label: 'Compiler Design', icon: '🔧', color: 'var(--grad-orange)',
+        chapters: [
+            { chapter: 'lexical-analysis', title: 'Lexical Analysis', content: `
+<h3>Lexical Analysis</h3>
+<p>Lexical analysis is the first phase of a compiler. It reads the source code character by character, groups them into tokens, and removes whitespace and comments.</p>
+
+<h4>Token, Pattern, Lexeme</h4>
+<ul>
+<li><strong>Token:</strong> A pair (token name, attribute value). E.g., <code>&lt;id, 1&gt;</code>, <code>&lt;num, 42&gt;</code></li>
+<li><strong>Pattern:</strong> A rule describing the set of lexemes that can represent a token. E.g., identifier = letter followed by letters/digits</li>
+<li><strong>Lexeme:</strong> Actual sequence of characters in source code that matches a pattern. E.g., <code>count</code>, <code>x1</code></li>
+</ul>
+
+<h4>Token Types</h4>
+<ul>
+<li><strong>Keywords:</strong> if, else, while, for, return (reserved)</li>
+<li><strong>Identifiers:</strong> variable names, function names</li>
+<li><strong>Constants:</strong> integers, floats, strings</li>
+<li><strong>Operators:</strong> +, -, *, /, ==, &lt;=, &amp;&amp;</li>
+<li><strong>Punctuation:</strong> ;, {, }, (, )</li>
+</ul>
+
+<h4>Regular Expressions</h4>
+<p>Each token type is described by a regular expression:</p>
+<ul>
+<li>Identifier: <code>letter(letter|digit)*</code></li>
+<li>Number: <code>digit+(.digit+)?</code></li>
+<li>Keyword <code>if</code>: literal string <code>if</code> (checked before identifier rule)</li>
+</ul>
+
+<h4>Finite Automata for Lexing</h4>
+<ul>
+<li><strong>DFA</strong> (Deterministic Finite Automaton) is used for efficient token recognition</li>
+<li>Longest match rule: always take the longest matching lexeme (e.g., <code>==</code> not two <code>=</code>)</li>
+<li>Priority rule: if multiple patterns match, use the one listed first (keywords before identifiers)</li>
+</ul>
+
+<div class="info-box">
+<strong>🎯 GATE Tip:</strong> The longest match rule and priority rule are frequently tested. Remember: <code>if</code> matches both keyword and identifier patterns — keyword wins by priority. <code>ifxy</code> matches identifier only.
+</div>
+` },
+            { chapter: 'parsing', title: 'Parsing (LL & LR)', content: `
+<h3>Parsing</h3>
+<p>Parsing checks if the token stream conforms to the grammar's syntax rules and builds a parse tree (AST).</p>
+
+<h4>Grammar Notation</h4>
+<p>A context-free grammar (CFG) is a 4-tuple $G = (V, T, P, S)$:</p>
+<ul>
+<li>$V$ = set of variables (non-terminals)</li>
+<li>$T$ = set of terminals (tokens)</li>
+<li>$P$ = set of productions (rules like $E \\to E + T \\mid T$)</li>
+<li>$S$ = start symbol</li>
+</ul>
+
+<h4>Top-Down Parsing (LL)</h4>
+<ul>
+<li>Starts from start symbol, tries to derive input string</li>
+<li><strong>Recursive Descent:</strong> One function per non-terminal, may require backtracking</li>
+<li><strong>Predictive Parser (LL(1)):</strong> Uses FIRST and FOLLOW sets to choose correct production without backtracking</li>
+<li><strong>LL(1) condition:</strong> For $A \\to \\alpha \\mid \\beta$: FIRST(α) ∩ FIRST(β) = ∅, and if ε in FIRST(α) then FIRST(β) ∩ FOLLOW(A) = ∅</li>
+</ul>
+
+<h4>FIRST and FOLLOW Sets</h4>
+<ul>
+<li><strong>FIRST(X):</strong> Set of terminals that can begin any string derivable from X</li>
+<li><strong>FOLLOW(A):</strong> Set of terminals that can appear immediately after A in some derivation</li>
+<li>Computing FOLLOW requires handling the start symbol ($) and rules like $A \\to \\alpha B \\beta$</li>
+</ul>
+
+<h4>Bottom-Up Parsing (LR)</h4>
+<ul>
+<li>Starts from input, reduces to start symbol (reverse of rightmost derivation)</li>
+<li>Uses a stack and shift-reduce actions</li>
+<li><strong>LR(0):</strong> Simplest — no lookahead, SLR(1) uses FOLLOW for reduce decisions</li>
+<li><strong>SLR(1):</strong> Use FOLLOW(A) to decide when to reduce by $A \\to \\alpha$</li>
+<li><strong>LALR(1):</strong> Merge LR(1) items with same core — used in practice (yacc/bison)</li>
+<li><strong>CLR(1):</strong> Most powerful LR(1) — full lookahead, but many states</li>
+</ul>
+
+<h4>Shift-Reduce Conflicts</h4>
+<ul>
+<li><strong>Shift-Reduce conflict:</strong> Parser can't decide whether to shift or reduce</li>
+<li><strong>Reduce-Reduce conflict:</strong> Multiple reductions possible</li>
+<li>LR(0) → SLR(1) → LALR(1) → CLR(1): increasing power, fewer conflicts</li>
+</ul>
+
+<div class="info-box">
+<strong>🎯 GATE Tip:</strong> LALR(1) is the most commonly asked parser in GATE. Key property: LALR has same number of states as LR(0) but uses lookahead. LALR may have conflicts that CLR doesn't (due to merging).
+</div>
+` },
+            { chapter: 'code-generation-and-optimization', title: 'Code Generation & Optimization', content: `
+<h3>Code Generation & Optimization</h3>
+
+<h4>Intermediate Code (Three-Address Code)</h4>
+<p>Three-address code (TAC) has at most 3 operands per instruction:</p>
+<ul>
+<li><code>t1 = a + b</code> (binary op)</li>
+<li><code>t2 = -a</code> (unary op)</li>
+<li><code>if t1 &lt; 10 goto L1</code> (conditional jump)</li>
+<li><code>param x</code> / <code>call p, 2</code> (function call)</li>
+<li><code>x = t1</code> (copy)</li>
+</ul>
+
+<h4>DAG (Directed Acyclic Graph)</h4>
+<ul>
+<li>Built from basic blocks to eliminate common subexpressions</li>
+<li>Leaf nodes = variables/constants, interior nodes = operators</li>
+<li>Common subexpression elimination: if same pattern appears, reuse node</li>
+</ul>
+
+<h4>Basic Block</h4>
+<ul>
+<li>Sequence of consecutive statements with single entry and single exit</li>
+<li>Leader = first statement (program start, jump target, statement after jump)</li>
+</ul>
+
+<h4>Peephole Optimization</h4>
+<ul>
+<li>Local optimization on small window of instructions</li>
+<li>Constant folding: <code>x = 2 + 3</code> → <code>x = 5</code></li>
+<li>Strength reduction: <code>x * 2</code> → <code>x &lt;&lt; 1</code></li>
+<li>Dead code elimination: remove unreachable statements</li>
+</ul>
+
+<h4>Data Flow Analyses</h4>
+<ul>
+<li><strong>Reaching Definitions:</strong> Which definitions reach each point (may analysis)</li>
+<li><strong>Live Variables:</strong> Which variables are used later (may analysis)</li>
+<li><strong>Available Expressions:</strong> Which expressions are already computed (must analysis)</li>
+<li><strong>Constant Propagation:</strong> Replace variables with constants when known</li>
+</ul>
+
+<div class="info-box">
+<strong>🎯 GATE Tip:</strong> For DAG questions: always check if a node's value is still needed before eliminating. Common subexpression elimination is the most frequently tested optimization.
+</div>
+` }
+        ]
+    },
+    'computer-organization': {
+        label: 'Computer Organization & Architecture', icon: '💻', color: 'var(--grad-cyan)',
+        chapters: [
+            { chapter: 'pipelining', title: 'Instruction Pipelining & Hazards', content: `
+<h3>Instruction Pipelining</h3>
+<p>Pipelining overlaps execution of multiple instructions by dividing execution into stages.</p>
+
+<h4>Pipeline Stages (Classic 5-Stage RISC)</h4>
+<ol>
+<li><strong>IF</strong> (Instruction Fetch): Fetch instruction from memory</li>
+<li><strong>ID</strong> (Instruction Decode): Decode instruction, read registers</li>
+<li><strong>EX</strong> (Execute): ALU operation, address calculation</li>
+<li><strong>MEM</strong> (Memory Access): Load/Store from/to memory</li>
+<li><strong>WB</strong> (Write Back): Write result to register file</li>
+</ol>
+
+<h4>Pipeline Speedup</h4>
+<p>For $n$ instructions, $k$ stages, cycle time $t$:</p>
+<ul>
+<li>Without pipeline: $n \\times k \\times t$</li>
+<li>With pipeline: $(k + n - 1) \\times t$</li>
+<li>Speedup $\\approx k$ (ideal, for large $n$)</li>
+</ul>
+
+<h4>Pipeline Hazards</h4>
+<ol>
+<li><strong>Structural Hazard:</strong> Two instructions need same hardware resource simultaneously</li>
+<li><strong>Data Hazard:</strong> Instruction depends on result of previous instruction not yet available
+<ul>
+<li><strong>RAW (Read After Write):</strong> True dependency — most common</li>
+<li><strong>WAR (Write After Read):</strong> Anti-dependency</li>
+<li><strong>WAW (Write After Write):</strong> Output dependency</li>
+</ul>
+</li>
+<li><strong>Control Hazard:</strong> Branch changes flow — next instruction unknown</li>
+</ol>
+
+<h4>Hazard Solutions</h4>
+<ul>
+<li><strong>Forwarding/Bypassing:</strong> Route result from EX/MEM directly to next instruction's EX input</li>
+<li><strong>Stalls (Bubbles):</strong> Insert NOP cycles when data not ready</li>
+<li><strong>Branch Prediction:</strong> Predict branch outcome to avoid stalls</li>
+<li><strong>Delayed Branch:</strong> Execute instruction(s) after branch regardless</li>
+</ul>
+
+<div class="info-box">
+<strong>🎯 GATE Tip:</strong> For data hazards: load-use hazard needs 1 stall. With forwarding, most RAW hazards are resolved except load-use. Pipeline CPI = 1 + (stall cycles per instruction).
+</div>
+` },
+            { chapter: 'memory-interfacing', title: 'Memory Hierarchy & Cache', content: `
+<h3>Memory Hierarchy & Cache Organization</h3>
+
+<h4>Memory Hierarchy (decreasing speed, increasing size)</h4>
+<ol>
+<li>Registers (fastest, smallest)</li>
+<li>L1 Cache (split I-cache + D-cache)</li>
+<li>L2 Cache (unified)</li>
+<li>L3 Cache (shared across cores)</li>
+<li>Main Memory (RAM)</li>
+<li>Secondary Storage (SSD/HDD)</li>
+</ol>
+
+<h4>Cache Mapping Techniques</h4>
+<ol>
+<li><strong>Direct Mapping:</strong> Block $i$ goes to cache line $i \\mod N$ ($N$ = cache lines)
+<ul>
+<li>Address = Tag | Line | Offset</li>
+<li>Simple, fast lookup, but conflict misses</li>
+</ul>
+</li>
+<li><strong>Fully Associative:</strong> Block can go anywhere
+<ul>
+<li>Address = Tag | Offset</li>
+<li>Flexible, but requires all tags checked in parallel</li>
+</ul>
+</li>
+<li><strong>Set-Associative:</strong> Block goes to set $i \\mod S$, any line within set
+<ul>
+<li>Address = Tag | Set | Offset</li>
+<li>$k$-way set associative: $k$ lines per set</li>
+<li>Balance between direct and fully associative</li>
+</ul>
+</li>
+</ol>
+
+<h4>Cache Performance</h4>
+<p><strong>Average Memory Access Time (AMAT):</strong></p>
+<p>$$AMAT = Hit_{time} + Miss_{rate} \\times Miss_{penalty}$$</p>
+
+<h4>Types of Cache Misses</h4>
+<ol>
+<li><strong>Compulsory (Cold):</strong> First access to block — unavoidable</li>
+<li><strong>Capacity:</strong> Cache too small to hold all needed blocks</li>
+<li><strong>Conflict:</strong> Multiple blocks map to same line (direct-mapped only)</li>
+</ol>
+
+<h4>Virtual Memory</h4>
+<ul>
+<li>Page table maps virtual addresses to physical addresses</li>
+<li><strong>TLB (Translation Lookaside Buffer):</strong> Cache for page table entries</li>
+<li>TLB hit → physical address immediately; TLB miss → check page table</li>
+<li>Page fault → OS loads page from disk</li>
+</ul>
+
+<div class="info-box">
+<strong>🎯 GATE Tip:</strong> AMAT formula is the most commonly tested cache concept. Remember: L1 miss penalty = L2 access time, L2 miss penalty = main memory access time.
+</div>
+` }
+        ]
+    },
+    'discrete-mathematics': {
+        label: 'Discrete Mathematics', icon: '∑', color: 'var(--grad-orange)',
+        chapters: [
+            { chapter: 'graph-theory', title: 'Graph Theory', content: `
+<h3>Graph Theory</h3>
+
+<h4>Basic Definitions</h4>
+<ul>
+<li><strong>Graph:</strong> $G = (V, E)$ where $V$ = vertices, $E$ = edges</li>
+<li><strong>Degree:</strong> Number of edges incident on a vertex</li>
+<li><strong>Handshaking Lemma:</strong> $\\sum \\deg(v) = 2|E|$ (sum of degrees = 2 × edges)</li>
+</ul>
+
+<h4>Graph Types</h4>
+<ul>
+<li><strong>Complete graph $K_n$:</strong> Every pair of vertices connected. Edges = $\\binom{n}{2} = \\frac{n(n-1)}{2}$</li>
+<li><strong>Bipartite graph:</strong> Vertices split into two sets, edges only between sets</li>
+<li><strong>Tree:</strong> Connected, acyclic graph. Edges = $n - 1$</li>
+<li><strong>Planar graph:</strong> Can be drawn without edge crossings</li>
+</ul>
+
+<h4>Graph Coloring</h4>
+<ul>
+<li>Chromatic number $\\chi(G)$ = minimum colors needed</li>
+<li>Bipartite graphs: $\\chi = 2$</li>
+<li>Complete graph $K_n$: $\\chi = n$</li>
+<li>Planar graphs: $\\chi \\leq 4$ (Four Color Theorem)</li>
+</ul>
+
+<h4>Euler and Hamiltonian</h4>
+<ul>
+<li><strong>Euler circuit:</strong> Uses every edge exactly once, starts/ends at same vertex. Exists iff all degrees are even.</li>
+<li><strong>Euler path:</strong> Uses every edge once. Exists iff exactly 0 or 2 vertices have odd degree.</li>
+<li><strong>Hamiltonian circuit:</strong> Visits every vertex exactly once. No simple necessary-and-sufficient condition.</li>
+</ul>
+
+<div class="info-box">
+<strong>🎯 GATE Tip:</strong> Handshaking lemma is heavily tested. Also remember: number of edges in complete bipartite $K_{m,n}$ = $m \\times n$.
+</div>
+` },
+            { chapter: 'probability', title: 'Probability & Statistics', content: `
+<h3>Probability & Statistics</h3>
+
+<h4>Basic Probability</h4>
+<ul>
+<li>$P(A) = $ favorable outcomes / total outcomes</li>
+<li>$P(A \\cup B) = P(A) + P(B) - P(A \\cap B)$</li>
+<li>$P(\\bar{A}) = 1 - P(A)$</li>
+</ul>
+
+<h4>Conditional Probability</h4>
+<p>$$P(A|B) = \\frac{P(A \\cap B)}{P(B)}$$</p>
+
+<h4>Bayes Theorem</h4>
+<p>$$P(A|B) = \\frac{P(B|A) \\times P(A)}{P(B)}$$</p>
+<p>Where $P(B) = \\sum_i P(B|A_i) \\times P(A_i)$ (Law of Total Probability)</p>
+
+<h4>Random Variables</h4>
+<ul>
+<li><strong>Expected value:</strong> $E[X] = \\sum x \\cdot P(x)$ (discrete), $\\int x \\cdot f(x) dx$ (continuous)</li>
+<li><strong>Variance:</strong> $Var(X) = E[X^2] - (E[X])^2$</li>
+<li><strong>Linearity:</strong> $E[aX + b] = aE[X] + b$, $Var(aX+b) = a^2 Var(X)$</li>
+</ul>
+
+<h4>Common Distributions</h4>
+<ul>
+<li><strong>Binomial $B(n,p)$:</strong> $E[X] = np$, $Var(X) = np(1-p)$</li>
+<li><strong>Poisson $\\lambda$:</strong> $P(k) = \\frac{\\lambda^k e^{-\\lambda}}{k!}$, $E[X] = Var(X) = \\lambda$</li>
+<li><strong>Uniform $[a,b]$:</strong> $E[X] = \\frac{a+b}{2}$, $Var(X) = \\frac{(b-a)^2}{12}$</li>
+<li><strong>Normal $N(\\mu, \\sigma^2)$:</strong> $E[X] = \\mu$, $Var(X) = \\sigma^2$</li>
+</ul>
+
+<div class="info-box">
+<strong>🎯 GATE Tip:</strong> Bayes theorem questions often involve diagnostic testing or urn problems. Remember: $P(A|B) \\neq P(B|A)$ — this is the key insight Bayes provides.
+</div>
+` },
+            { chapter: 'linear-algebra', title: 'Linear Algebra', content: `
+<h3>Linear Algebra</h3>
+
+<h4>Matrices</h4>
+<ul>
+<li>Matrix multiplication: $(AB)_{ij} = \\sum_k A_{ik} B_{kj}$</li>
+<li>Transpose: $(A^T)_{ij} = A_{ji}$</li>
+<li>Determinant: $|A|$ for square matrices</li>
+</ul>
+
+<h4>System of Linear Equations</h4>
+<p>$Ax = b$ where $A$ is $n \\times n$ matrix</p>
+<ul>
+<li>Unique solution iff $|A| \\neq 0$ (non-singular)</li>
+<li>No solution or infinite solutions if $|A| = 0$</li>
+</ul>
+
+<h4>Eigenvalues and Eigenvectors</h4>
+<p>$Av = \\lambda v$ where $v$ is eigenvector, $\\lambda$ is eigenvalue</p>
+<ul>
+<li>Characteristic equation: $|A - \\lambda I| = 0$</li>
+<li>Sum of eigenvalues = trace($A$) = $\\sum a_{ii}$</li>
+<li>Product of eigenvalues = $|A|$ (determinant)</li>
+</ul>
+
+<div class="info-box">
+<strong>🎯 GATE Tip:</strong> Trace = sum of eigenvalues, Determinant = product of eigenvalues. These two properties solve most GATE eigenvalue questions without computing eigenvectors.
+</div>
+` }
+        ]
+    },
+    'general-aptitude': {
+        label: 'General Aptitude', icon: '🧮', color: 'var(--grad-gold)',
+        chapters: [
+            { chapter: 'numerical-ability', title: 'Numerical Ability', content: `
+<h3>Numerical Ability — Key Formulas</h3>
+
+<h4>Percentages</h4>
+<ul>
+<li>$x\\%$ of $y = \\frac{x \\times y}{100}$</li>
+<li>If $A$ is $x\\%$ more than $B$, then $A = B(1 + x/100)$</li>
+<li>Successive percentage change: $a + b + \\frac{ab}{100}$</li>
+</ul>
+
+<h4>Time, Speed & Distance</h4>
+<ul>
+<li>$Distance = Speed \\times Time$</li>
+<li>Average speed = $\\frac{2 \\times s_1 \\times s_2}{s_1 + s_2}$ (equal distances)</li>
+<li>Relative speed (same direction): $|s_1 - s_2|$</li>
+</ul>
+
+<h4>Ratio & Proportion</h4>
+<ul>
+<li>If $a:b = c:d$, then $ad = bc$</li>
+<li>Compound ratio: $\\frac{a}{b} \\times \\frac{c}{d} = \\frac{ac}{bd}$</li>
+</ul>
+
+<h4>Permutations & Combinations</h4>
+<ul>
+<li>$P(n,r) = \\frac{n!}{(n-r)!}$ — order matters</li>
+<li>$C(n,r) = \\frac{n!}{r!(n-r)!}$ — order doesn't matter</li>
+<li>$C(n,r) = C(n,n-r)$</li>
+<li>Circular permutation: $(n-1)!$</li>
+</ul>
+
+<div class="info-box">
+<strong>🎯 GATE Tip:</strong> GA section (15 marks) is the easiest to score. Practice 10 questions daily. Focus on percentages, ratios, and basic number theory. Time-speed-distance is frequently tested.
+</div>
+` },
+            { chapter: 'verbal-ability', title: 'Verbal Ability', content: `
+<h3>Verbal Ability</h3>
+
+<h4>Reading Comprehension</h4>
+<ul>
+<li>Read the question first, then scan the passage for keywords</li>
+<li>Answer based on what's IN the passage, not prior knowledge</li>
+<li>Watch for: "according to the passage" vs "can be inferred"</li>
+</ul>
+
+<h4>Grammar — Common Errors</h4>
+<ul>
+<li>Subject-verb agreement: "The list of items <em>is</em>" (singular subject)</li>
+<li>Tense consistency: don't mix past and present in same clause</li>
+<li>Articles: use "the" for specific, "a/an" for general</li>
+</ul>
+
+<h4>Vocabulary</h4>
+<ul>
+<li>Synonyms: words with similar meaning</li>
+<li>Antonyms: words with opposite meaning</li>
+<li>Contextual meaning: word meaning in context of sentence</li>
+</ul>
+
+<div class="info-box">
+<strong>🎯 GATE Tip:</strong> For "fill in the blank" questions, try each option by reading the full sentence. Eliminate options that don't fit grammatically or logically.
+</div>
+` }
+        ]
     }
 };
 
